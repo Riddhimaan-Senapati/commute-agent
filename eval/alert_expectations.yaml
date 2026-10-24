@@ -1,0 +1,31 @@
+# Alert response expectations for `eval/run.py`. Shape: a list of rows, each
+#   trip: str                 Showcase_Trip name from data/showcase_trips.yaml
+#   source: str               Alert_Source: "none" or a snapshot label in data/alert_snapshots/
+#   affected_lines: [str]     MBTA route ids whose transit routes must carry the alert
+#   pareto_must_change: bool  the Pareto set must differ from the same trip under "none"
+#   disrupted_must_rank_lower: bool (optional)  front routes on affected lines must rank
+#                             lower than under "none" (equal preference weights)
+- trip: fields-corner-to-downtown
+  source: none
+  affected_lines: []
+  pareto_must_change: false
+- trip: hyde-square-to-longwood
+  source: none
+  affected_lines: []
+  pareto_must_change: false
+- trip: charlestown-to-copley
+  source: none
+  affected_lines: []
+  pareto_must_change: false
+- trip: maverick-to-courthouse
+  source: none
+  affected_lines: []
+  pareto_must_change: false
+- trip: allston-to-boston-common
+  source: none
+  affected_lines: []
+  pareto_must_change: false
+- trip: fields-corner-to-downtown
+  source: "Synthetic: Red Line suspended JFK/UMass to Park Street"
+  affected_lines: [Red]
+  pareto_must_change: true

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pareto Commute Agent — Boston</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230072B2'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-title">
+      <h1>Pareto Commute Agent</h1>
+      <p class="notice" role="note">Independent prototype. Not a City of Boston or MBTA service.</p>
+    </div>
+    <div class="header-controls">
+      <div class="control">
+        <label for="trip-select">Showcase trip</label>
+        <select id="trip-select" aria-label="Showcase trip">
+          <option value="">Loading trips…</option>
+        </select>
+      </div>
+      <div class="control">
+        <label for="alert-select">Alert source</label>
+        <select id="alert-select" aria-label="Alert source">
+          <option value="none">none</option>
+        </select>
+      </div>
+      <div class="control status-control">
+        <span class="status-label">Mode</span>
+        <span id="run-mode" class="status-value" aria-live="polite">—</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="col col-left" aria-labelledby="routes-heading">
+      <h2 id="routes-heading">Routes</h2>
+      <div id="route-list" class="route-list" role="list" aria-label="Pareto route options"></div>
+      <div id="pareto-change" class="pareto-change" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="col col-center" aria-label="Map">
+      <div id="map" role="application" aria-label="Route map"></div>
+    </section>
+
+    <section class="col col-right">
+      <div class="chart-panel" aria-labelledby="chart-heading">
+        <h2 id="chart-heading">Time vs CO₂</h2>
+        <div class="chart-wrap">
+          <canvas id="chart" width="360" height="260" aria-label="Time versus CO2 scatter chart of route options" role="img"></canvas>
+        </div>
+      </div>
+      <div class="chat-panel" aria-labelledby="chat-heading">
+        <h2 id="chat-heading">Ask about this trip</h2>
+        <div id="chat-log" class="chat-log" role="log" aria-live="polite" aria-label="Chat transcript"></div>
+        <form id="chat-form" class="chat-form">
+          <label for="chat-input" class="visually-hidden">Message</label>
+          <input id="chat-input" type="text" autocomplete="off"
+                 placeholder="e.g. Which route has the lowest CO₂?" aria-label="Message" />
+          <button type="submit" id="chat-send">Send</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="alert" aria-live="assertive" hidden></div>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

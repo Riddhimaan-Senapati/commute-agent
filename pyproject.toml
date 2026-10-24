@@ -1,0 +1,57 @@
+[project]
+name = "commute-agent"
+version = "0.1.0"
+description = "Pareto commute agent: Boston trip options over time, CO2, crash risk, and MBTA disruption."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { text = "MIT" }
+dependencies = [
+    "smolagents[mcp,openai]==1.26.0",
+    "mcp==1.30.0",
+    "openai==3.37.0",
+    "osmnx==2.1.1",
+    "networkx==3.7",
+    "fastapi==0.162.0",
+    "uvicorn==0.54.0",
+    "pydantic==2.14.1",
+    "pyyaml==6.0.3",
+    "httpx==0.28.1",
+    "pandas==3.1.0",
+    "pyarrow==26.0.0",
+    "geopandas==1.2.0",
+    "shapely==2.2.0",
+    "scipy==1.18.1",
+    "polyline==2.0.4",
+    "python-dotenv==1.2.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "hypothesis==6.170.9",
+    "ruff==0.17.2",
+]
+
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["commute_agent"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = ["live: calls OTP or the MBTA V3 API; run with -m live"]
+addopts = "-m 'not live'"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# SYSTEM_PROMPT is prose copied verbatim from the design.
+"commute_agent/agent.py" = ["E501"]

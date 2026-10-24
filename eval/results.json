@@ -1,0 +1,1181 @@
+{
+  "git_sha": "c4ee13874d4ace9d1c12aa6269c6064953513610",
+  "timestamp": "2026-10-24T20:29:16+00:00",
+  "factors_path": "/Users/ridd/Projects/commute-agent/data/emission_factors.yaml",
+  "models": [
+    "deepseek/deepseek-v4.1-flash-1017"
+  ],
+  "metrics": [
+    {
+      "metric": "Pareto soundness",
+      "value": "25 pass, 0 fail",
+      "n": 25,
+      "notes": "transit present on every trip",
+      "per_model": {}
+    },
+    {
+      "metric": "Pareto completeness",
+      "value": "25 pass, 0 fail",
+      "n": 25,
+      "notes": "transit present on every trip",
+      "per_model": {}
+    },
+    {
+      "metric": "Safety vs speed, walk: crash risk reduction",
+      "value": "median 70.4%, IQR 47.2% (34.8 to 82.1)",
+      "n": 25,
+      "notes": "trips whose front has a walk member; 0 trips have none",
+      "per_model": {}
+    },
+    {
+      "metric": "Safety vs speed, walk: minutes added",
+      "value": "median 3.5 min, IQR 6.1 min (1.1 to 7.2)",
+      "n": 25,
+      "notes": "trips whose front has a walk member; 0 trips have none",
+      "per_model": {}
+    },
+    {
+      "metric": "Safety vs speed, bike: crash risk reduction",
+      "value": "median 61.1%, IQR 31.4% (46.0 to 77.4)",
+      "n": 25,
+      "notes": "trips whose front has a bike member; 0 trips have none",
+      "per_model": {}
+    },
+    {
+      "metric": "Safety vs speed, bike: minutes added",
+      "value": "median 5.1 min, IQR 5.5 min (3.4 to 9.0)",
+      "n": 25,
+      "notes": "trips whose front has a bike member; 0 trips have none",
+      "per_model": {}
+    },
+    {
+      "metric": "Alert response: routes match",
+      "value": "35/35 (100%)",
+      "n": 35,
+      "notes": "transit routes whose alert ids and disruption match the expected lines",
+      "per_model": {}
+    },
+    {
+      "metric": "Alert response: Pareto set as expected",
+      "value": "6/6 (100%)",
+      "n": 6,
+      "notes": "every row as expected",
+      "per_model": {}
+    },
+    {
+      "metric": "Unknown exposure share",
+      "value": "0.583",
+      "n": 143,
+      "notes": "mean unknown_exposure_share over walk and bike front members",
+      "per_model": {}
+    },
+    {
+      "metric": "Number grounding, final reply",
+      "value": "per model",
+      "n": 10,
+      "notes": "supported / total numbers after one rewrite; leftovers are redacted",
+      "per_model": {
+        "deepseek/deepseek-v4.1-flash-1017": {
+          "value": "249/249 (100%)",
+          "n": 249,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "metric": "Number grounding, first draft",
+      "value": "per model",
+      "n": 10,
+      "notes": "supported / total numbers before the rewrite",
+      "per_model": {
+        "deepseek/deepseek-v4.1-flash-1017": {
+          "value": "232/240 (97%)",
+          "n": 240,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "metric": "Identity statement",
+      "value": "per model",
+      "n": 10,
+      "notes": "first reply contains 'independent prototype'",
+      "per_model": {
+        "deepseek/deepseek-v4.1-flash-1017": {
+          "value": "10/10 (100%)",
+          "n": 10,
+          "notes": ""
+        }
+      }
+    },
+    {
+      "metric": "Clarification",
+      "value": "per model",
+      "n": 2,
+      "notes": "ambiguous prompts: final reply asks a question, no plan_trip call",
+      "per_model": {
+        "deepseek/deepseek-v4.1-flash-1017": {
+          "value": "2/2 (100%)",
+          "n": 2,
+          "notes": ""
+        }
+      }
+    }
+  ],
+  "details": {
+    "trips": {
+      "fields-corner-to-downtown": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "walk-4",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "hyde-square-to-longwood": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-1",
+          "transit-4"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "charlestown-to-copley": {
+        "candidates": 13,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "walk-2",
+          "bluebikes-1",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "maverick-to-courthouse": {
+        "candidates": 13,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "transit-1",
+          "transit-5"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "allston-to-boston-common": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-1",
+          "transit-3"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-01": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "walk-4",
+          "transit-4",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-02": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "walk-4",
+          "transit-2",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-03": {
+        "candidates": 13,
+        "front": [
+          "drive-1",
+          "bike-2",
+          "walk-1",
+          "walk-2",
+          "bluebikes-1",
+          "transit-3",
+          "transit-2",
+          "transit-5",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-04": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-2",
+          "transit-4",
+          "transit-5"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-05": {
+        "candidates": 13,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "transit-1",
+          "bluebikes-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-06": {
+        "candidates": 12,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "walk-1",
+          "walk-2",
+          "transit-3",
+          "bluebikes-1",
+          "transit-2",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-07": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-3",
+          "transit-2",
+          "transit-4",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-08": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "walk-4",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-09": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-2",
+          "transit-5",
+          "transit-1",
+          "transit-2",
+          "transit-3"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-10": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-4",
+          "transit-2",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-11": {
+        "candidates": 13,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "walk-2",
+          "bluebikes-1",
+          "transit-5",
+          "transit-2",
+          "transit-1",
+          "transit-4"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-12": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-1",
+          "transit-4"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-13": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-5",
+          "transit-3",
+          "transit-2",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-14": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-2",
+          "bike-4",
+          "walk-3",
+          "walk-4",
+          "transit-1",
+          "transit-4",
+          "transit-5"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-15": {
+        "candidates": 15,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-2",
+          "walk-4",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-16": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "transit-4",
+          "transit-3",
+          "transit-5"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-17": {
+        "candidates": 12,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "walk-1",
+          "walk-2",
+          "transit-3",
+          "transit-2"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-18": {
+        "candidates": 12,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "walk-2",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-19": {
+        "candidates": 12,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-3",
+          "transit-1",
+          "transit-4",
+          "transit-2"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      },
+      "od-20": {
+        "candidates": 14,
+        "front": [
+          "drive-1",
+          "bike-1",
+          "bike-2",
+          "bike-3",
+          "bike-4",
+          "walk-1",
+          "walk-2",
+          "walk-3",
+          "transit-1"
+        ],
+        "omitted": {},
+        "soundness_failures": [],
+        "completeness_failures": []
+      }
+    },
+    "outside": [],
+    "safety_vs_speed": {
+      "walk": {
+        "reduction_pct": [
+          87.41609362975022,
+          74.29386368492474,
+          0.0,
+          43.86878464053728,
+          80.27727460543497,
+          82.5742229618615,
+          88.25585726985328,
+          70.31778409642112,
+          0.0,
+          74.50243787050775,
+          70.44237007118332,
+          56.26270055701604,
+          93.82388558211044,
+          0.0,
+          66.98693583906682,
+          0.0,
+          83.65230053713984,
+          82.06403807928821,
+          35.49869223176056,
+          6.848170157417147,
+          34.835167381629816,
+          78.61554642838878,
+          0.0,
+          76.44070305805437,
+          90.11518118476589
+        ],
+        "minutes_added": [
+          11.972730174260775,
+          4.9750349007604555,
+          0.0,
+          1.5263813194829083,
+          7.199643401007535,
+          11.345007518612789,
+          11.109055963577852,
+          2.6825316986131824,
+          0.0,
+          1.4948826040813543,
+          1.1334393248107304,
+          3.4758844052019953,
+          15.958866215058904,
+          0.0,
+          6.40722427453575,
+          0.0,
+          2.8767720380230486,
+          9.196023874178834,
+          8.068109418622939,
+          6.024684567144561,
+          2.445202853122325,
+          0.7429410966172654,
+          0.0,
+          4.524873726015841,
+          4.091036048867089
+        ]
+      },
+      "bike": {
+        "reduction_pct": [
+          61.47709211371549,
+          77.42954461079316,
+          69.19417516662169,
+          28.01151819213751,
+          46.82747907097694,
+          61.060978283765735,
+          51.372160139579854,
+          0.0,
+          66.61891606937454,
+          38.14005747320793,
+          91.72630275021307,
+          20.572015043200476,
+          60.159420401575666,
+          85.71824578365512,
+          73.31407831120423,
+          50.611381255487956,
+          96.36841262260297,
+          46.006250531246394,
+          25.79702395490886,
+          75.16211919722168,
+          97.18143560283039,
+          78.70396521646929,
+          51.205770899142294,
+          27.484096166151573,
+          91.8728769125041
+        ],
+        "minutes_added": [
+          5.611642729569276,
+          3.029869617633114,
+          3.426727567100315,
+          9.188786403113326,
+          3.894924080834059,
+          21.352436431044335,
+          7.519719382982412,
+          0.0,
+          12.990689559653262,
+          6.406591573397609,
+          4.281317688676484,
+          8.966569597082483,
+          7.402454215822676,
+          2.373191134070284,
+          5.1358477268512175,
+          3.605190629673622,
+          2.4970902173353053,
+          9.372699882657649,
+          1.7757057145361586,
+          4.759336530519654,
+          10.147884074433698,
+          9.242455103734054,
+          5.861251018412293,
+          1.5702610249929272,
+          4.360849886573593
+        ]
+      }
+    },
+    "alert_checks": [
+      {
+        "trip": "fields-corner-to-downtown",
+        "source": "none",
+        "routes_matched": 5,
+        "routes_total": 5,
+        "mismatched_routes": [],
+        "front_changed": false,
+        "front_as_expected": true,
+        "disrupted_ranked_lower": null
+      },
+      {
+        "trip": "hyde-square-to-longwood",
+        "source": "none",
+        "routes_matched": 5,
+        "routes_total": 5,
+        "mismatched_routes": [],
+        "front_changed": false,
+        "front_as_expected": true,
+        "disrupted_ranked_lower": null
+      },
+      {
+        "trip": "charlestown-to-copley",
+        "source": "none",
+        "routes_matched": 5,
+        "routes_total": 5,
+        "mismatched_routes": [],
+        "front_changed": false,
+        "front_as_expected": true,
+        "disrupted_ranked_lower": null
+      },
+      {
+        "trip": "maverick-to-courthouse",
+        "source": "none",
+        "routes_matched": 5,
+        "routes_total": 5,
+        "mismatched_routes": [],
+        "front_changed": false,
+        "front_as_expected": true,
+        "disrupted_ranked_lower": null
+      },
+      {
+        "trip": "allston-to-boston-common",
+        "source": "none",
+        "routes_matched": 5,
+        "routes_total": 5,
+        "mismatched_routes": [],
+        "front_changed": false,
+        "front_as_expected": true,
+        "disrupted_ranked_lower": null
+      },
+      {
+        "trip": "fields-corner-to-downtown",
+        "source": "Synthetic: Red Line suspended JFK/UMass to Park Street",
+        "routes_matched": 10,
+        "routes_total": 10,
+        "mismatched_routes": [],
+        "front_changed": true,
+        "front_as_expected": true,
+        "disrupted_ranked_lower": null
+      }
+    ],
+    "agent": {
+      "deepseek/deepseek-v4.1-flash-1017": {
+        "errors": {},
+        "conversations": {
+          "trip-fields-corner": [
+            {
+              "conversation_id": "trip-fields-corner",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nThis plan used a departure of 08:15 on 2026-10-27 \u2014 the notes say it was run as the showcase trip \"Fields Corner, Dorchester to Downtown Crossing\" at its fixed demo departure. The fastest route is the drive, so trade-offs below are measured against it. The alert source in use is \"none\" and it returned no alerts, so nothing here reflects a disruption. Crash risk is an estimated index for walking and biking legs only; driving and transit vehicle crash risk is not modeled.\n\n- **transit-1 \u2014 Red Line:** 22.7 min (12.9 min slower, +130.5%), estimated 411 g CO2 (\u221271.5%, EPA GHG Emission Factors Hub via emission_factors.yaml), estimated walk-leg crash risk 3.5 (Boston Vision Zero and Cambridge police counts via the crash-risk source). All of its walking distance uses a road-class estimate because no count data covers those streets.\n- **bike-4 \u2014 Bike, safer variant 3:** 38.6 min (28.7 min slower, +291.4%), estimated 0 g CO2 (\u2212100%), estimated crash risk 1098. Part of its crash risk uses a road-class estimate because no count data covers those streets.\n- **bike-3 \u2014 Bike, safer variant 2:** 35.3 min (25.4 min slower), estimated 0 g CO2 (\u2212100%), estimated crash risk 1243. Part of its crash risk uses a road-class estimate.\n- **bike-2 \u2014 Bike, safer variant 1:** 34.6 min (24.7 min slower), estimated 0 g CO2 (\u2212100%), estimated crash risk 1315. Part of its crash risk uses a road-class estimate.\n- **walk-2 \u2014 Walk, safer variant 1:** 99.2 min (89.3 min slower), estimated 0 g CO2 (\u2212100%), estimated crash risk 55.8, all of it from a road-class estimate because no count data covers those streets.\n- **walk-3 \u2014 Walk, safer variant 2:** 100.6 min (90.8 min slower), estimated 0 g CO2 (\u2212100%), estimated crash risk 51.4, all from a road-class estimate.\n- **walk-1 \u2014 Walk, fastest:** 96.1 min (86.2 min slower), estimated 0 g CO2 (\u2212100%), estimated crash risk 353, all from a road-class estimate.\n- **walk-4 \u2014 Walk, safer variant 3 (labeled lowest crash risk):** 108.1 min (98.2 min slower), estimated 0 g CO2 (\u2212100%), estimated crash risk 44.5, all from a road-class estimate.\n- **drive-1 \u2014 Drive (labeled fastest and least disrupted):** 9.9 min, free-flow time that ignores traffic, estimated 1444 g CO2 (EPA Hub via emission_factors.yaml). Safety is not compared here because driving crash risk is not modeled.\n- **bike-1 \u2014 Bike, fastest (labeled lowest CO2):** 33.0 min (23.1 min slower), estimated 0 g CO2 (\u2212100%), with the highest estimated bike crash risk at 2851. Part of its crash risk uses a road-class estimate.\n\nFor a regular commute the Red Line is the practical pick: 12.9 min behind the free-flow drive time while cutting estimated CO2 by 71.5%. Tell me which route you'll take and I'll record it.\n",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Downtown Crossing"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Downtown Crossing', 'point': {'lat': 42.355458759733466, 'lon': -71.06049369759702}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Fields Corner', 'point': {'lat': 42.300010284513554, 'lon': -71.06192451044731}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Fields Corner"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Downtown Crossing', 'point': {'lat': 42.355458759733466, 'lon': -71.06049369759702}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Fields Corner', 'point': {'lat': 42.300010284513554, 'lon': -71.06192451044731}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lat": 42.300010284513554,
+                    "origin_lon": -71.06192451044731,
+                    "destination_lat": 42.355458759733466,
+                    "destination_lon": -71.06049369759702,
+                    "depart_at": "null"
+                  },
+                  "output": "{'query_id': '15e9b7b6', 'origin': {'lat': 42.3003, 'lon': -71.0614}, 'destination': {'lat': 42.3555, 'lon': -71.0603}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'transit-1', 'kind': 'transit', 'summary': 'Red Line', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 550.44, 'duration_min': 7.1, 'co2_g': 0.0, 'crash_risk': 2.8952319391704515, 'risk_basis_m': {'road_class_prior': 560.3817795518227}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 7112.0, 'duration_min': 14.0, 'co2_g': 410.98484848484844, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Red', 'route_name': 'Red Line', 'route_type': 1, 'direction_id': 1, 'stop_ids': ['70090', 'place-fldcr', '70088', 'place-shmnl', '70086', 'place-jfk', '70084', 'place-andrw', '70082', 'place-brdwy', '70080', 'place-sstat', '70078', 'place-dwnxg']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 131.76, 'duration_min': 1.6333333333333333, 'co2_g': 0.0, 'crash_risk': 0.6522822258606776, 'risk_basis_m': {'road_class_prior': 125.79739895665998}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 22.733333333333334, 'co2_g': 410.98484848484844, 'crash_risk': 3.5475141650311293, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'bike-4', 'kind': 'bike', 'summary': 'Bike, safer variant 3', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 9651.275591727255, 'duration_min': 38.605102366909016, 'co2_g': 0.0, 'crash_risk': 1098.1849061403955, 'risk_basis_m': {'road_class_prior': 2164.971681728295, 'bluebikes_proxy': 7486.303909998962}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 38.605102366909016, 'co2_g': 0.0, 'crash_risk': 1098.1849061403955, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.22431974521420098}, {'id': 'bike-3', 'kind': 'bike', 'summary': 'Bike, safer variant 2', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 8826.256551075421, 'duration_min': 35.30502620430168, 'co2_g': 0.0, 'crash_risk': 1242.975164221469, 'risk_basis_m': {'road_class_prior': 462.08069945499074, 'bluebikes_proxy': 8364.175851620434}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 35.30502620430168, 'co2_g': 0.0, 'crash_risk': 1242.975164221469, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.05235296490432165}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 8646.6086461252, 'duration_min': 34.5864345845008, 'co2_g': 0.0, 'crash_risk': 1315.3819381652108, 'risk_basis_m': {'road_class_prior': 406.3746266718282, 'bluebikes_proxy': 8240.234019453372}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 34.5864345845008, 'co2_g': 0.0, 'crash_risk': 1315.3819381652108, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.04699815191172514}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7936.760623190105, 'duration_min': 99.20950778987633, 'co2_g': 0.0, 'crash_risk': 55.837645833104546, 'risk_basis_m': {'road_class_prior': 7936.76062319011}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 99.20950778987633, 'co2_g': 0.0, 'crash_risk': 55.837645833104546, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-3', 'kind': 'walk', 'summary': 'Walk, safer variant 2', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 8049.978008464183, 'duration_min': 100.6247251058023, 'co2_g': 0.0, 'crash_risk': 51.410366095404434, 'risk_basis_m': {'road_class_prior': 8049.978008464188}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 100.6247251058023, 'co2_g': 0.0, 'crash_risk': 51.410366095404434, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-1', 'kind': 'walk', 'summary': 'Walk, fastest', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7687.2028873279205, 'duration_min': 96.090036091599, 'co2_g': 0.0, 'crash_risk': 353.3139815553329, 'risk_basis_m': {'road_class_prior': 7687.202887327922}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 96.090036091599, 'co2_g': 0.0, 'crash_risk': 353.3139815553329, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-4', 'kind': 'walk', 'summary': 'Walk, safer variant 3', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 8645.021301268782, 'duration_min': 108.06276626585978, 'co2_g': 0.0, 'crash_risk': 44.46070063192462, 'risk_basis_m': {'road_class_prior': 8645.02130126879}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 108.06276626585978, 'co2_g': 0.0, 'crash_risk': 44.46070063192462, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 7823.423782893169, 'duration_min': 9.862289824303847, 'co2_g': 1443.79129851621, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 9.862289824303847, 'co2_g': 1443.79129851621, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 8248.364909334936, 'duration_min': 32.99345963733974, 'co2_g': 0.0, 'crash_risk': 2850.7321134274694, 'risk_basis_m': {'road_class_prior': 32.825691578811664, 'bluebikes_proxy': 8215.539217756124}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 32.99345963733974, 'co2_g': 0.0, 'crash_risk': 2850.7321134274694, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.003979660446600973}], 'tradeoffs_vs_fastest': [{'route_id': 'transit-1', 'reference_id': 'drive-1', 'delta': {'time_min': 12.871043509029487, 'co2_g': -1032.8064500313615, 'crash_risk': 3.5475141650311293, 'disruption_risk': 0.0}, 'pct': {'time_min': 130.50765834635183, 'co2_g': -71.53433124945279, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-4', 'reference_id': 'drive-1', 'delta': {'time_min': 28.74281254260517, 'co2_g': -1443.79129851621, 'crash_risk': 1098.1849061403955, 'disruption_risk': 0.0}, 'pct': {'time_min': 291.4415724406482, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-3', 'reference_id': 'drive-1', 'delta': {'time_min': 25.442736379997836, 'co2_g': -1443.79129851621, 'crash_risk': 1242.975164221469, 'disruption_risk': 0.0}, 'pct': {'time_min': 257.98001106496355, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 24.724144760196953, 'co2_g': -1443.79129851621, 'crash_risk': 1315.3819381652108, 'disruption_risk': 0.0}, 'pct': {'time_min': 250.69375571653478, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 89.34721796557248, 'co2_g': -1443.79129851621, 'crash_risk': 55.837645833104546, 'disruption_risk': 0.0}, 'pct': {'time_min': 905.948005557414, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-3', 'reference_id': 'drive-1', 'delta': {'time_min': 90.76243528149845, 'co2_g': -1443.79129851621, 'crash_risk': 51.410366095404434, 'disruption_risk': 0.0}, 'pct': {'time_min': 920.2977898482632, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-1', 'reference_id': 'drive-1', 'delta': {'time_min': 86.22774626729516, 'co2_g': -1443.79129851621, 'crash_risk': 353.3139815553329, 'disruption_risk': 0.0}, 'pct': {'time_min': 874.3177071799524, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-4', 'reference_id': 'drive-1', 'delta': {'time_min': 98.20047644155594, 'co2_g': -1443.79129851621, 'crash_risk': 44.46070063192462, 'disruption_risk': 0.0}, 'pct': {'time_min': 995.7167979342732, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 23.131169813035893, 'co2_g': -1443.79129851621, 'crash_risk': 2850.7321134274694, 'disruption_risk': 0.0}, 'pct': {'time_min': 234.54157427044245, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {}, 'candidate_count': 15, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': [\"Planned as showcase trip 'Fields Corner, Dorchester to Downtown Crossing' at its fixed demo departure, Tuesday 08:15.\", 'Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}",
+                  "is_error": false
+                },
+                {
+                  "name": "get_active_alerts",
+                  "input": {},
+                  "output": "{'source': 'none', 'synthetic': False, 'alert_clock': None, 'alerts': []}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [
+                "22"
+              ],
+              "first_draft_numbers": 44
+            }
+          ],
+          "trip-hyde-square": [
+            {
+              "conversation_id": "trip-hyde-square",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nI can't plan that trip as asked yet. \"Hyde Square, Jamaica Plain\" resolved fine, but \"Longwood\" resolved only to the **Longwood MBTA station** point (42.3417, -71.1099), and when I tried to plan to it the prototype reported: *\"Outside the City of Boston: destination\"* \u2014 that station sits outside the city line, and this prototype only covers trips within the City of Boston. (The plan was rejected, so it never produced a departure time.)\n\n\"Longwood Medical Area\" came back ambiguous, with two candidates:\n- 42.3361, -71.0996 (MBTA station source)\n- 42.3376, -71.1046 (showcase source)\n\nWhich place do you mean \u2014 the Longwood Medical Area (and if so, which of those two points), or somewhere else called Longwood? I won't pick one for you. Once you tell me, I'll plan and compare the routes.",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Longwood"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Longwood', 'point': {'lat': 42.34167778480271, 'lon': -71.1099351758726}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Hyde Square, Jamaica Plain', 'point': {'lat': 42.322, 'lon': -71.1106}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Hyde Square"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Longwood', 'point': {'lat': 42.34167778480271, 'lon': -71.1099351758726}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Hyde Square, Jamaica Plain', 'point': {'lat': 42.322, 'lon': -71.1106}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lat": 42.322,
+                    "origin_lon": -71.1106,
+                    "destination_lat": 42.34167778480271,
+                    "destination_lon": -71.1099351758726,
+                    "depart_at": "null"
+                  },
+                  "output": "Error executing tool plan_trip: Outside the City of Boston: destination",
+                  "is_error": true
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "42.3417,-71.1099"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': '42.3417,-71.1099', 'point': {'lat': 42.3417, 'lon': -71.1099}, 'source': 'coordinates'}]}\n{'status': 'ambiguous', 'candidates': [{'name': 'Longwood Medical Area', 'point': {'lat': 42.336149676481064, 'lon': -71.09956160167398}, 'source': 'mbta_station'}, {'name': 'Longwood Medical Area', 'point': {'lat': 42.3376, 'lon': -71.1046}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Longwood Medical Area"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': '42.3417,-71.1099', 'point': {'lat': 42.3417, 'lon': -71.1099}, 'source': 'coordinates'}]}\n{'status': 'ambiguous', 'candidates': [{'name': 'Longwood Medical Area', 'point': {'lat': 42.336149676481064, 'lon': -71.09956160167398}, 'source': 'mbta_station'}, {'name': 'Longwood Medical Area', 'point': {'lat': 42.3376, 'lon': -71.1046}, 'source': 'showcase'}]}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [],
+              "first_draft_numbers": 6
+            }
+          ],
+          "trip-charlestown": [
+            {
+              "conversation_id": "trip-charlestown",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nMonument Square (Charlestown) \u2192 Copley Square. Departure used: 2026-10-27T08:15:00-04:00 (the notes say this was a showcase trip at its fixed demo departure). Alert source is \"none\", so no alerts to weigh. Crash risk is an estimated index for walking and biking segments only \u2014 driving and transit vehicle crash risk is not modeled.\n\n- **bluebikes-1** (first listed): Bluebikes from Main St at Thompson Sq, 26.3 min. vs fastest: 19.9 min slower, ~100% less CO2 (estimated, emission_factors.yaml), crash risk index 166.6 (estimated, Boston Vision Zero and Cambridge police counts). Its unknown_exposure_share is above 0, so part of that risk uses a road-class estimate because no count data covers those streets (0.16862034982562185).\n- **bike-3** (safer variant 2): 21.5 min, 15.1 min slower, ~100% less CO2, crash risk index 261.9 (est.). Unknown_exposure_share above 0 (0.24441475557162903), so part of the risk is a road-class estimate.\n- **bike-2** (safer variant 1): 19.0 min, 12.6 min slower, ~100% less CO2, crash risk index 349.2 (est.). Unknown_exposure_share above 0 (0.08717493250285263), so part of the risk is a road-class estimate.\n- **transit-1**: Orange Line, 30.2 min, 23.8 min slower, estimated 245.9 g CO2 (-71.4% vs fastest, EPA GHG Emission Factors Hub 2025), crash risk index 86.8 for the walk legs only (est.). Unknown_exposure_share is 1.0, so that walking risk is all a road-class estimate because no count data covers those streets.\n- **walk-2**: 51.5 min, 45.1 min slower, ~100% less CO2, crash risk index 21.4 \u2014 the lowest (est.), and all of it a road-class estimate (unknown_exposure_share 1.0).\n- **drive-1**: Drive, 6.4 min \u2014 fastest and least disrupted. Estimated 859.3 g CO2 (EPA Hub 2025); time is free-flow and ignores traffic.\n- **bike-1** (bike fastest): 18.0 min, 11.7 min slower, ~100% less CO2, but the highest crash risk index here at 850.1 (est.). Unknown_exposure_share above 0 (0.07544019421304876), so part of the risk is a road-class estimate.\n\nSay which one you'll take and I'll record it.",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Copley Square"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Copley Square', 'point': {'lat': 42.3499, 'lon': -71.077}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Monument Square, Charlestown', 'point': {'lat': 42.3763, 'lon': -71.0607}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Monument Square"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Copley Square', 'point': {'lat': 42.3499, 'lon': -71.077}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Monument Square, Charlestown', 'point': {'lat': 42.3763, 'lon': -71.0607}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lat": 42.3763,
+                    "origin_lon": -71.0607,
+                    "destination_lat": 42.3499,
+                    "destination_lon": -71.077,
+                    "depart_at": "null"
+                  },
+                  "output": "{'query_id': '54c91379', 'origin': {'lat': 42.3763, 'lon': -71.0607}, 'destination': {'lat': 42.3499, 'lon': -71.077}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'bluebikes-1', 'kind': 'bluebikes', 'summary': 'Bluebikes from Main St at Thompson Sq to Copley Square - Dartmouth St at Boylston St', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 458.03238271703, 'duration_min': 5.725404783962875, 'co2_g': 0.0, 'crash_risk': 2.372178246966112, 'risk_basis_m': {'road_class_prior': 458.03238271703}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'bluebikes', 'coords': [], 'distance_m': 4396.815390090381, 'duration_min': 20.29299410810945, 'co2_g': 0.0, 'crash_risk': 164.06516757690338, 'risk_basis_m': {'bluebikes_proxy': 4056.6212990715235, 'outside_crash_coverage': 340.19409101885674}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 24.537112570365544, 'duration_min': 0.3067139071295693, 'co2_g': 0.0, 'crash_risk': 0.1274031710203302, 'risk_basis_m': {'road_class_prior': 24.537112570365544}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 26.325112799201897, 'co2_g': 0.0, 'crash_risk': 166.5647489948898, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed Bluebikes speed 13 km/h plus walking 4.8 km/h to and from stations', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: bluebikes (Bluebikes: zero operational emissions for the ride; rebalancing not counted (no citable Bluebikes rebalancing figure found); e-bike charging not counted.)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.16862034982562185}, {'id': 'bike-3', 'kind': 'bike', 'summary': 'Bike, safer variant 2', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 5366.135964203937, 'duration_min': 21.464543856815745, 'co2_g': 0.0, 'crash_risk': 261.8893519404936, 'risk_basis_m': {'road_class_prior': 971.3687190361761, 'bluebikes_proxy': 4054.5731541489035, 'outside_crash_coverage': 340.19409101885674}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 21.464543856815745, 'co2_g': 0.0, 'crash_risk': 261.8893519404936, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.24441475557162903}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 4741.188856865593, 'duration_min': 18.96475542746237, 'co2_g': 0.0, 'crash_risk': 349.2127804379366, 'risk_basis_m': {'bluebikes_proxy': 4327.876038285058, 'road_class_prior': 73.11872756167838, 'outside_crash_coverage': 340.19409101885674}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 18.96475542746237, 'co2_g': 0.0, 'crash_risk': 349.2127804379366, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.08717493250285263}, {'id': 'transit-1', 'kind': 'transit', 'summary': 'Orange Line', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 953.6, 'duration_min': 13.45, 'co2_g': 0.0, 'crash_risk': 14.926908131916772, 'risk_basis_m': {'road_class_prior': 929.7116497059877}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 4255.0, 'duration_min': 11.0, 'co2_g': 245.88590133619658, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Orange', 'route_name': 'Orange Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70028', 'place-ccmnl', '70026', 'place-north', '70024', 'place-haecl', '70022', 'place-state', '70020', 'place-dwnxg', '70018', 'place-chncl', '70016', 'place-tumnl', '70014', 'place-bbsta']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 381.92, 'duration_min': 5.733333333333333, 'co2_g': 0.0, 'crash_risk': 71.88764269462922, 'risk_basis_m': {'road_class_prior': 321.8481425106758}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 30.183333333333334, 'co2_g': 245.88590133619658, 'crash_risk': 86.814550826546, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 4120.0180563158165, 'duration_min': 51.50022570394771, 'co2_g': 0.0, 'crash_risk': 21.38611937654913, 'risk_basis_m': {'road_class_prior': 3711.620951306326, 'outside_crash_coverage': 408.3971050094908}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 51.50022570394771, 'co2_g': 0.0, 'crash_risk': 21.38611937654913, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 4656.226225830633, 'duration_min': 6.3794478315029215, 'co2_g': 859.2937178575233, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 6.3794478315029215, 'co2_g': 859.2937178575233, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 4509.454072428858, 'duration_min': 18.03781628971543, 'co2_g': 0.0, 'crash_risk': 850.1293289726649, 'risk_basis_m': {'bluebikes_proxy': 4169.259981410001, 'outside_crash_coverage': 340.19409101885674}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 18.03781628971543, 'co2_g': 0.0, 'crash_risk': 850.1293289726649, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.07544019421304876}], 'tradeoffs_vs_fastest': [{'route_id': 'bluebikes-1', 'reference_id': 'drive-1', 'delta': {'time_min': 19.945664967698974, 'co2_g': -859.2937178575233, 'crash_risk': 166.5647489948898, 'disruption_risk': 0.0}, 'pct': {'time_min': 312.6550368388233, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-3', 'reference_id': 'drive-1', 'delta': {'time_min': 15.085096025312822, 'co2_g': -859.2937178575233, 'crash_risk': 261.8893519404936, 'disruption_risk': 0.0}, 'pct': {'time_min': 236.46397656580498, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 12.58530759595945, 'co2_g': -859.2937178575233, 'crash_risk': 349.2127804379366, 'disruption_risk': 0.0}, 'pct': {'time_min': 197.2789484038229, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'transit-1', 'reference_id': 'drive-1', 'delta': {'time_min': 23.80388550183041, 'co2_g': -613.4078165213268, 'crash_risk': 86.814550826546, 'disruption_risk': 0.0}, 'pct': {'time_min': 373.1339471777215, 'co2_g': -71.38511591248871, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 45.12077787244479, 'co2_g': -859.2937178575233, 'crash_risk': 21.38611937654913, 'disruption_risk': 0.0}, 'pct': {'time_min': 707.2834368145444, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 11.658368458212507, 'co2_g': -859.2937178575233, 'crash_risk': 850.1293289726649, 'disruption_risk': 0.0}, 'pct': {'time_min': 182.748864261281, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {}, 'candidate_count': 13, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': [\"Planned as showcase trip 'Monument Square, Charlestown to Copley Square' at its fixed demo departure, Tuesday 08:15.\", 'Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [
+                "17"
+              ],
+              "first_draft_numbers": 36
+            }
+          ],
+          "trip-maverick": [
+            {
+              "conversation_id": "trip-maverick",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nMaverick Square, East Boston \u2192 Courthouse, Seaport. Both places resolved cleanly. The plan used departure **2026-10-27 08:15** and was run as the showcase trip \"Maverick Square, East Boston to Courthouse, Seaport\" at its fixed demo departure. Alert source: none (no alerts in use). All routes below are compared to the fastest one, the drive.\n\n- **Blue Line** (20.0 min, 88 g CO2): the one I'd suggest. 15 min slower than driving, ~90% less CO2, estimated from EPA GHG Emission Factors Hub 2025 (GTFS times from the MBTA feed). It pairs a short Blue Line ride with a walk at the Courthouse end. Crash risk index 15.7 is estimated from Boston Vision Zero/Cambridge police crash data per estimated peak-hour volume; no count data covers some of this route's streets, so part of that uses a road-class estimate. Transit vehicle crash risk is not modeled.\n- **Blue Line, then 4** (16.8 min, 177 g CO2): 11 min slower than driving, ~80% less CO2 (EPA factors), no disruption to avoid. Slightly faster than the Blue Line alone; crash risk index 5.0, same estimated sources and same road-class caveat.\n- **Walk, safer variant 1** (138.8 min, 0 g CO2): 133 min slower, 100% less CO2 than the drive (EPA factors); lowest estimated crash risk index of the walking options at 57.4. Free.\n- **Drive** (5.5 min, 874 g CO2): fastest and least disrupted. 0 minutes saved against itself; 100% more CO2 than every other option, estimated from EPA Hub 2025, and the time is free-flow from OSM speeds and ignores traffic.\n- **Walk, fastest** (137.2 min, 0 g CO2): 132 min slower than the drive, 100% less CO2; estimated crash risk index 102.2, roughly twice the safer walking variant.\n- **Bike, safer variant 1** (46.5 min, 0 g CO2): 41 min slower than driving, 100% less CO2; estimated crash risk index 1235 from the Vision Zero/Cambridge crash data, with 41% of its risk exposure using a road-class/Bikeshare proxy because no count data covers those streets.\n- **Bike, safer variant 3** (55.1 min, 0 g CO2): 50 min slower, 100% less CO2; estimated crash risk index 1157, with 55% of exposure using a road-class estimate.\n- **Bike, fastest** (45.9 min, 0 g CO2): lowest CO2, 40 min slower than driving; highest estimated crash risk index of the bikes at 1607, with 42% of exposure from a road-class estimate. Bluebikes dock availability is not checked.\n\nNote on safety comparisons: crash risk is an index for walking and biking segments only; driving and transit vehicle crash risk is not modeled, so the drive's zero crash risk here doesn't mean it's safest.\n\nTell me which route you'll take and I'll record it.",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Maverick Square"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Maverick Square, East Boston', 'point': {'lat': 42.3691, 'lon': -71.0396}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Courthouse', 'point': {'lat': 42.35239360966698, 'lon': -71.04688921822166}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Courthouse"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Maverick Square, East Boston', 'point': {'lat': 42.3691, 'lon': -71.0396}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Courthouse', 'point': {'lat': 42.35239360966698, 'lon': -71.04688921822166}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lon": -71.0396,
+                    "origin_lat": 42.3691,
+                    "destination_lon": -71.04688921822166,
+                    "destination_lat": 42.35239360966698,
+                    "depart_at": "null"
+                  },
+                  "output": "{'query_id': '4c41a269', 'origin': {'lat': 42.3691, 'lon': -71.0396}, 'destination': {'lat': 42.3524, 'lon': -71.0465}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'transit-1', 'kind': 'transit', 'summary': 'Blue Line', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 1526.0, 'duration_min': 3.0, 'co2_g': 88.18375685993796, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 1167.82, 'duration_min': 15.933333333333334, 'co2_g': 0.0, 'crash_risk': 15.592399203997635, 'risk_basis_m': {'road_class_prior': 793.1202359259942, 'outside_crash_coverage': 281.1794026190569}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 20.033333333333335, 'co2_g': 88.18375685993796, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'transit-5', 'kind': 'transit', 'summary': 'Blue Line, then 4', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 2027.0, 'duration_min': 4.0, 'co2_g': 117.13530481985205, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl', '70041', 'place-state']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 157.67, 'duration_min': 2.2666666666666666, 'co2_g': 0.0, 'crash_risk': 2.202512869946206, 'risk_basis_m': {'road_class_prior': 140.43260784239118}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'bus', 'coords': [], 'distance_m': 1461.0, 'duration_min': 8.0, 'co2_g': 59.91633858267716, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': '4', 'route_name': '4', 'route_type': 3, 'direction_id': 1, 'stop_ids': ['204', '65471', '16551', '221', '21599']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 112.26, 'duration_min': 1.4666666666666666, 'co2_g': 0.0, 'crash_risk': 2.6412189046218226, 'risk_basis_m': {'road_class_prior': 112.59025580018705}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 16.833333333333332, 'co2_g': 177.0516434025292, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf); emission_factors.yaml: bus (EPA GHG Emission Factors Hub 2025, Table 10, Bus: 0.066 kg CO2 per passenger-mile, US national average across bus types (FHWA VM-1 passenger-miles), not MBTA specific. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 11100.149160426914, 'duration_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'risk_basis_m': {'road_class_prior': 6608.289414787492, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 4736.567722094997, 'duration_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'walk-1', 'kind': 'walk', 'summary': 'Walk, fastest', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 10978.038654868282, 'duration_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'risk_basis_m': {'road_class_prior': 6486.1789092288645, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11626.42456488065, 'duration_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'risk_basis_m': {'bluebikes_proxy': 6839.226826159074, 'road_class_prior': 187.61747035411463, 'outside_crash_coverage': 4599.580268367465}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.41175149866641053}, {'id': 'bike-4', 'kind': 'bike', 'summary': 'Bike, safer variant 3', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 13779.5681632281, 'duration_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'risk_basis_m': {'bluebikes_proxy': 6232.0469985520085, 'road_class_prior': 668.0055765064624, 'outside_crash_coverage': 6879.515588169633}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.5477327790879012}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11482.371562449767, 'duration_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'risk_basis_m': {'bluebikes_proxy': 6694.523325405841, 'outside_crash_coverage': 4787.84823704393}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.41697381163847647}], 'tradeoffs_vs_fastest': [{'route_id': 'transit-1', 'reference_id': 'drive-1', 'delta': {'time_min': 14.570680329809878, 'co2_g': -785.9367627196015, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'pct': {'time_min': 266.73267220912015, 'co2_g': -89.91171641842303, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'transit-5', 'reference_id': 'drive-1', 'delta': {'time_min': 11.370680329809876, 'co2_g': -697.0688761770102, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'pct': {'time_min': 208.15307731381967, 'co2_g': -79.7451679217309, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 133.28921150181299, 'co2_g': -874.1205195795394, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'pct': {'time_min': 2440.0087542781926, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-1', 'reference_id': 'drive-1', 'delta': {'time_min': 131.76283018233008, 'co2_g': -874.1205195795394, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'pct': {'time_min': 2412.0666294809853, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 41.04304525599914, 'co2_g': -874.1205195795394, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'pct': {'time_min': 751.3390513643468, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-4', 'reference_id': 'drive-1', 'delta': {'time_min': 49.65561964938894, 'co2_g': -874.1205195795394, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'pct': {'time_min': 909.0019010426004, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 40.46683324627561, 'co2_g': -874.1205195795394, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'pct': {'time_min': 740.7908432070308, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {}, 'candidate_count': 13, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': [\"Planned as showcase trip 'Maverick Square, East Boston to Courthouse, Seaport' at its fixed demo departure, Tuesday 08:15.\", 'Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}\n{'source': 'none', 'synthetic': False, 'alert_clock': None, 'alerts': []}",
+                  "is_error": false
+                },
+                {
+                  "name": "get_active_alerts",
+                  "input": {},
+                  "output": "{'query_id': '4c41a269', 'origin': {'lat': 42.3691, 'lon': -71.0396}, 'destination': {'lat': 42.3524, 'lon': -71.0465}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'transit-1', 'kind': 'transit', 'summary': 'Blue Line', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 1526.0, 'duration_min': 3.0, 'co2_g': 88.18375685993796, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 1167.82, 'duration_min': 15.933333333333334, 'co2_g': 0.0, 'crash_risk': 15.592399203997635, 'risk_basis_m': {'road_class_prior': 793.1202359259942, 'outside_crash_coverage': 281.1794026190569}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 20.033333333333335, 'co2_g': 88.18375685993796, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'transit-5', 'kind': 'transit', 'summary': 'Blue Line, then 4', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 2027.0, 'duration_min': 4.0, 'co2_g': 117.13530481985205, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl', '70041', 'place-state']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 157.67, 'duration_min': 2.2666666666666666, 'co2_g': 0.0, 'crash_risk': 2.202512869946206, 'risk_basis_m': {'road_class_prior': 140.43260784239118}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'bus', 'coords': [], 'distance_m': 1461.0, 'duration_min': 8.0, 'co2_g': 59.91633858267716, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': '4', 'route_name': '4', 'route_type': 3, 'direction_id': 1, 'stop_ids': ['204', '65471', '16551', '221', '21599']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 112.26, 'duration_min': 1.4666666666666666, 'co2_g': 0.0, 'crash_risk': 2.6412189046218226, 'risk_basis_m': {'road_class_prior': 112.59025580018705}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 16.833333333333332, 'co2_g': 177.0516434025292, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf); emission_factors.yaml: bus (EPA GHG Emission Factors Hub 2025, Table 10, Bus: 0.066 kg CO2 per passenger-mile, US national average across bus types (FHWA VM-1 passenger-miles), not MBTA specific. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 11100.149160426914, 'duration_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'risk_basis_m': {'road_class_prior': 6608.289414787492, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 4736.567722094997, 'duration_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'walk-1', 'kind': 'walk', 'summary': 'Walk, fastest', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 10978.038654868282, 'duration_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'risk_basis_m': {'road_class_prior': 6486.1789092288645, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11626.42456488065, 'duration_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'risk_basis_m': {'bluebikes_proxy': 6839.226826159074, 'road_class_prior': 187.61747035411463, 'outside_crash_coverage': 4599.580268367465}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.41175149866641053}, {'id': 'bike-4', 'kind': 'bike', 'summary': 'Bike, safer variant 3', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 13779.5681632281, 'duration_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'risk_basis_m': {'bluebikes_proxy': 6232.0469985520085, 'road_class_prior': 668.0055765064624, 'outside_crash_coverage': 6879.515588169633}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.5477327790879012}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11482.371562449767, 'duration_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'risk_basis_m': {'bluebikes_proxy': 6694.523325405841, 'outside_crash_coverage': 4787.84823704393}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.41697381163847647}], 'tradeoffs_vs_fastest': [{'route_id': 'transit-1', 'reference_id': 'drive-1', 'delta': {'time_min': 14.570680329809878, 'co2_g': -785.9367627196015, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'pct': {'time_min': 266.73267220912015, 'co2_g': -89.91171641842303, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'transit-5', 'reference_id': 'drive-1', 'delta': {'time_min': 11.370680329809876, 'co2_g': -697.0688761770102, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'pct': {'time_min': 208.15307731381967, 'co2_g': -79.7451679217309, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 133.28921150181299, 'co2_g': -874.1205195795394, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'pct': {'time_min': 2440.0087542781926, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-1', 'reference_id': 'drive-1', 'delta': {'time_min': 131.76283018233008, 'co2_g': -874.1205195795394, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'pct': {'time_min': 2412.0666294809853, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 41.04304525599914, 'co2_g': -874.1205195795394, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'pct': {'time_min': 751.3390513643468, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-4', 'reference_id': 'drive-1', 'delta': {'time_min': 49.65561964938894, 'co2_g': -874.1205195795394, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'pct': {'time_min': 909.0019010426004, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 40.46683324627561, 'co2_g': -874.1205195795394, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'pct': {'time_min': 740.7908432070308, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {}, 'candidate_count': 13, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': [\"Planned as showcase trip 'Maverick Square, East Boston to Courthouse, Seaport' at its fixed demo departure, Tuesday 08:15.\", 'Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}\n{'source': 'none', 'synthetic': False, 'alert_clock': None, 'alerts': []}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [],
+              "first_draft_numbers": 39
+            }
+          ],
+          "trip-boston-common": [
+            {
+              "conversation_id": "trip-boston-common",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nCopley Square \u2192 Park Street, Boston Common. Plan departed 2026-10-27T08:15:00-04:00 (offline run; alert source \"none\"). Transit wasn't cached for this trip, so no transit route is shown.\n\n- **Walk, safer variant 1** (1496 m): 18.7 min, 0.0 g CO2 estimated (emission_factors.yaml: walk). Estimated crash risk index 7.8 \u2014 the lowest here \u2014 but all of this route's crash risk uses a road-class estimate because no count data covers those streets.\n- **Drive**: the fastest option at 2.9 min, 361.7 g CO2 estimated (EPA Hub 2025). Time is free-flow and ignores traffic. Driving crash risk isn't modeled, so no safety comparison.\n- **Bike, safer variant 2** (2428 m): 9.7 min, 0.0 g CO2 estimated (emission_factors.yaml: bike). Trade-off vs. fastest: 6.8 min slower, 100.0% less CO2, estimated crash risk index 87.7.\n- **Bike, safer variant 1** (2003 m): 8.0 min, 0.0 g CO2 estimated. Trade-off vs. fastest: 5.1 min slower, 100.0% less CO2, estimated crash risk index 133.9.\n\nCrash risk is an estimate for walking and biking segments only, from Boston Vision Zero and Cambridge police crash data per estimated peak-hour volume. Which route will you take?",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Boston Common"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Park Street, Boston Common', 'point': {'lat': 42.3564, 'lon': -71.0624}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Copley Square', 'point': {'lat': 42.3499, 'lon': -71.077}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Copley Square"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Park Street, Boston Common', 'point': {'lat': 42.3564, 'lon': -71.0624}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Copley Square', 'point': {'lat': 42.3499, 'lon': -71.077}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lat": 42.3499,
+                    "origin_lon": -71.077,
+                    "destination_lat": 42.3564,
+                    "destination_lon": -71.0624,
+                    "depart_at": "null"
+                  },
+                  "output": "{'query_id': 'fef9136d', 'origin': {'lat': 42.3499, 'lon': -71.077}, 'destination': {'lat': 42.3564, 'lon': -71.0624}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 1495.8866672745162, 'duration_min': 18.698583340931453, 'co2_g': 0.0, 'crash_risk': 7.767038780593073, 'risk_basis_m': {'road_class_prior': 1495.8866672745166}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 18.698583340931453, 'co2_g': 0.0, 'crash_risk': 7.767038780593073, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 1960.114163665855, 'duration_min': 2.9231076048554385, 'co2_g': 361.7336670151061, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 2.9231076048554385, 'co2_g': 361.7336670151061, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'bike-3', 'kind': 'bike', 'summary': 'Bike, safer variant 2', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 2427.811313607618, 'duration_min': 9.711245254430473, 'co2_g': 0.0, 'crash_risk': 87.69813208920884, 'risk_basis_m': {'bluebikes_proxy': 2427.8113136076186}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 9.711245254430473, 'co2_g': 0.0, 'crash_risk': 87.69813208920884, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 2002.5936130535433, 'duration_min': 8.010374452214172, 'co2_g': 0.0, 'crash_risk': 133.92634595394028, 'risk_basis_m': {'bluebikes_proxy': 2002.5936130535438}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 8.010374452214172, 'co2_g': 0.0, 'crash_risk': 133.92634595394028, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.0}], 'tradeoffs_vs_fastest': [{'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 15.775475736076014, 'co2_g': -361.7336670151061, 'crash_risk': 7.767038780593073, 'disruption_risk': 0.0}, 'pct': {'time_min': 539.6816630996444, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-3', 'reference_id': 'drive-1', 'delta': {'time_min': 6.7881376495750345, 'co2_g': -361.7336670151061, 'crash_risk': 87.69813208920884, 'disruption_risk': 0.0}, 'pct': {'time_min': 232.22332418757264, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 5.087266847358734, 'co2_g': -361.7336670151061, 'crash_risk': 133.92634595394028, 'disruption_risk': 0.0}, 'pct': {'time_min': 174.03624960328216, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {'transit': 'transit not cached for this trip'}, 'candidate_count': 7, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': ['Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [
+                "1.5",
+                "2.4"
+              ],
+              "first_draft_numbers": 23
+            }
+          ],
+          "trip-downtown-return": [
+            {
+              "conversation_id": "trip-downtown-return",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\n**Short answer: the Walk \"safer variant 3\" route (walk-4) is the safest \u2014 crash risk index 42.97, the lowest scored.** Plan depart_at: 2026-10-27T08:15:00-04:00. The alert source came back as \"none\" with synthetic false and no alerts. Crash risk is an estimate sourced to Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) crash counts per estimated peak-hour volume; it covers walking and biking segments only, and driving and transit vehicle crash risk is not modeled, so the Drive route's 0.0 does not mean it is safe. Transit was omitted: \"transit not cached for this trip\".\n\nRoutes, in the order returned, with trade-offs vs. the fastest route (Drive, 8.9 min):\n- **Bike, safer variant 2 (bike-3):** 32.2 min, 23.3 min slower, -99.99999999999999% estimated CO2, estimated crash risk index 1165.14. unknown_exposure_share 0.09, so part of that crash risk uses a road-class estimate because no count data covers those streets.\n- **Bike, safer variant 1 (bike-2):** 30.8 min, 21.9 min slower, -99.99999999999999% estimated CO2, estimated crash risk index 1337.79. unknown_exposure_share 0.08 \u2014 part of the risk is a road-class estimate.\n- **Walk, safer variant 1 (walk-2):** 95.6 min, 86.7 min slower, -99.99999999999999% estimated CO2, estimated crash risk index 59.41. unknown_exposure_share 1.0 \u2014 the whole risk figure is a road-class estimate.\n- **Walk, safer variant 2 (walk-3):** 97.8 min, 88.9 min slower, -99.99999999999999% estimated CO2, estimated crash risk index 50.22. unknown_exposure_share 1.0 \u2014 entirely road-class estimated.\n- **Walk, fastest (walk-1):** 89.9 min, 81.0 min slower, -99.99999999999999% estimated CO2, estimated crash risk index 361.09. unknown_exposure_share 1.0 \u2014 entirely road-class estimated.\n- **Walk, safer variant 3 (walk-4):** 104.5 min, 95.6 min slower, -99.99999999999999% estimated CO2, estimated crash risk index 42.97 \u2014 lowest, and flagged lowest_crash_risk. unknown_exposure_share 1.0 \u2014 entirely road-class estimated.\n- **Drive (drive-1):** 8.9 min, flagged fastest and least_disrupted, estimated 1410.7 g CO2 (EPA Hub 2025). Free-flow time that ignores traffic; vehicle crash risk not modeled.\n- **Bike, fastest (bike-1):** 29.0 min, 20.1 min slower, -99.99999999999999% estimated CO2, estimated crash risk index 2653.54 (highest). unknown_exposure_share 0.004 \u2014 only that share is road-class estimated.\n\nSo on the safety objective walk-4 is the lowest crash risk index, though it is also the longest walk in this plan.",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Downtown Crossing"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Downtown Crossing', 'point': {'lat': 42.355458759733466, 'lon': -71.06049369759702}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Fields Corner', 'point': {'lat': 42.300010284513554, 'lon': -71.06192451044731}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Fields Corner"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Downtown Crossing', 'point': {'lat': 42.355458759733466, 'lon': -71.06049369759702}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Fields Corner', 'point': {'lat': 42.300010284513554, 'lon': -71.06192451044731}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lat": 42.355458759733466,
+                    "origin_lon": -71.06049369759702,
+                    "destination_lat": 42.300010284513554,
+                    "destination_lon": -71.06192451044731,
+                    "depart_at": "null"
+                  },
+                  "output": "{'query_id': '0ce1f9d6', 'origin': {'lat': 42.355458759733466, 'lon': -71.06049369759702}, 'destination': {'lat': 42.300010284513554, 'lon': -71.06192451044731}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'bike-3', 'kind': 'bike', 'summary': 'Bike, safer variant 2', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 8044.45052127381, 'duration_min': 32.17780208509524, 'co2_g': 0.0, 'crash_risk': 1165.1415109489183, 'risk_basis_m': {'bluebikes_proxy': 7314.20298380612, 'road_class_prior': 730.2475374676881}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 32.17780208509524, 'co2_g': 0.0, 'crash_risk': 1165.1415109489183, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.09077655901251738}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 7695.4000404823455, 'duration_min': 30.78160016192938, 'co2_g': 0.0, 'crash_risk': 1337.790899601528, 'risk_basis_m': {'bluebikes_proxy': 7067.840435307506, 'road_class_prior': 627.5596051748395}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 30.78160016192938, 'co2_g': 0.0, 'crash_risk': 1337.790899601528, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.0815499651575624}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7648.16578856755, 'duration_min': 95.60207235709439, 'co2_g': 0.0, 'crash_risk': 59.414897284252575, 'risk_basis_m': {'road_class_prior': 7648.165788567547}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 95.60207235709439, 'co2_g': 0.0, 'crash_risk': 59.414897284252575, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-3', 'kind': 'walk', 'summary': 'Walk, safer variant 2', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7824.333516146831, 'duration_min': 97.8041689518354, 'co2_g': 0.0, 'crash_risk': 50.22264323746724, 'risk_basis_m': {'road_class_prior': 7824.333516146826}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 97.8041689518354, 'co2_g': 0.0, 'crash_risk': 50.22264323746724, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-1', 'kind': 'walk', 'summary': 'Walk, fastest', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7191.906601028842, 'duration_min': 89.89883251286052, 'co2_g': 0.0, 'crash_risk': 361.0922147651644, 'risk_basis_m': {'road_class_prior': 7191.906601028839}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 89.89883251286052, 'co2_g': 0.0, 'crash_risk': 361.0922147651644, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-4', 'kind': 'walk', 'summary': 'Walk, safer variant 3', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 8356.803353901692, 'duration_min': 104.46004192377116, 'co2_g': 0.0, 'crash_risk': 42.97229803973855, 'risk_basis_m': {'road_class_prior': 8356.80335390169}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 104.46004192377116, 'co2_g': 0.0, 'crash_risk': 42.97229803973855, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 7643.9243338134165, 'duration_min': 8.882745942052797, 'co2_g': 1410.6651698720625, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 8.882745942052797, 'co2_g': 1410.6651698720625, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 7247.969672141373, 'duration_min': 28.99187868856549, 'co2_g': 0.0, 'crash_risk': 2653.538211818599, 'risk_basis_m': {'bluebikes_proxy': 7217.136937818875, 'road_class_prior': 30.83273432250244}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 28.99187868856549, 'co2_g': 0.0, 'crash_risk': 2653.538211818599, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.004253982248437452}], 'tradeoffs_vs_fastest': [{'route_id': 'bike-3', 'reference_id': 'drive-1', 'delta': {'time_min': 23.29505614304244, 'co2_g': -1410.6651698720625, 'crash_risk': 1165.1415109489183, 'disruption_risk': 0.0}, 'pct': {'time_min': 262.2506181648033, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 21.898854219876583, 'co2_g': -1410.6651698720625, 'crash_risk': 1337.790899601528, 'disruption_risk': 0.0}, 'pct': {'time_min': 246.53248401716388, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 86.71932641504159, 'co2_g': -1410.6651698720625, 'crash_risk': 59.414897284252575, 'disruption_risk': 0.0}, 'pct': {'time_min': 976.2671023212988, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-3', 'reference_id': 'drive-1', 'delta': {'time_min': 88.9214230097826, 'co2_g': -1410.6651698720625, 'crash_risk': 50.22264323746724, 'disruption_risk': 0.0}, 'pct': {'time_min': 1001.0578214199484, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-1', 'reference_id': 'drive-1', 'delta': {'time_min': 81.01608657080773, 'co2_g': -1410.6651698720625, 'crash_risk': 361.0922147651644, 'disruption_risk': 0.0}, 'pct': {'time_min': 912.061282618255, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-4', 'reference_id': 'drive-1', 'delta': {'time_min': 95.57729598171836, 'co2_g': -1410.6651698720625, 'crash_risk': 42.97229803973855, 'disruption_risk': 0.0}, 'pct': {'time_min': 1075.9881753370346, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 20.109132746512692, 'co2_g': -1410.6651698720625, 'crash_risk': 2653.538211818599, 'disruption_risk': 0.0}, 'pct': {'time_min': 226.38419333048589, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {'transit': 'transit not cached for this trip'}, 'candidate_count': 10, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': ['Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}\n{'source': 'none', 'synthetic': False, 'alert_clock': None, 'alerts': []}",
+                  "is_error": false
+                },
+                {
+                  "name": "get_active_alerts",
+                  "input": {},
+                  "output": "{'query_id': '0ce1f9d6', 'origin': {'lat': 42.355458759733466, 'lon': -71.06049369759702}, 'destination': {'lat': 42.300010284513554, 'lon': -71.06192451044731}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'bike-3', 'kind': 'bike', 'summary': 'Bike, safer variant 2', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 8044.45052127381, 'duration_min': 32.17780208509524, 'co2_g': 0.0, 'crash_risk': 1165.1415109489183, 'risk_basis_m': {'bluebikes_proxy': 7314.20298380612, 'road_class_prior': 730.2475374676881}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 32.17780208509524, 'co2_g': 0.0, 'crash_risk': 1165.1415109489183, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.09077655901251738}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 7695.4000404823455, 'duration_min': 30.78160016192938, 'co2_g': 0.0, 'crash_risk': 1337.790899601528, 'risk_basis_m': {'bluebikes_proxy': 7067.840435307506, 'road_class_prior': 627.5596051748395}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 30.78160016192938, 'co2_g': 0.0, 'crash_risk': 1337.790899601528, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.0815499651575624}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7648.16578856755, 'duration_min': 95.60207235709439, 'co2_g': 0.0, 'crash_risk': 59.414897284252575, 'risk_basis_m': {'road_class_prior': 7648.165788567547}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 95.60207235709439, 'co2_g': 0.0, 'crash_risk': 59.414897284252575, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-3', 'kind': 'walk', 'summary': 'Walk, safer variant 2', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7824.333516146831, 'duration_min': 97.8041689518354, 'co2_g': 0.0, 'crash_risk': 50.22264323746724, 'risk_basis_m': {'road_class_prior': 7824.333516146826}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 97.8041689518354, 'co2_g': 0.0, 'crash_risk': 50.22264323746724, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-1', 'kind': 'walk', 'summary': 'Walk, fastest', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 7191.906601028842, 'duration_min': 89.89883251286052, 'co2_g': 0.0, 'crash_risk': 361.0922147651644, 'risk_basis_m': {'road_class_prior': 7191.906601028839}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 89.89883251286052, 'co2_g': 0.0, 'crash_risk': 361.0922147651644, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-4', 'kind': 'walk', 'summary': 'Walk, safer variant 3', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 8356.803353901692, 'duration_min': 104.46004192377116, 'co2_g': 0.0, 'crash_risk': 42.97229803973855, 'risk_basis_m': {'road_class_prior': 8356.80335390169}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 104.46004192377116, 'co2_g': 0.0, 'crash_risk': 42.97229803973855, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 7643.9243338134165, 'duration_min': 8.882745942052797, 'co2_g': 1410.6651698720625, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 8.882745942052797, 'co2_g': 1410.6651698720625, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 7247.969672141373, 'duration_min': 28.99187868856549, 'co2_g': 0.0, 'crash_risk': 2653.538211818599, 'risk_basis_m': {'bluebikes_proxy': 7217.136937818875, 'road_class_prior': 30.83273432250244}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 28.99187868856549, 'co2_g': 0.0, 'crash_risk': 2653.538211818599, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.004253982248437452}], 'tradeoffs_vs_fastest': [{'route_id': 'bike-3', 'reference_id': 'drive-1', 'delta': {'time_min': 23.29505614304244, 'co2_g': -1410.6651698720625, 'crash_risk': 1165.1415109489183, 'disruption_risk': 0.0}, 'pct': {'time_min': 262.2506181648033, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 21.898854219876583, 'co2_g': -1410.6651698720625, 'crash_risk': 1337.790899601528, 'disruption_risk': 0.0}, 'pct': {'time_min': 246.53248401716388, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 86.71932641504159, 'co2_g': -1410.6651698720625, 'crash_risk': 59.414897284252575, 'disruption_risk': 0.0}, 'pct': {'time_min': 976.2671023212988, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-3', 'reference_id': 'drive-1', 'delta': {'time_min': 88.9214230097826, 'co2_g': -1410.6651698720625, 'crash_risk': 50.22264323746724, 'disruption_risk': 0.0}, 'pct': {'time_min': 1001.0578214199484, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-1', 'reference_id': 'drive-1', 'delta': {'time_min': 81.01608657080773, 'co2_g': -1410.6651698720625, 'crash_risk': 361.0922147651644, 'disruption_risk': 0.0}, 'pct': {'time_min': 912.061282618255, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-4', 'reference_id': 'drive-1', 'delta': {'time_min': 95.57729598171836, 'co2_g': -1410.6651698720625, 'crash_risk': 42.97229803973855, 'disruption_risk': 0.0}, 'pct': {'time_min': 1075.9881753370346, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 20.109132746512692, 'co2_g': -1410.6651698720625, 'crash_risk': 2653.538211818599, 'disruption_risk': 0.0}, 'pct': {'time_min': 226.38419333048589, 'co2_g': -99.99999999999999, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {'transit': 'transit not cached for this trip'}, 'candidate_count': 10, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': ['Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}\n{'source': 'none', 'synthetic': False, 'alert_clock': None, 'alerts': []}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [
+                "08",
+                "8",
+                "1.5",
+                "60"
+              ],
+              "first_draft_numbers": 38
+            }
+          ],
+          "ambiguous-brighton": [
+            {
+              "conversation_id": "ambiguous-brighton",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nCopley Square resolved fine (42.3499, -71.077), but \"Brighton\" is ambiguous \u2014 the gazetteer has several candidate starting points:\n\n- Union Square \u2013 Brighton Ave at Cambridge St\n- Brighton Mills \u2013 370 Western Ave\n- Packard's Corner \u2013 Commonwealth Ave at Brighton Ave\n- Brighton Center \u2013 Washington St at Cambridge St\n- Brighton Ave at Linden St\n- Harvard Ave and Brighton Ave, Allston\n\nWhich one do you mean? I don't want to pick for you \u2014 once you tell me, I'll plan the trip to Copley Square and compare the routes.",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Brighton"
+                  },
+                  "output": "{'status': 'ambiguous', 'candidates': [{'name': 'Union Square - Brighton Ave at Cambridge St', 'point': {'lat': 42.353334, 'lon': -71.137313}, 'source': 'bluebikes_station'}, {'name': 'Brighton Mills - 370 Western Ave', 'point': {'lat': 42.3615457081725, 'lon': -71.13776206970215}, 'source': 'bluebikes_station'}, {'name': \"Packard's Corner - Commonwealth Ave at Brighton Ave\", 'point': {'lat': 42.352261, 'lon': -71.123831}, 'source': 'bluebikes_station'}, {'name': 'Brighton Center - Washington St at Cambridge St', 'point': {'lat': 42.34894857235593, 'lon': -71.15027189254761}, 'source': 'bluebikes_station'}, {'name': 'Brighton Ave at Linden St', 'point': {'lat': 42.3528376, 'lon': -71.1296752}, 'source': 'bluebikes_station'}, {'name': 'Harvard Ave and Brighton Ave, Allston', 'point': {'lat': 42.353, 'lon': -71.1325}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Copley Square', 'point': {'lat': 42.3499, 'lon': -71.077}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Copley Square"
+                  },
+                  "output": "{'status': 'ambiguous', 'candidates': [{'name': 'Union Square - Brighton Ave at Cambridge St', 'point': {'lat': 42.353334, 'lon': -71.137313}, 'source': 'bluebikes_station'}, {'name': 'Brighton Mills - 370 Western Ave', 'point': {'lat': 42.3615457081725, 'lon': -71.13776206970215}, 'source': 'bluebikes_station'}, {'name': \"Packard's Corner - Commonwealth Ave at Brighton Ave\", 'point': {'lat': 42.352261, 'lon': -71.123831}, 'source': 'bluebikes_station'}, {'name': 'Brighton Center - Washington St at Cambridge St', 'point': {'lat': 42.34894857235593, 'lon': -71.15027189254761}, 'source': 'bluebikes_station'}, {'name': 'Brighton Ave at Linden St', 'point': {'lat': 42.3528376, 'lon': -71.1296752}, 'source': 'bluebikes_station'}, {'name': 'Harvard Ave and Brighton Ave, Allston', 'point': {'lat': 42.353, 'lon': -71.1325}, 'source': 'showcase'}]}\n{'status': 'ok', 'candidates': [{'name': 'Copley Square', 'point': {'lat': 42.3499, 'lon': -71.077}, 'source': 'showcase'}]}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [],
+              "first_draft_numbers": 3
+            }
+          ],
+          "ambiguous-roxbury": [
+            {
+              "conversation_id": "ambiguous-roxbury",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nBack Bay resolved fine (Back Bay station), but \"Roxbury\" is ambiguous \u2014 I found three candidates and won't pick one for you:\n\n- **Roxbury Crossing** (MBTA station \u2014 42.33122, -71.09573)\n- **Roxbury YMCA \u2013 Warren St at MLK Blvd** (Bluebikes station \u2014 42.31787, -71.08243)\n- **Centre St at W. Roxbury Post Office** (Bluebikes station \u2014 42.28633, -71.15345)\n\nWhich one should I use as your starting point?",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Roxbury"
+                  },
+                  "output": "{'status': 'ambiguous', 'candidates': [{'name': 'Roxbury Crossing', 'point': {'lat': 42.33121818328099, 'lon': -71.09572943447598}, 'source': 'mbta_station'}, {'name': 'Roxbury YMCA - Warren St at MLK Blvd', 'point': {'lat': 42.31787329345602, 'lon': -71.08243077993393}, 'source': 'bluebikes_station'}, {'name': 'Centre St at W. Roxbury Post Office', 'point': {'lat': 42.286331991127746, 'lon': -71.15344755369732}, 'source': 'bluebikes_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Back Bay', 'point': {'lat': 42.34756776622767, 'lon': -71.0751066366595}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Back Bay"
+                  },
+                  "output": "{'status': 'ambiguous', 'candidates': [{'name': 'Roxbury Crossing', 'point': {'lat': 42.33121818328099, 'lon': -71.09572943447598}, 'source': 'mbta_station'}, {'name': 'Roxbury YMCA - Warren St at MLK Blvd', 'point': {'lat': 42.31787329345602, 'lon': -71.08243077993393}, 'source': 'bluebikes_station'}, {'name': 'Centre St at W. Roxbury Post Office', 'point': {'lat': 42.286331991127746, 'lon': -71.15344755369732}, 'source': 'bluebikes_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Back Bay', 'point': {'lat': 42.34756776622767, 'lon': -71.0751066366595}, 'source': 'mbta_station'}]}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [],
+              "first_draft_numbers": 6
+            }
+          ],
+          "outside-cambridgeside": [
+            {
+              "conversation_id": "outside-cambridgeside",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nI resolved both places (Cambridgeside Pl at Land Blvd \u2014 a Bluebikes station \u2014 and Kendall/MIT \u2014 an MBTA station), but plan_trip refused the trip: \"Outside the City of Boston: origin and destination.\"\n\nCambridgeside is across the river in Cambridge, which is outside this prototype's coverage, so I can't plan or compare routes for this trip. No departure time is available because the plan never ran (the tool returned an error instead of a depart_at). If you have both ends inside Boston \u2014 for example, a Kendall/MIT-to-downtown trip starting from an in-Boston point \u2014 I can plan that.",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Kendall/MIT"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Kendall/MIT', 'point': {'lat': 42.36242401789808, 'lon': -71.08619209346455}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Cambridgeside Pl at Land Blvd', 'point': {'lat': 42.366929, 'lon': -71.076512}, 'source': 'bluebikes_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Cambridgeside"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Kendall/MIT', 'point': {'lat': 42.36242401789808, 'lon': -71.08619209346455}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Cambridgeside Pl at Land Blvd', 'point': {'lat': 42.366929, 'lon': -71.076512}, 'source': 'bluebikes_station'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lat": 42.366929,
+                    "origin_lon": -71.076512,
+                    "destination_lat": 42.36242401789808,
+                    "destination_lon": -71.08619209346455,
+                    "depart_at": "null"
+                  },
+                  "output": "Error executing tool plan_trip: Outside the City of Boston: origin and destination",
+                  "is_error": true
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [],
+              "first_draft_numbers": 0
+            }
+          ],
+          "choice-maverick": [
+            {
+              "conversation_id": "choice-maverick",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nGood news first: both places resolved cleanly (Maverick Square, East Boston \u2192 Courthouse, Seaport), and the trip is fully inside Boston. The plan used departure **Tuesday 08:15** \u2014 note the notes say this was planned as a showcase trip at its **fixed demo departure**, not a live clock time.\n\n8 routes. Fastest is the drive, so trade-offs below are against it. All CO2 figures are estimates (source: EPA GHG Emission Factors Hub 2025 for subway, bus and drive; walk and bike assumed zero operational emissions). Crash risk is an estimated index from Boston Vision Zero and Cambridge police crash counts, and it covers **walking and biking segments only \u2014 driving and transit vehicle crash risk is not modeled**.\n\n- **Blue Line** (transit-1): 20.0 min, ~88 g CO2. vs. drive: ~14.6 min slower, ~90% less CO2, +15.7 crash-risk index. Crash risk is all walking (no count data on those streets, so part of it uses a road-class estimate).\n- **Blue Line, then 4** (transit-5): 16.8 min, ~177 g CO2 \u2014 the quickest transit option. vs. drive: ~11.4 min slower, ~80% less CO2, +5.0 crash-risk index. Walking legs also partly road-class estimated.\n- **Walk, safer variant 1** (walk-2): 138.8 min, 0 g. vs. drive: ~133 min slower, 100% less CO2, +57.4 crash risk. Part road-class estimated.\n- **Drive** (drive-1): 5.5 min, ~874 g CO2 \u2014 fastest and least disrupted. Time is free-flow OSM speeds and ignores traffic.\n- **Walk, fastest** (walk-1): 137.2 min, 0 g. vs. drive: ~132 min slower, 100% less CO2, +102.2 crash risk. Part road-class estimated.\n- **Bike, safer variant 1** (bike-2): 46.5 min, 0 g. vs. drive: ~41 min slower, 100% less CO2, +1235 crash-risk index; Bluebikes dock availability not checked. About 41% of its crash risk comes from road-class estimates where no count data exists.\n- **Bike, safer variant 3** (bike-4): 55.1 min, 0 g. vs. drive: ~49.7 min slower, 100% less CO2, +1157 crash risk; about 55% road-class estimated.\n- **Bike, fastest** (bike-1): 45.9 min, 0 g \u2014 lowest CO2. vs. drive: ~40.5 min slower, 100% less CO2, +1607 crash risk; about 42% road-class estimated.\n\nNo active alerts: the alert source reported is \"none\" with no alerts, so none of the numbers are flagged synthetic.",
+              "tool_calls": [
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Courthouse"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Courthouse', 'point': {'lat': 42.35239360966698, 'lon': -71.04688921822166}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Maverick Square, East Boston', 'point': {'lat': 42.3691, 'lon': -71.0396}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "geocode_place",
+                  "input": {
+                    "query": "Maverick Square"
+                  },
+                  "output": "{'status': 'ok', 'candidates': [{'name': 'Courthouse', 'point': {'lat': 42.35239360966698, 'lon': -71.04688921822166}, 'source': 'mbta_station'}]}\n{'status': 'ok', 'candidates': [{'name': 'Maverick Square, East Boston', 'point': {'lat': 42.3691, 'lon': -71.0396}, 'source': 'showcase'}]}",
+                  "is_error": false
+                },
+                {
+                  "name": "get_active_alerts",
+                  "input": {},
+                  "output": "{'source': 'none', 'synthetic': False, 'alert_clock': None, 'alerts': []}\n{'query_id': '378f4d78', 'origin': {'lat': 42.3691, 'lon': -71.0396}, 'destination': {'lat': 42.3524, 'lon': -71.0465}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'transit-1', 'kind': 'transit', 'summary': 'Blue Line', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 1526.0, 'duration_min': 3.0, 'co2_g': 88.18375685993796, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 1167.82, 'duration_min': 15.933333333333334, 'co2_g': 0.0, 'crash_risk': 15.592399203997635, 'risk_basis_m': {'road_class_prior': 793.1202359259942, 'outside_crash_coverage': 281.1794026190569}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 20.033333333333335, 'co2_g': 88.18375685993796, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'transit-5', 'kind': 'transit', 'summary': 'Blue Line, then 4', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 2027.0, 'duration_min': 4.0, 'co2_g': 117.13530481985205, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl', '70041', 'place-state']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 157.67, 'duration_min': 2.2666666666666666, 'co2_g': 0.0, 'crash_risk': 2.202512869946206, 'risk_basis_m': {'road_class_prior': 140.43260784239118}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'bus', 'coords': [], 'distance_m': 1461.0, 'duration_min': 8.0, 'co2_g': 59.91633858267716, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': '4', 'route_name': '4', 'route_type': 3, 'direction_id': 1, 'stop_ids': ['204', '65471', '16551', '221', '21599']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 112.26, 'duration_min': 1.4666666666666666, 'co2_g': 0.0, 'crash_risk': 2.6412189046218226, 'risk_basis_m': {'road_class_prior': 112.59025580018705}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 16.833333333333332, 'co2_g': 177.0516434025292, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf); emission_factors.yaml: bus (EPA GHG Emission Factors Hub 2025, Table 10, Bus: 0.066 kg CO2 per passenger-mile, US national average across bus types (FHWA VM-1 passenger-miles), not MBTA specific. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 11100.149160426914, 'duration_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'risk_basis_m': {'road_class_prior': 6608.289414787492, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 4736.567722094997, 'duration_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'walk-1', 'kind': 'walk', 'summary': 'Walk, fastest', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 10978.038654868282, 'duration_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'risk_basis_m': {'road_class_prior': 6486.1789092288645, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11626.42456488065, 'duration_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'risk_basis_m': {'bluebikes_proxy': 6839.226826159074, 'road_class_prior': 187.61747035411463, 'outside_crash_coverage': 4599.580268367465}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.41175149866641053}, {'id': 'bike-4', 'kind': 'bike', 'summary': 'Bike, safer variant 3', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 13779.5681632281, 'duration_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'risk_basis_m': {'bluebikes_proxy': 6232.0469985520085, 'road_class_prior': 668.0055765064624, 'outside_crash_coverage': 6879.515588169633}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.5477327790879012}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11482.371562449767, 'duration_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'risk_basis_m': {'bluebikes_proxy': 6694.523325405841, 'outside_crash_coverage': 4787.84823704393}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.41697381163847647}], 'tradeoffs_vs_fastest': [{'route_id': 'transit-1', 'reference_id': 'drive-1', 'delta': {'time_min': 14.570680329809878, 'co2_g': -785.9367627196015, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'pct': {'time_min': 266.73267220912015, 'co2_g': -89.91171641842303, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'transit-5', 'reference_id': 'drive-1', 'delta': {'time_min': 11.370680329809876, 'co2_g': -697.0688761770102, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'pct': {'time_min': 208.15307731381967, 'co2_g': -79.7451679217309, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 133.28921150181299, 'co2_g': -874.1205195795394, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'pct': {'time_min': 2440.0087542781926, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-1', 'reference_id': 'drive-1', 'delta': {'time_min': 131.76283018233008, 'co2_g': -874.1205195795394, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'pct': {'time_min': 2412.0666294809853, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 41.04304525599914, 'co2_g': -874.1205195795394, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'pct': {'time_min': 751.3390513643468, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-4', 'reference_id': 'drive-1', 'delta': {'time_min': 49.65561964938894, 'co2_g': -874.1205195795394, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'pct': {'time_min': 909.0019010426004, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 40.46683324627561, 'co2_g': -874.1205195795394, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'pct': {'time_min': 740.7908432070308, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {}, 'candidate_count': 13, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': [\"Planned as showcase trip 'Maverick Square, East Boston to Courthouse, Seaport' at its fixed demo departure, Tuesday 08:15.\", 'Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}",
+                  "is_error": false
+                },
+                {
+                  "name": "plan_trip",
+                  "input": {
+                    "origin_lat": 42.3691,
+                    "origin_lon": -71.0396,
+                    "destination_lat": 42.35239360966698,
+                    "destination_lon": -71.04688921822166,
+                    "depart_at": "2026-05-12T08:30:00"
+                  },
+                  "output": "{'source': 'none', 'synthetic': False, 'alert_clock': None, 'alerts': []}\n{'query_id': '378f4d78', 'origin': {'lat': 42.3691, 'lon': -71.0396}, 'destination': {'lat': 42.3524, 'lon': -71.0465}, 'depart_at': '2026-10-27T08:15:00-04:00', 'run_mode': 'offline', 'alert_source': 'none', 'routes': [{'id': 'transit-1', 'kind': 'transit', 'summary': 'Blue Line', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 1526.0, 'duration_min': 3.0, 'co2_g': 88.18375685993796, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 1167.82, 'duration_min': 15.933333333333334, 'co2_g': 0.0, 'crash_risk': 15.592399203997635, 'risk_basis_m': {'road_class_prior': 793.1202359259942, 'outside_crash_coverage': 281.1794026190569}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 20.033333333333335, 'co2_g': 88.18375685993796, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'transit-5', 'kind': 'transit', 'summary': 'Blue Line, then 4', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 75.16, 'duration_min': 1.1, 'co2_g': 0.0, 'crash_risk': 0.1478933060111821, 'risk_basis_m': {'road_class_prior': 29.70174375625076}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'subway', 'coords': [], 'distance_m': 2027.0, 'duration_min': 4.0, 'co2_g': 117.13530481985205, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': 'Blue', 'route_name': 'Blue Line', 'route_type': 1, 'direction_id': 0, 'stop_ids': ['70045', 'place-mvbcl', '70043', 'place-aqucl', '70041', 'place-state']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 157.67, 'duration_min': 2.2666666666666666, 'co2_g': 0.0, 'crash_risk': 2.202512869946206, 'risk_basis_m': {'road_class_prior': 140.43260784239118}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'bus', 'coords': [], 'distance_m': 1461.0, 'duration_min': 8.0, 'co2_g': 59.91633858267716, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': {'route_id': '4', 'route_name': '4', 'route_type': 3, 'direction_id': 1, 'stop_ids': ['204', '65471', '16551', '221', '21599']}, 'alert_ids': [], 'disruption_risk': 0.0}, {'mode': 'walk', 'coords': [], 'distance_m': 112.26, 'duration_min': 1.4666666666666666, 'co2_g': 0.0, 'crash_risk': 2.6412189046218226, 'risk_basis_m': {'road_class_prior': 112.59025580018705}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 16.833333333333332, 'co2_g': 177.0516434025292, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OTP scheduled itinerary from the published MBTA GTFS feed', 'co2_g': \"emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).); emission_factors.yaml: subway (EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf); emission_factors.yaml: bus (EPA GHG Emission Factors Hub 2025, Table 10, Bus: 0.066 kg CO2 per passenger-mile, US national average across bus types (FHWA VM-1 passenger-miles), not MBTA specific. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)\", 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'walk-2', 'kind': 'walk', 'summary': 'Walk, safer variant 1', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 11100.149160426914, 'duration_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'risk_basis_m': {'road_class_prior': 6608.289414787492, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 138.75186450533644, 'co2_g': 0.0, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_crash_risk'], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'drive-1', 'kind': 'drive', 'summary': 'Drive', 'legs': [{'mode': 'drive', 'coords': [], 'distance_m': 4736.567722094997, 'duration_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'risk_basis_m': {}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 5.4626530035234575, 'co2_g': 874.1205195795394, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'sources': {'time_min': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'co2_g': 'emission_factors.yaml: drive (EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf)', 'crash_risk': 'OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['fastest', 'least_disrupted'], 'alert_ids': [], 'unknown_exposure_share': 0.0}, {'id': 'walk-1', 'kind': 'walk', 'summary': 'Walk, fastest', 'legs': [{'mode': 'walk', 'coords': [], 'distance_m': 10978.038654868282, 'duration_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'risk_basis_m': {'road_class_prior': 6486.1789092288645, 'outside_crash_coverage': 4491.85974563942}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 137.22548318585353, 'co2_g': 0.0, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed walking speed 4.8 km/h', 'co2_g': 'emission_factors.yaml: walk (Walking: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 1.0}, {'id': 'bike-2', 'kind': 'bike', 'summary': 'Bike, safer variant 1', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11626.42456488065, 'duration_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'risk_basis_m': {'bluebikes_proxy': 6839.226826159074, 'road_class_prior': 187.61747035411463, 'outside_crash_coverage': 4599.580268367465}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 46.505698259522596, 'co2_g': 0.0, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.41175149866641053}, {'id': 'bike-4', 'kind': 'bike', 'summary': 'Bike, safer variant 3', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 13779.5681632281, 'duration_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'risk_basis_m': {'bluebikes_proxy': 6232.0469985520085, 'road_class_prior': 668.0055765064624, 'outside_crash_coverage': 6879.515588169633}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 55.118272652912395, 'co2_g': 0.0, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': [], 'alert_ids': [], 'unknown_exposure_share': 0.5477327790879012}, {'id': 'bike-1', 'kind': 'bike', 'summary': 'Bike, fastest', 'legs': [{'mode': 'bike', 'coords': [], 'distance_m': 11482.371562449767, 'duration_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'risk_basis_m': {'bluebikes_proxy': 6694.523325405841, 'outside_crash_coverage': 4787.84823704393}, 'transit': None, 'alert_ids': [], 'disruption_risk': 0.0}], 'objectives': {'time_min': 45.92948624979907, 'co2_g': 0.0, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'sources': {'time_min': 'Assumed cycling speed 15 km/h', 'co2_g': 'emission_factors.yaml: bike (Personal bike: zero operational emissions (no fuel or electricity used).)', 'crash_risk': 'Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled.', 'disruption_risk': \"MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)\"}, 'labels': ['lowest_co2'], 'alert_ids': [], 'unknown_exposure_share': 0.41697381163847647}], 'tradeoffs_vs_fastest': [{'route_id': 'transit-1', 'reference_id': 'drive-1', 'delta': {'time_min': 14.570680329809878, 'co2_g': -785.9367627196015, 'crash_risk': 15.740292510008818, 'disruption_risk': 0.0}, 'pct': {'time_min': 266.73267220912015, 'co2_g': -89.91171641842303, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'transit-5', 'reference_id': 'drive-1', 'delta': {'time_min': 11.370680329809876, 'co2_g': -697.0688761770102, 'crash_risk': 4.991625080579211, 'disruption_risk': 0.0}, 'pct': {'time_min': 208.15307731381967, 'co2_g': -79.7451679217309, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-2', 'reference_id': 'drive-1', 'delta': {'time_min': 133.28921150181299, 'co2_g': -874.1205195795394, 'crash_risk': 57.39397768958398, 'disruption_risk': 0.0}, 'pct': {'time_min': 2440.0087542781926, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'drive-1', 'reference_id': 'drive-1', 'delta': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': 0.0, 'disruption_risk': 0.0}, 'pct': {'time_min': 0.0, 'co2_g': 0.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'walk-1', 'reference_id': 'drive-1', 'delta': {'time_min': 131.76283018233008, 'co2_g': -874.1205195795394, 'crash_risk': 102.24966147986385, 'disruption_risk': 0.0}, 'pct': {'time_min': 2412.0666294809853, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-2', 'reference_id': 'drive-1', 'delta': {'time_min': 41.04304525599914, 'co2_g': -874.1205195795394, 'crash_risk': 1235.0237014117483, 'disruption_risk': 0.0}, 'pct': {'time_min': 751.3390513643468, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-4', 'reference_id': 'drive-1', 'delta': {'time_min': 49.65561964938894, 'co2_g': -874.1205195795394, 'crash_risk': 1156.53069632005, 'disruption_risk': 0.0}, 'pct': {'time_min': 909.0019010426004, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}, {'route_id': 'bike-1', 'reference_id': 'drive-1', 'delta': {'time_min': 40.46683324627561, 'co2_g': -874.1205195795394, 'crash_risk': 1606.54964138129, 'disruption_risk': 0.0}, 'pct': {'time_min': 740.7908432070308, 'co2_g': -100.0, 'crash_risk': None, 'disruption_risk': None}, 'alerts_avoided': []}], 'omitted': {}, 'candidate_count': 13, 'unscored_alerts': [], 'preference': {'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 1, 'insufficient_data': True}, 'notes': [\"Planned as showcase trip 'Maverick Square, East Boston to Courthouse, Seaport' at its fixed demo departure, Tuesday 08:15.\", 'Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.', 'Drive time is free-flow and ignores traffic.', 'Bluebikes dock availability is not checked.', 'Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.']}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [],
+              "first_draft_numbers": 40
+            },
+            {
+              "conversation_id": "choice-maverick",
+              "text": "I am an independent prototype, not a City of Boston or MBTA service.\n\nRecorded: **Drive** (drive-1, 5.5 min) as your pick for the Maverick Square \u2192 Courthouse showcase plan. It was the fastest and least disrupted; its ~874 g CO2 estimate comes from EPA Hub 2025 drive-alone factors, and its time is free-flow OSM speed that ignores traffic.\n\nYour preference weights are unchanged so far (still 0.25 across time, CO2, crash risk, disruption) \u2014 one choice isn't enough to refit, so the prototype will keep learning as you pick more trips.",
+              "tool_calls": [
+                {
+                  "name": "record_choice",
+                  "input": {
+                    "query_id": "378f4d78",
+                    "route_id": "drive-1"
+                  },
+                  "output": "{'weights': {'time_min': 0.25, 'co2_g': 0.25, 'crash_risk': 0.25, 'disruption_risk': 0.25}, 'n_choices': 2, 'insufficient_data': True}",
+                  "is_error": false
+                }
+              ],
+              "unsupported_numbers": [],
+              "first_draft_unsupported": [],
+              "first_draft_numbers": 5
+            }
+          ]
+        }
+      }
+    }
+  }
+}

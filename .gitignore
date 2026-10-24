@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# commute-agent Data_Store
+data/raw/
+data/processed/
+data/otp/
+data/cache/
+data/preferences.db
+drafts/

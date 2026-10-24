@@ -1,0 +1,60 @@
+# Emission factors for the Pareto Commute prototype. Every value verified by the user
+# against its source on 2026-10-24.
+#
+# Scope: operational emissions per passenger. Electric rail includes grid electricity.
+# Value: grams of CO2 only, so it matches the app's co2_g objective. CH4 and N2O are left
+# out. The CO2e that includes them (AR5 GWPs from Hub Table 11: CH4 28, N2O 265) is shown
+# on each line as "CO2e would be", in case you prefer CO2e.
+#
+# Primary source: EPA GHG Emission Factors Hub 2025 (15 January 2025), Table 10
+#   https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf
+#   Rail: "Fuel consumption was converted to emissions by using fuel and electricity
+#   emission factors presented in the tables above" (TEDB Edition 40, 2019 data).
+# Gap fill: UK DESNZ GHG conversion factors 2026, flat file revised July 2026
+#   https://assets.publishing.service.gov.uk/media/6a6c9748862aaf18d9c62ac9/ghg-conversion-factors-2026-flat-format-revised.xlsx
+# Drive: drive-alone, occupancy 1.0.
+
+walk:
+  value: 0.0
+  unit: g_per_passenger_km
+  source: "Walking: zero operational emissions (no fuel or electricity used)."
+
+bike:
+  value: 0.0
+  unit: g_per_passenger_km
+  source: "Personal bike: zero operational emissions (no fuel or electricity used)."
+
+bluebikes:
+  value: 0.0
+  unit: g_per_passenger_km
+  source: "Bluebikes: zero operational emissions for the ride; rebalancing not counted (no citable Bluebikes rebalancing figure found); e-bike charging not counted."
+
+drive:
+  value: 297.0   # occupancy 1.0. CO2e would be 298.6.
+  unit: g_per_passenger_mile
+  source: "EPA Hub 2025, Table 10; drive alone; divide by occupants for carpools; US national average. Passenger Car: 0.297 kg CO2 per vehicle-mile, combustion only (EV grid electricity not included). https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf"
+
+subway:
+  value: 93.0    # CO2e would be 93.5
+  unit: g_per_passenger_mile
+  source: "EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf"
+
+light_rail:
+  value: 93.0    # same Hub row as subway. CO2e would be 93.5
+  unit: g_per_passenger_mile
+  source: "EPA GHG Emission Factors Hub 2025, Table 10, Transit Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. New England's grid is about 30% cleaner (EPA Table 6), so this likely overstates Boston. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf"
+
+bus:
+  value: 66.0    # CO2e would be 66.6
+  unit: g_per_passenger_mile
+  source: "EPA GHG Emission Factors Hub 2025, Table 10, Bus: 0.066 kg CO2 per passenger-mile, US national average across bus types (FHWA VM-1 passenger-miles), not MBTA specific. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf"
+
+commuter_rail:
+  value: 133.0   # CO2e would be 134.0
+  unit: g_per_passenger_mile
+  source: "EPA GHG Emission Factors Hub 2025, Table 10, Commuter Rail; includes power-plant emissions at US-average grid factors; excludes upstream fuel production; 2019 data; US national average. https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf"
+
+ferry:
+  value: 18.48   # CO2e would be 18.71
+  unit: g_per_passenger_km
+  source: "UK DESNZ GHG conversion factors 2026 (UK basis, not US or MBTA), Business travel- sea, Ferry, Foot passenger: 0.01848 kg CO2 per passenger-km (CO2 component of 0.01871 kg CO2e); EPA Hub 2025 has no ferry factor. UK fleet average; likely understates Boston fast ferries. https://assets.publishing.service.gov.uk/media/6a6c9748862aaf18d9c62ac9/ghg-conversion-factors-2026-flat-format-revised.xlsx"

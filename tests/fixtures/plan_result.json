@@ -1,0 +1,328 @@
+{
+  "query_id": "fixture01",
+  "origin": {
+    "lat": 42.3003,
+    "lon": -71.0614
+  },
+  "destination": {
+    "lat": 42.3555,
+    "lon": -71.0603
+  },
+  "depart_at": "2026-10-27T08:15:00-04:00",
+  "run_mode": "offline",
+  "alert_source": "none",
+  "routes": [
+    {
+      "id": "bike-1",
+      "kind": "bike",
+      "summary": "Bike, fastest",
+      "legs": [
+        {
+          "mode": "bike",
+          "coords": [
+            [
+              -71.065,
+              42.355
+            ],
+            [
+              -71.064,
+              42.356
+            ]
+          ],
+          "distance_m": 1800.0,
+          "duration_min": 7.2,
+          "co2_g": 0.0,
+          "crash_risk": 1.4,
+          "risk_basis_m": {
+            "bluebikes_proxy": 1800.0
+          },
+          "transit": null,
+          "alert_ids": [],
+          "disruption_risk": 0.0
+        }
+      ],
+      "objectives": {
+        "time_min": 7.2,
+        "co2_g": 0.0,
+        "crash_risk": 1.4,
+        "disruption_risk": 0.0
+      },
+      "sources": {
+        "time_min": "Assumed cycling speed 15 km/h",
+        "co2_g": "emission_factors.yaml: walk (fixture)",
+        "crash_risk": "Estimated crash risk index for walk and bike segments (fixture)",
+        "disruption_risk": "MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)"
+      },
+      "labels": [
+        "fastest"
+      ],
+      "alert_ids": [],
+      "unknown_exposure_share": 0.0
+    },
+    {
+      "id": "walk-1",
+      "kind": "walk",
+      "summary": "Walk, fastest",
+      "legs": [
+        {
+          "mode": "walk",
+          "coords": [
+            [
+              -71.065,
+              42.355
+            ],
+            [
+              -71.064,
+              42.356
+            ]
+          ],
+          "distance_m": 1200.0,
+          "duration_min": 15.0,
+          "co2_g": 0.0,
+          "crash_risk": 2.1,
+          "risk_basis_m": {
+            "road_class_prior": 1200.0
+          },
+          "transit": null,
+          "alert_ids": [],
+          "disruption_risk": 0.0
+        }
+      ],
+      "objectives": {
+        "time_min": 15.0,
+        "co2_g": 0.0,
+        "crash_risk": 2.1,
+        "disruption_risk": 0.0
+      },
+      "sources": {
+        "time_min": "Assumed walking speed 4.8 km/h",
+        "co2_g": "emission_factors.yaml: walk (fixture)",
+        "crash_risk": "Estimated crash risk index for walk and bike segments (fixture)",
+        "disruption_risk": "MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)"
+      },
+      "labels": [
+        "lowest_crash_risk"
+      ],
+      "alert_ids": [],
+      "unknown_exposure_share": 1.0
+    },
+    {
+      "id": "transit-1",
+      "kind": "transit",
+      "summary": "Red Line from Fields Corner",
+      "legs": [
+        {
+          "mode": "walk",
+          "coords": [
+            [
+              -71.065,
+              42.355
+            ],
+            [
+              -71.064,
+              42.356
+            ]
+          ],
+          "distance_m": 160.0,
+          "duration_min": 3.0,
+          "co2_g": 0.0,
+          "crash_risk": 0.0,
+          "risk_basis_m": {},
+          "transit": null,
+          "alert_ids": [],
+          "disruption_risk": 0.0
+        },
+        {
+          "mode": "subway",
+          "coords": [
+            [
+              -71.065,
+              42.355
+            ],
+            [
+              -71.064,
+              42.356
+            ]
+          ],
+          "distance_m": 4300.0,
+          "duration_min": 16.0,
+          "co2_g": 35.2,
+          "crash_risk": 0.0,
+          "risk_basis_m": {},
+          "transit": {
+            "route_id": "Red",
+            "route_name": "Red Line",
+            "route_type": 1,
+            "direction_id": 1,
+            "stop_ids": [
+              "70090",
+              "place-fldcr",
+              "70078",
+              "place-dwnxg"
+            ]
+          },
+          "alert_ids": [
+            "synthetic-red-1"
+          ],
+          "disruption_risk": 1.0
+        },
+        {
+          "mode": "walk",
+          "coords": [
+            [
+              -71.065,
+              42.355
+            ],
+            [
+              -71.064,
+              42.356
+            ]
+          ],
+          "distance_m": 110.0,
+          "duration_min": 2.0,
+          "co2_g": 0.0,
+          "crash_risk": 0.0,
+          "risk_basis_m": {},
+          "transit": null,
+          "alert_ids": [],
+          "disruption_risk": 0.0
+        }
+      ],
+      "objectives": {
+        "time_min": 21.0,
+        "co2_g": 35.2,
+        "crash_risk": 0.0,
+        "disruption_risk": 1.0
+      },
+      "sources": {
+        "time_min": "OpenTripPlanner itinerary duration (fixture)",
+        "co2_g": "emission_factors.yaml: walk (fixture)",
+        "crash_risk": "Estimated crash risk index for walk and bike segments (fixture)",
+        "disruption_risk": "MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)"
+      },
+      "labels": [
+        "lowest_co2",
+        "least_disrupted"
+      ],
+      "alert_ids": [
+        "synthetic-red-1"
+      ],
+      "unknown_exposure_share": 0.0
+    },
+    {
+      "id": "drive-1",
+      "kind": "drive",
+      "summary": "Drive",
+      "legs": [
+        {
+          "mode": "drive",
+          "coords": [
+            [
+              -71.065,
+              42.355
+            ],
+            [
+              -71.064,
+              42.356
+            ]
+          ],
+          "distance_m": 5200.0,
+          "duration_min": 14.0,
+          "co2_g": 1210.0,
+          "crash_risk": 0.0,
+          "risk_basis_m": {},
+          "transit": null,
+          "alert_ids": [],
+          "disruption_risk": 0.0
+        }
+      ],
+      "objectives": {
+        "time_min": 14.0,
+        "co2_g": 1210.0,
+        "crash_risk": 0.0,
+        "disruption_risk": 0.0
+      },
+      "sources": {
+        "time_min": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic",
+        "co2_g": "emission_factors.yaml: walk (fixture)",
+        "crash_risk": "Estimated crash risk index for walk and bike segments (fixture)",
+        "disruption_risk": "MBTA alerts scored by the prototype's effect table (heuristic index, 0 to 1)"
+      },
+      "labels": [],
+      "alert_ids": [],
+      "unknown_exposure_share": 0.0
+    }
+  ],
+  "tradeoffs_vs_fastest": [
+    {
+      "route_id": "walk-1",
+      "reference_id": "bike-1",
+      "delta": {
+        "time_min": 7.8,
+        "co2_g": 0.0,
+        "crash_risk": 0.7000000000000002,
+        "disruption_risk": 0.0
+      },
+      "pct": {
+        "time_min": 108.33333333333333,
+        "co2_g": null,
+        "crash_risk": 50.000000000000014,
+        "disruption_risk": null
+      },
+      "alerts_avoided": []
+    },
+    {
+      "route_id": "transit-1",
+      "reference_id": "bike-1",
+      "delta": {
+        "time_min": 13.8,
+        "co2_g": 35.2,
+        "crash_risk": -1.4,
+        "disruption_risk": 1.0
+      },
+      "pct": {
+        "time_min": 191.66666666666666,
+        "co2_g": null,
+        "crash_risk": -100.0,
+        "disruption_risk": null
+      },
+      "alerts_avoided": []
+    },
+    {
+      "route_id": "drive-1",
+      "reference_id": "bike-1",
+      "delta": {
+        "time_min": 6.8,
+        "co2_g": 1210.0,
+        "crash_risk": -1.4,
+        "disruption_risk": 0.0
+      },
+      "pct": {
+        "time_min": 94.44444444444444,
+        "co2_g": null,
+        "crash_risk": -100.0,
+        "disruption_risk": null
+      },
+      "alerts_avoided": []
+    }
+  ],
+  "omitted": {
+    "bluebikes": "no path"
+  },
+  "candidate_count": 9,
+  "unscored_alerts": [],
+  "preference": {
+    "weights": {
+      "time_min": 0.25,
+      "co2_g": 0.25,
+      "crash_risk": 0.25,
+      "disruption_risk": 0.25
+    },
+    "n_choices": 0,
+    "insufficient_data": true
+  },
+  "notes": [
+    "Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.",
+    "Drive time is free-flow and ignores traffic."
+  ]
+}

@@ -1,0 +1,327 @@
+{
+  "data": [
+    {
+      "attributes": {
+        "active_period": [
+          {
+            "end": null,
+            "start": "2026-10-07T15:03:54-04:00"
+          }
+        ],
+        "banner": null,
+        "cause": "UNKNOWN_CAUSE",
+        "closed_timestamp": null,
+        "created_at": "2026-10-07T15:03:54-04:00",
+        "description": "Affected stations:\r\nBraintree",
+        "duration_certainty": "UNKNOWN",
+        "effect": "NOTICE",
+        "header": "Braintree Station notice: Premium parking is available at this location. You can buy premium passes and permits using SpotHero.",
+        "image": null,
+        "image_alternative_text": null,
+        "informed_entity": [
+          {
+            "stop": "70105",
+            "direction_id": 0,
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "place-brntn",
+            "direction_id": 0,
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "70105",
+            "direction_id": 1,
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "place-brntn",
+            "direction_id": 1,
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          }
+        ],
+        "last_push_notification_timestamp": "2026-10-07T15:03:54-04:00",
+        "lifecycle": "ONGOING",
+        "reminder_times": null,
+        "service_effect": "Red Line notice",
+        "severity": 1,
+        "short_header": "",
+        "timeframe": "ongoing",
+        "updated_at": "2026-10-07T15:03:54-04:00",
+        "url": "http://www.mbta.com/SpotHeroBraintree"
+      },
+      "id": "1037418",
+      "links": {
+        "self": "/alerts/1037418"
+      },
+      "type": "alert"
+    },
+    {
+      "attributes": {
+        "active_period": [
+          {
+            "end": null,
+            "start": "2026-10-07T15:05:00-04:00"
+          }
+        ],
+        "banner": null,
+        "cause": "UNKNOWN_CAUSE",
+        "closed_timestamp": null,
+        "created_at": "2026-10-07T15:07:07-04:00",
+        "description": "Affected stations:\r\nRiverside",
+        "duration_certainty": "UNKNOWN",
+        "effect": "NOTICE",
+        "header": "Riverside Station notice: Premium parking is available at this location. You can buy premium passes and permits using SpotHero.",
+        "image": null,
+        "image_alternative_text": null,
+        "informed_entity": [
+          {
+            "stop": "70161",
+            "direction_id": 0,
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "place-river",
+            "direction_id": 0,
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "70160",
+            "direction_id": 1,
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "place-river",
+            "direction_id": 1,
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          }
+        ],
+        "last_push_notification_timestamp": "2026-10-07T15:07:07-04:00",
+        "lifecycle": "ONGOING",
+        "reminder_times": null,
+        "service_effect": "Green Line notice",
+        "severity": 1,
+        "short_header": "",
+        "timeframe": "ongoing",
+        "updated_at": "2026-10-07T15:07:07-04:00",
+        "url": "http://www.mbta.com/SpotHeroRiverside"
+      },
+      "id": "1037420",
+      "links": {
+        "self": "/alerts/1037420"
+      },
+      "type": "alert"
+    },
+    {
+      "attributes": {
+        "active_period": [
+          {
+            "end": null,
+            "start": "2026-10-07T15:05:00-04:00"
+          }
+        ],
+        "banner": null,
+        "cause": "UNKNOWN_CAUSE",
+        "closed_timestamp": null,
+        "created_at": "2026-10-07T15:05:04-04:00",
+        "description": "Affected stations:\r\nOak Grove",
+        "duration_certainty": "UNKNOWN",
+        "effect": "NOTICE",
+        "header": "Oak Grove Station notice: Premium parking is available at this location. You can buy premium passes and permits using SpotHero.",
+        "image": null,
+        "image_alternative_text": null,
+        "informed_entity": [
+          {
+            "stop": "70036",
+            "direction_id": 0,
+            "route_type": 1,
+            "route": "Orange",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "place-ogmnl",
+            "direction_id": 0,
+            "route_type": 1,
+            "route": "Orange",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "70036",
+            "direction_id": 1,
+            "route_type": 1,
+            "route": "Orange",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "stop": "place-ogmnl",
+            "direction_id": 1,
+            "route_type": 1,
+            "route": "Orange",
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          }
+        ],
+        "last_push_notification_timestamp": "2026-10-07T15:05:03-04:00",
+        "lifecycle": "ONGOING",
+        "reminder_times": null,
+        "service_effect": "Orange Line notice",
+        "severity": 1,
+        "short_header": "",
+        "timeframe": "ongoing",
+        "updated_at": "2026-10-07T15:05:19-04:00",
+        "url": "http://www.mbta.com/SpotHeroOakGrove"
+      },
+      "id": "1037419",
+      "links": {
+        "self": "/alerts/1037419"
+      },
+      "type": "alert"
+    },
+    {
+      "type": "alert",
+      "id": "synthetic-red-1",
+      "attributes": {
+        "header": "Synthetic demo alert: Red Line suspended between JFK/UMass and Park Street. Shuttle buses replace trains.",
+        "effect": "SUSPENSION",
+        "severity": 7,
+        "lifecycle": "NEW",
+        "timeframe": null,
+        "active_period": [
+          {
+            "start": "2026-10-27T05:00:00-04:00",
+            "end": null
+          }
+        ],
+        "informed_entity": [
+          {
+            "route": "Red",
+            "stop": "place-jfk",
+            "route_type": 1,
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "route": "Red",
+            "stop": "place-andrw",
+            "route_type": 1,
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "route": "Red",
+            "stop": "place-brdwy",
+            "route_type": 1,
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "route": "Red",
+            "stop": "place-sstat",
+            "route_type": 1,
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "route": "Red",
+            "stop": "place-dwnxg",
+            "route_type": 1,
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          },
+          {
+            "route": "Red",
+            "stop": "place-pktrm",
+            "route_type": 1,
+            "activities": [
+              "BOARD",
+              "EXIT",
+              "RIDE"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  },
+  "links": {}
+}

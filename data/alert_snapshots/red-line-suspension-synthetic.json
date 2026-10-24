@@ -1,0 +1,57 @@
+{
+  "label": "Synthetic: Red Line suspended JFK/UMass to Park Street",
+  "recorded_at": "2026-10-27T08:00:00-04:00",
+  "synthetic": true,
+  "alerts": [
+    {
+      "id": "synthetic-red-1",
+      "header": "Synthetic demo alert: Red Line suspended between JFK/UMass and Park Street. Shuttle buses replace trains.",
+      "effect": "SUSPENSION",
+      "severity": 7,
+      "active_periods": [
+        {
+          "start": "2026-10-27T05:00:00-04:00",
+          "end": null
+        }
+      ],
+      "entities": [
+        {
+          "route": "Red",
+          "stop": "place-jfk",
+          "route_type": 1,
+          "direction_id": null
+        },
+        {
+          "route": "Red",
+          "stop": "place-andrw",
+          "route_type": 1,
+          "direction_id": null
+        },
+        {
+          "route": "Red",
+          "stop": "place-brdwy",
+          "route_type": 1,
+          "direction_id": null
+        },
+        {
+          "route": "Red",
+          "stop": "place-sstat",
+          "route_type": 1,
+          "direction_id": null
+        },
+        {
+          "route": "Red",
+          "stop": "place-dwnxg",
+          "route_type": 1,
+          "direction_id": null
+        },
+        {
+          "route": "Red",
+          "stop": "place-pktrm",
+          "route_type": 1,
+          "direction_id": null
+        }
+      ]
+    }
+  ]
+}

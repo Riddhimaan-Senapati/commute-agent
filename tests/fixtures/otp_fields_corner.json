@@ -1,0 +1,628 @@
+{
+  "data": {
+    "planConnection": {
+      "edges": [
+        {
+          "node": {
+            "start": "2026-10-27T08:15:54-04:00",
+            "end": "2026-10-27T08:38:38-04:00",
+            "duration": 1364,
+            "legs": [
+              {
+                "mode": "WALK",
+                "duration": 426.0,
+                "distance": 550.44,
+                "from": {
+                  "name": "Origin",
+                  "stop": null
+                },
+                "to": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "awdaG~evpLFd@\\pBH^J\\Jf@HPLp@Jb@J`@Lb@ZhADLDDHJf@uAQUi@}@Yy@Mg@K_@Qg@EAAKA@COq@}D@?Ej@??DXPLAH"
+                }
+              },
+              {
+                "mode": "SUBWAY",
+                "duration": 840.0,
+                "distance": 7112.0,
+                "from": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "route": {
+                  "gtfsId": "mbta:Red",
+                  "shortName": null,
+                  "longName": "Red Line",
+                  "type": 1
+                },
+                "trip": {
+                  "directionId": "1"
+                },
+                "intermediateStops": [
+                  {
+                    "gtfsId": "mbta:70088",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-shmnl"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70086",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-jfk"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70084",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-andrw"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70082",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-brdwy"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70080",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-sstat"
+                    }
+                  }
+                ],
+                "legGeometry": {
+                  "points": "oudaGbhvpLUqAG]Km@Ie@IeAAs@Ca@Ay@AkDAeDEoAMqAG_@I_@K]Oa@i@kAS]_@_@UM{@g@ICKCy@CaB@uA@cAEy@GiAMwAWYGa@KsDu@yHiAeBWQ?_AO}@KwAY_AUg@SmA[kAa@cA_@q@SOG_Bm@QG]MoBo@_AYqDcAeBe@kASyAMoBEs@?iCL_CBoCBcCDeA@_A@w@Du@DmADkAFYBaBLQ@yAHw@DSBwANeAT_AX]Nk@Tm@X]ReAt@WPm@p@_@b@yDvF[f@_B|Bo@jAUX_C|Cm@f@k@Z}@ZW?OC]OqBq@{F_Ci@Sg@?{lAl@??qC@ge@i[{@c@k@Q[Gs@Ic@?k@FiAPm@TQN_@h@oDlMERKXi@jBs@jBq@vBk@bAsFxK"
+                }
+              },
+              {
+                "mode": "WALK",
+                "duration": 98.0,
+                "distance": 131.76,
+                "from": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Destination",
+                  "stop": null
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "gloaGbxupL}@`ALA??y@hAA?c@p@"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "node": {
+            "start": "2026-10-27T08:24:54-04:00",
+            "end": "2026-10-27T08:47:38-04:00",
+            "duration": 1364,
+            "legs": [
+              {
+                "mode": "WALK",
+                "duration": 426.0,
+                "distance": 550.44,
+                "from": {
+                  "name": "Origin",
+                  "stop": null
+                },
+                "to": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "awdaG~evpLFd@\\pBH^J\\Jf@HPLp@Jb@J`@Lb@ZhADLDDHJf@uAQUi@}@Yy@Mg@K_@Qg@EAAKA@COq@}D@?Ej@??DXPLAH"
+                }
+              },
+              {
+                "mode": "SUBWAY",
+                "duration": 840.0,
+                "distance": 7112.0,
+                "from": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "route": {
+                  "gtfsId": "mbta:Red",
+                  "shortName": null,
+                  "longName": "Red Line",
+                  "type": 1
+                },
+                "trip": {
+                  "directionId": "1"
+                },
+                "intermediateStops": [
+                  {
+                    "gtfsId": "mbta:70088",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-shmnl"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70086",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-jfk"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70084",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-andrw"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70082",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-brdwy"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70080",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-sstat"
+                    }
+                  }
+                ],
+                "legGeometry": {
+                  "points": "oudaGbhvpLUqAG]Km@Ie@IeAAs@Ca@Ay@AkDAeDEoAMqAG_@I_@K]Oa@i@kAS]_@_@UM{@g@ICKCy@CaB@uA@cAEy@GiAMwAWYGa@KsDu@yHiAeBWQ?_AO}@KwAY_AUg@SmA[kAa@cA_@q@SOG_Bm@QG]MoBo@_AYqDcAeBe@kASyAMoBEs@?iCL_CBoCBcCDeA@_A@w@Du@DmADkAFYBaBLQ@yAHw@DSBwANeAT_AX]Nk@Tm@X]ReAt@WPm@p@_@b@yDvF[f@_B|Bo@jAUX_C|Cm@f@k@Z}@ZW?OC]OqBq@{F_Ci@Sg@?{lAl@??qC@ge@i[{@c@k@Q[Gs@Ic@?k@FiAPm@TQN_@h@oDlMERKXi@jBs@jBq@vBk@bAsFxK"
+                }
+              },
+              {
+                "mode": "WALK",
+                "duration": 98.0,
+                "distance": 131.76,
+                "from": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Destination",
+                  "stop": null
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "gloaGbxupL}@`ALA??y@hAA?c@p@"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "node": {
+            "start": "2026-10-27T08:33:54-04:00",
+            "end": "2026-10-27T08:56:38-04:00",
+            "duration": 1364,
+            "legs": [
+              {
+                "mode": "WALK",
+                "duration": 426.0,
+                "distance": 550.44,
+                "from": {
+                  "name": "Origin",
+                  "stop": null
+                },
+                "to": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "awdaG~evpLFd@\\pBH^J\\Jf@HPLp@Jb@J`@Lb@ZhADLDDHJf@uAQUi@}@Yy@Mg@K_@Qg@EAAKA@COq@}D@?Ej@??DXPLAH"
+                }
+              },
+              {
+                "mode": "SUBWAY",
+                "duration": 840.0,
+                "distance": 7112.0,
+                "from": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "route": {
+                  "gtfsId": "mbta:Red",
+                  "shortName": null,
+                  "longName": "Red Line",
+                  "type": 1
+                },
+                "trip": {
+                  "directionId": "1"
+                },
+                "intermediateStops": [
+                  {
+                    "gtfsId": "mbta:70088",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-shmnl"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70086",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-jfk"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70084",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-andrw"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70082",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-brdwy"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70080",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-sstat"
+                    }
+                  }
+                ],
+                "legGeometry": {
+                  "points": "oudaGbhvpLUqAG]Km@Ie@IeAAs@Ca@Ay@AkDAeDEoAMqAG_@I_@K]Oa@i@kAS]_@_@UM{@g@ICKCy@CaB@uA@cAEy@GiAMwAWYGa@KsDu@yHiAeBWQ?_AO}@KwAY_AUg@SmA[kAa@cA_@q@SOG_Bm@QG]MoBo@_AYqDcAeBe@kASyAMoBEs@?iCL_CBoCBcCDeA@_A@w@Du@DmADkAFYBaBLQ@yAHw@DSBwANeAT_AX]Nk@Tm@X]ReAt@WPm@p@_@b@yDvF[f@_B|Bo@jAUX_C|Cm@f@k@Z}@ZW?OC]OqBq@{F_Ci@Sg@?{lAl@??qC@ge@i[{@c@k@Q[Gs@Ic@?k@FiAPm@TQN_@h@oDlMERKXi@jBs@jBq@vBk@bAsFxK"
+                }
+              },
+              {
+                "mode": "WALK",
+                "duration": 98.0,
+                "distance": 131.76,
+                "from": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Destination",
+                  "stop": null
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "gloaGbxupL}@`ALA??y@hAA?c@p@"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "node": {
+            "start": "2026-10-27T08:42:54-04:00",
+            "end": "2026-10-27T09:05:38-04:00",
+            "duration": 1364,
+            "legs": [
+              {
+                "mode": "WALK",
+                "duration": 426.0,
+                "distance": 550.44,
+                "from": {
+                  "name": "Origin",
+                  "stop": null
+                },
+                "to": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "awdaG~evpLFd@\\pBH^J\\Jf@HPLp@Jb@J`@Lb@ZhADLDDHJf@uAQUi@}@Yy@Mg@K_@Qg@EAAKA@COq@}D@?Ej@??DXPLAH"
+                }
+              },
+              {
+                "mode": "SUBWAY",
+                "duration": 840.0,
+                "distance": 7112.0,
+                "from": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "route": {
+                  "gtfsId": "mbta:Red",
+                  "shortName": null,
+                  "longName": "Red Line",
+                  "type": 1
+                },
+                "trip": {
+                  "directionId": "1"
+                },
+                "intermediateStops": [
+                  {
+                    "gtfsId": "mbta:70088",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-shmnl"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70086",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-jfk"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70084",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-andrw"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70082",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-brdwy"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70080",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-sstat"
+                    }
+                  }
+                ],
+                "legGeometry": {
+                  "points": "oudaGbhvpLUqAG]Km@Ie@IeAAs@Ca@Ay@AkDAeDEoAMqAG_@I_@K]Oa@i@kAS]_@_@UM{@g@ICKCy@CaB@uA@cAEy@GiAMwAWYGa@KsDu@yHiAeBWQ?_AO}@KwAY_AUg@SmA[kAa@cA_@q@SOG_Bm@QG]MoBo@_AYqDcAeBe@kASyAMoBEs@?iCL_CBoCBcCDeA@_A@w@Du@DmADkAFYBaBLQ@yAHw@DSBwANeAT_AX]Nk@Tm@X]ReAt@WPm@p@_@b@yDvF[f@_B|Bo@jAUX_C|Cm@f@k@Z}@ZW?OC]OqBq@{F_Ci@Sg@?{lAl@??qC@ge@i[{@c@k@Q[Gs@Ic@?k@FiAPm@TQN_@h@oDlMERKXi@jBs@jBq@vBk@bAsFxK"
+                }
+              },
+              {
+                "mode": "WALK",
+                "duration": 98.0,
+                "distance": 131.76,
+                "from": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Destination",
+                  "stop": null
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "gloaGbxupL}@`ALA??y@hAA?c@p@"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "node": {
+            "start": "2026-10-27T08:51:54-04:00",
+            "end": "2026-10-27T09:14:38-04:00",
+            "duration": 1364,
+            "legs": [
+              {
+                "mode": "WALK",
+                "duration": 426.0,
+                "distance": 550.44,
+                "from": {
+                  "name": "Origin",
+                  "stop": null
+                },
+                "to": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "awdaG~evpLFd@\\pBH^J\\Jf@HPLp@Jb@J`@Lb@ZhADLDDHJf@uAQUi@}@Yy@Mg@K_@Qg@EAAKA@COq@}D@?Ej@??DXPLAH"
+                }
+              },
+              {
+                "mode": "SUBWAY",
+                "duration": 840.0,
+                "distance": 7112.0,
+                "from": {
+                  "name": "Fields Corner",
+                  "stop": {
+                    "gtfsId": "mbta:70090",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-fldcr"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "route": {
+                  "gtfsId": "mbta:Red",
+                  "shortName": null,
+                  "longName": "Red Line",
+                  "type": 1
+                },
+                "trip": {
+                  "directionId": "1"
+                },
+                "intermediateStops": [
+                  {
+                    "gtfsId": "mbta:70088",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-shmnl"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70086",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-jfk"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70084",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-andrw"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70082",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-brdwy"
+                    }
+                  },
+                  {
+                    "gtfsId": "mbta:70080",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-sstat"
+                    }
+                  }
+                ],
+                "legGeometry": {
+                  "points": "oudaGbhvpLUqAG]Km@Ie@IeAAs@Ca@Ay@AkDAeDEoAMqAG_@I_@K]Oa@i@kAS]_@_@UM{@g@ICKCy@CaB@uA@cAEy@GiAMwAWYGa@KsDu@yHiAeBWQ?_AO}@KwAY_AUg@SmA[kAa@cA_@q@SOG_Bm@QG]MoBo@_AYqDcAeBe@kASyAMoBEs@?iCL_CBoCBcCDeA@_A@w@Du@DmADkAFYBaBLQ@yAHw@DSBwANeAT_AX]Nk@Tm@X]ReAt@WPm@p@_@b@yDvF[f@_B|Bo@jAUX_C|Cm@f@k@Z}@ZW?OC]OqBq@{F_Ci@Sg@?{lAl@??qC@ge@i[{@c@k@Q[Gs@Ic@?k@FiAPm@TQN_@h@oDlMERKXi@jBs@jBq@vBk@bAsFxK"
+                }
+              },
+              {
+                "mode": "WALK",
+                "duration": 98.0,
+                "distance": 131.76,
+                "from": {
+                  "name": "Downtown Crossing",
+                  "stop": {
+                    "gtfsId": "mbta:70078",
+                    "parentStation": {
+                      "gtfsId": "mbta:place-dwnxg"
+                    }
+                  }
+                },
+                "to": {
+                  "name": "Destination",
+                  "stop": null
+                },
+                "route": null,
+                "trip": null,
+                "intermediateStops": null,
+                "legGeometry": {
+                  "points": "gloaGbxupL}@`ALA??y@hAA?c@p@"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

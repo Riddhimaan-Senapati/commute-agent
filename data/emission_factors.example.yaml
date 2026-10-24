@@ -1,0 +1,10 @@
+# Copy to emission_factors.yaml and fill every value with a sourced factor.
+walk:          {value: null, unit: g_per_passenger_km, source: ""}
+bike:          {value: null, unit: g_per_passenger_km, source: ""}
+bluebikes:     {value: null, unit: g_per_passenger_km, source: ""}
+drive:         {value: null, unit: g_per_passenger_km, source: ""}
+subway:        {value: null, unit: g_per_passenger_km, source: ""}
+light_rail:    {value: null, unit: g_per_passenger_km, source: ""}
+bus:           {value: null, unit: g_per_passenger_km, source: ""}
+commuter_rail: {value: null, unit: g_per_passenger_km, source: ""}
+ferry:         {value: null, unit: g_per_passenger_km, source: ""}

@@ -1,0 +1,40 @@
+- name: fields-corner-to-downtown
+  origin_name: Fields Corner, Dorchester
+  destination_name: Downtown Crossing
+  origin: {lat: 42.3003, lon: -71.0614}
+  destination: {lat: 42.3555, lon: -71.0603}
+  weekday: tuesday
+  depart_local: "08:15"
+  description: Red Line commute that the synthetic JFK/UMass to Park Street suspension disrupts.
+- name: hyde-square-to-longwood
+  origin_name: Hyde Square, Jamaica Plain
+  destination_name: Longwood Medical Area
+  origin: {lat: 42.3220, lon: -71.1106}
+  destination: {lat: 42.3376, lon: -71.1046}
+  weekday: tuesday
+  depart_local: "08:15"
+  description: Short trip where bike and walk compete with bus and the Green Line E branch.
+- name: charlestown-to-copley
+  origin_name: Monument Square, Charlestown
+  destination_name: Copley Square
+  origin: {lat: 42.3763, lon: -71.0607}
+  destination: {lat: 42.3499, lon: -71.0770}
+  weekday: tuesday
+  depart_local: "08:15"
+  description: Orange Line versus a bike route across the Charles River Dam.
+- name: maverick-to-courthouse
+  origin_name: Maverick Square, East Boston
+  destination_name: Courthouse, Seaport
+  origin: {lat: 42.3691, lon: -71.0396}
+  destination: {lat: 42.3524, lon: -71.0465}
+  weekday: tuesday
+  depart_local: "08:15"
+  description: Harbor crossing where driving uses a tunnel and transit uses the Blue Line and Silver Line.
+- name: allston-to-boston-common
+  origin_name: Harvard Ave and Brighton Ave, Allston
+  destination_name: Park Street, Boston Common
+  origin: {lat: 42.3530, lon: -71.1325}
+  destination: {lat: 42.3564, lon: -71.0624}
+  weekday: tuesday
+  depart_local: "08:15"
+  description: Green Line B branch versus Commonwealth Avenue bike lanes.

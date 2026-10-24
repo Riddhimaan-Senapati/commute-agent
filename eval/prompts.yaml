@@ -1,0 +1,51 @@
+# Agent prompts for `eval/run.py`. Shape: a list of rows, each
+#   id: str          unique prompt id
+#   kind: str        trip | ambiguous | outside | choice
+#   turns: [str]     user messages, sent in order to one conversation
+#
+# Place names were checked against the gazetteer (commute_agent.gazetteer.geocode):
+# every trip and choice place resolves with status ok, and "Brighton" and "Roxbury"
+# return ambiguous. "Harvard" resolves ok to the Harvard MBTA station, so it is not used
+# as an ambiguous example. "Kendall" alone is ambiguous, so the outside prompt names
+# Kendall/MIT to keep it a pure outside-Boston case.
+- id: trip-fields-corner
+  kind: trip
+  turns:
+    - How should I get from Fields Corner to Downtown Crossing?
+- id: trip-hyde-square
+  kind: trip
+  turns:
+    - Compare ways to get from Hyde Square to Longwood.
+- id: trip-charlestown
+  kind: trip
+  turns:
+    - What are my options from Monument Square to Copley Square?
+- id: trip-maverick
+  kind: trip
+  turns:
+    - I need to go from Maverick Square to Courthouse. What do you suggest?
+- id: trip-boston-common
+  kind: trip
+  turns:
+    - How do I get from Copley Square to Boston Common?
+- id: trip-downtown-return
+  kind: trip
+  turns:
+    - Which route is safest from Downtown Crossing to Fields Corner?
+- id: ambiguous-brighton
+  kind: ambiguous
+  turns:
+    - How do I get from Brighton to Copley Square?
+- id: ambiguous-roxbury
+  kind: ambiguous
+  turns:
+    - Plan a trip from Roxbury to Back Bay.
+- id: outside-cambridgeside
+  kind: outside
+  turns:
+    - How do I get from Cambridgeside to Kendall/MIT?
+- id: choice-maverick
+  kind: choice
+  turns:
+    - What are my options from Maverick Square to Courthouse?
+    - I'll take the fastest one.
