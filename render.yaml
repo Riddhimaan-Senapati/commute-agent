@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: commute-agent
+    runtime: docker
+    plan: 2c-4g # measured peak 3.2 GB; 1c-2g runs out of memory loading the street graphs
+    region: virginia
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    autoDeployTrigger: "off" # GitHub Actions deploys after tests pass
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false

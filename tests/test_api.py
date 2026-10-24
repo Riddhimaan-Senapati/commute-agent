@@ -123,3 +123,7 @@ def test_geocode_resolves_a_station_and_reports_unknown_places(client: TestClien
     assert found["status"] == "ok"
     assert found["candidates"][0]["name"] == "Park Street"
     assert client.get("/api/geocode", params={"q": "Zzyzx"}).json()["status"] == "not_found"
+
+
+def test_healthz_is_ok(client: TestClient) -> None:
+    assert client.get("/healthz").json() == {"ok": True}

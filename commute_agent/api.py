@@ -35,6 +35,8 @@ from commute_agent.paths import PROCESSED, WEB
 IDENTITY_NOTICE = "Independent prototype. Not a City of Boston or MBTA service."
 NO_AUTH_NOTICE = "No authentication. Local demo use only."
 HOST = "127.0.0.1"
+# The MCP subprocess loads ~330 MB of street graphs before it answers; slow hosts need minutes.
+MCP_CONNECT_TIMEOUT_S = 300
 
 logger = logging.getLogger("commute_agent.api")
 
@@ -89,11 +91,21 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
             else:
                 args = ["-m", "commute_agent.mcp_server", *(["--live"] if live else [])]
                 params = StdioServerParameters(command=sys.executable, args=args)
-                tools = stack.enter_context(MCPClient(params, structured_output=True))
+                tools = stack.enter_context(
+                    MCPClient(
+                        params,
+                        structured_output=True,
+                        adapter_kwargs={"connect_timeout": MCP_CONNECT_TIMEOUT_S},
+                    )
+                )
                 app.state.tools = {tool.name: tool for tool in tools}
             yield
 
     app = FastAPI(title="Pareto Commute", lifespan=lifespan)
+
+    @app.get("/healthz")
+    def healthz() -> dict:
+        return {"ok": True}
 
     @app.get("/api/status")
     def status() -> dict:
@@ -186,6 +198,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Model id on the configured endpoint, for example deepseek/deepseek-v4.1-flash-1017.",
     )
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument(
+        "--host",
+        default=HOST,
+        help="Bind address. Default 127.0.0.1; use 0.0.0.0 only behind a hosted proxy.",
+    )
     args = parser.parse_args(argv)
     load_env()
     if args.model:
@@ -197,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     logging.basicConfig(level=logging.INFO)
     logger.warning(NO_AUTH_NOTICE)
-    uvicorn.run(create_app(live=args.live), host=HOST, port=args.port)
+    uvicorn.run(create_app(live=args.live), host=args.host, port=args.port)
     return 0
 
 

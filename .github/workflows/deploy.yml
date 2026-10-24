@@ -1,0 +1,45 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-render
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.18"
+      - run: uv sync --frozen
+      - run: uv run ruff check commute_agent tests eval
+      - run: uv run pytest -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+      - run: npm ci
+        working-directory: webapp
+      - run: npx tsc --noEmit
+        working-directory: webapp
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Render CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh \
+            --output /tmp/install-render-cli.sh
+          sudo sh /tmp/install-render-cli.sh
+      - name: Deploy this commit and wait for it to go live
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: render deploys create "${{ secrets.RENDER_SERVICE_ID }}" --commit "${{ github.sha }}" --wait --confirm -o json

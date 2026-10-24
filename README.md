@@ -119,6 +119,14 @@ The agent talks to any OpenAI-compatible endpoint. To use another one, set `COMM
 
 The server has no authentication. It binds to 127.0.0.1 only. Use it for local demos only.
 
+## Deploy (Render)
+
+`Dockerfile` builds one container: FastAPI and the MCP server on the container's loopback, and the Next.js page on `$PORT`. Only Next.js is public. The processed graphs, basemap, and OTP cache (about 35 MB compressed) come from the `data-v1` GitHub release, because they are not in git. `render.yaml` defines the service on the `2c-4g` plan: the app peaks at about 3.2 GB of memory, so smaller plans run out of memory. The first start takes about 80 s while the street graphs load.
+
+`.github/workflows/deploy.yml` runs the tests on every push to `main`, then deploys that commit with the Render CLI and waits for it to go live. It needs two repository secrets: `RENDER_API_KEY` and `RENDER_SERVICE_ID`. Set `OPENROUTER_API_KEY` on the Render service for the chat.
+
+The hosted demo has no login. Anyone with the link can use the chat, which spends the OpenRouter key; keep a credit limit on it.
+
 ## Offline demo script
 
 Turn Wi-Fi off before you start.
