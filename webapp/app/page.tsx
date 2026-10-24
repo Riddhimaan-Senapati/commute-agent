@@ -1,15 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ChatPanel from "@/components/ChatPanel";
-import RouteList from "@/components/RouteList";
-import TradeoffChart from "@/components/TradeoffChart";
+import PlaceInput from "@/components/PlaceInput";
+import RouteCard from "@/components/RouteCard";
 import {
   type AlertSources,
   AlertSourcesSchema,
   AlertsViewSchema,
   ApiError,
+  type Place,
   type Plan,
   PlanSchema,
   PreferenceSchema,
@@ -19,7 +20,7 @@ import {
   TripsSchema,
   api,
 } from "@/lib/api";
-import { type ParetoChange, departureText, paretoChange } from "@/lib/format";
+import { OBJECTIVES, type Objective, departureText, enteredRoutes, visibleRoutes } from "@/lib/format";
 
 const RouteMap = dynamic(() => import("@/components/RouteMap"), {
   ssr: false,
@@ -27,53 +28,46 @@ const RouteMap = dynamic(() => import("@/components/RouteMap"), {
 });
 
 const NO_ALERTS = "none";
+const PANEL_WIDTH = 400;
+
+function placeOf(trip: Trip, end: "origin" | "destination"): Place {
+  return end === "origin"
+    ? { name: trip.origin_name, point: trip.origin, source: "showcase" }
+    : { name: trip.destination_name, point: trip.destination, source: "showcase" };
+}
 
 export default function Home() {
   const [status, setStatus] = useState<Status | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [sources, setSources] = useState<AlertSources | null>(null);
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [from, setFrom] = useState<Place | null>(null);
+  const [to, setTo] = useState<Place | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [change, setChange] = useState<ParetoChange | null>(null);
-  const [alertHeaders, setAlertHeaders] = useState<Map<string, string>>(new Map());
-  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [objective, setObjective] = useState<Objective>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [chosenId, setChosenId] = useState<string | null>(null);
+  const [alertHeaders, setAlertHeaders] = useState<Map<string, string>>(new Map());
+  const [news, setNews] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
 
-  const onHighlight = useCallback((id: string | null) => setHighlightedId(id), []);
+  const synthetic = sources?.sources.find((s) => s.startsWith("Synthetic")) ?? null;
+  const suspended = synthetic !== null && sources?.active === synthetic;
+  const shown = useMemo(() => (plan ? visibleRoutes(plan, objective) : []), [plan, objective]);
+  const trades = useMemo(() => new Map(plan?.tradeoffs_vs_fastest.map((t) => [t.route_id, t])), [plan]);
 
-  useEffect(() => {
-    Promise.all([
-      api("/api/status", StatusSchema),
-      api("/api/showcase-trips", TripsSchema),
-      api("/api/alert-sources", AlertSourcesSchema),
-    ])
-      .then(([s, t, a]) => {
-        setStatus(s);
-        setTrips(t.trips);
-        setSources(a);
-      })
-      .catch(() => setError("Cannot reach the API. Start it with: uv run python -m commute_agent.api"));
-  }, []);
-
-  async function refreshAlerts() {
-    const view = await api("/api/alerts", AlertsViewSchema);
-    setAlertHeaders(new Map(view.alerts.map((a) => [a.id, a.header])));
-  }
-
-  async function planTrip(next: Trip, previous: Plan | null): Promise<Plan | null> {
+  const planRoute = useCallback(async (origin: Place, destination: Place) => {
     setBusy(true);
     setError(null);
     try {
       const result = await api("/api/plan", PlanSchema, {
         method: "POST",
-        body: { origin: next.origin, destination: next.destination, depart_at: null },
+        body: { origin: origin.point, destination: destination.point, depart_at: null },
       });
-      await refreshAlerts();
-      setChange(previous ? paretoChange(previous, result) : null);
+      const view = await api("/api/alerts", AlertsViewSchema);
+      setAlertHeaders(new Map(view.alerts.map((a) => [a.id, a.header])));
       setPlan(result);
-      setTrip(next);
       setChosenId(null);
       return result;
     } catch (e) {
@@ -82,175 +76,208 @@ export default function Home() {
     } finally {
       setBusy(false);
     }
+  }, []);
+
+  useEffect(() => {
+    Promise.all([
+      api("/api/status", StatusSchema),
+      api("/api/showcase-trips", TripsSchema),
+      api("/api/alert-sources", AlertSourcesSchema),
+    ])
+      .then(async ([s, t, a]) => {
+        setStatus(s);
+        setTrips(t.trips);
+        setSources(a);
+        const first = t.trips[0];
+        if (first) {
+          setFrom(placeOf(first, "origin"));
+          setTo(placeOf(first, "destination"));
+          await planRoute(placeOf(first, "origin"), placeOf(first, "destination"));
+        }
+      })
+      .catch(() => setError("Cannot reach the API. Start it with: uv run python -m commute_agent.api"));
+  }, [planRoute]);
+
+  // Keep a visible route selected whenever the plan or objective changes.
+  useEffect(() => {
+    if (!shown.some((r) => r.id === selectedId)) setSelectedId(shown[0]?.id ?? null);
+  }, [shown, selectedId]);
+
+  async function go(origin: Place | null, destination: Place | null) {
+    if (!origin || !destination) return;
+    setNews(null);
+    await planRoute(origin, destination);
   }
 
-  async function setAlertSource(name: string, current = { trip, plan }) {
-    const updated = await api("/api/alert-source", AlertSourcesSchema, {
-      method: "POST",
-      body: { name },
-    });
+  function pickTrip(trip: Trip) {
+    const a = placeOf(trip, "origin");
+    const b = placeOf(trip, "destination");
+    setFrom(a);
+    setTo(b);
+    void go(a, b);
+  }
+
+  async function toggleSuspension() {
+    if (!synthetic) return;
+    const name = suspended ? NO_ALERTS : synthetic;
+    setSources((current) => (current ? { ...current, active: name } : current));
+    const updated = await api("/api/alert-source", AlertSourcesSchema, { method: "POST", body: { name } });
     setSources(updated);
-    if (current.trip) await planTrip(current.trip, current.plan);
+    if (!from || !to) return;
+    const before = plan;
+    const after = await planRoute(from, to);
+    if (!after || !before) return;
+    if (name === NO_ALERTS) {
+      setNews("Red Line service restored.");
+      return;
+    }
+    const entered = enteredRoutes(before, after);
+    setNews(
+      entered.length
+        ? `Red Line suspended (synthetic). New options: ${entered.join("; ")}.`
+        : "Red Line suspended (synthetic). Affected routes are flagged.",
+    );
+    setObjective("all");
   }
 
   async function choose(routeId: string) {
     if (!plan) return;
-    await api("/api/choice", PreferenceSchema, {
-      method: "POST",
-      body: { query_id: plan.query_id, route_id: routeId },
-    });
+    await api("/api/choice", PreferenceSchema, { method: "POST", body: { query_id: plan.query_id, route_id: routeId } });
     setChosenId(routeId);
-  }
-
-  const synthetic = sources?.sources.find((s) => s.startsWith("Synthetic")) ?? null;
-  const live = status?.run_mode === "live";
-
-  async function demoStep(step: 1 | 2) {
-    const first = trips[0];
-    if (!first) return;
-    if (step === 1) {
-      if (sources?.active !== NO_ALERTS) {
-        setSources(await api("/api/alert-source", AlertSourcesSchema, { method: "POST", body: { name: NO_ALERTS } }));
-      }
-      await planTrip(first, null);
-      return;
-    }
-    if (!synthetic) return;
-    const base = trip?.name === first.name && plan ? plan : await planTrip(first, null);
-    if (base) await setAlertSource(synthetic, { trip: first, plan: base });
   }
 
   return (
     <div className="app">
-      <header className="top">
-        <div className="brand">
+      <RouteMap
+        routes={shown}
+        selectedId={selectedId}
+        origin={plan?.origin ?? from?.point ?? null}
+        destination={plan?.destination ?? to?.point ?? null}
+        onSelect={setSelectedId}
+        panelWidth={PANEL_WIDTH}
+      />
+
+      <aside className="panel" style={{ width: PANEL_WIDTH }} aria-label="Trip planner">
+        <header className="brand">
           <h1>Pareto Commute</h1>
-          <p className="tagline">Every Boston route no other route beats on time, CO₂, crash risk, and disruption.</p>
+          <p className="notice" role="note">
+            {status?.notice ?? "Independent prototype. Not a City of Boston or MBTA service."}
+          </p>
+        </header>
+
+        <div className="places">
+          <PlaceInput label="From" marker="A" value={from} onChange={(p) => { setFrom(p); void go(p, to); }} />
+          <PlaceInput label="To" marker="B" value={to} onChange={(p) => { setTo(p); void go(from, p); }} />
+          <button
+            type="button"
+            className="swap"
+            aria-label="Swap start and destination"
+            onClick={() => { setFrom(to); setTo(from); void go(to, from); }}
+          >
+            ⇅
+          </button>
         </div>
-        <p className="notice" role="note">
-          {status?.notice ?? "Independent prototype. Not a City of Boston or MBTA service."}
-        </p>
-      </header>
 
-      <nav className="controls" aria-label="Trip and alert controls">
-        <ol className="demo" aria-label="Three-step demo">
-          <li>
-            <button type="button" onClick={() => void demoStep(1)} disabled={busy || !trips.length}>
-              <span className="step">1</span> Plan Fields Corner → Downtown Crossing
+        <div className="demo-trips" aria-label="Demo trips">
+          {trips.map((t) => (
+            <button key={t.name} type="button" onClick={() => pickTrip(t)} disabled={busy} title={t.description}>
+              {t.origin_name.split(",")[0]} → {t.destination_name.split(",")[0]}
             </button>
-          </li>
-          <li>
-            <button type="button" onClick={() => void demoStep(2)} disabled={busy || !synthetic}>
-              <span className="step">2</span> Suspend the Red Line (synthetic)
-            </button>
-          </li>
-          <li>
-            <span className="step-hint">
-              <span className="step">3</span> Ask the agent, right panel
-            </span>
-          </li>
-        </ol>
-        <div className="selects">
-          <label>
-            Showcase trip
-            <select
-              value={trip?.name ?? ""}
-              onChange={(e) => {
-                const next = trips.find((t) => t.name === e.target.value);
-                if (next) void planTrip(next, null);
-              }}
-              disabled={busy}
-            >
-              <option value="" disabled>
-                Choose a trip
-              </option>
-              {trips.map((t) => (
-                <option key={t.name} value={t.name}>
-                  {t.origin_name} → {t.destination_name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Alert source
-            <select
-              value={sources?.active ?? NO_ALERTS}
-              onChange={(e) => void setAlertSource(e.target.value)}
-              disabled={busy || !sources}
-            >
-              {sources?.sources.map((s) => (
-                <option key={s} value={s} disabled={s === "live" && !live}>
-                  {s === "live" && !live ? "live (needs --live)" : s}
-                </option>
-              ))}
-            </select>
-          </label>
+          ))}
         </div>
-      </nav>
 
-      {error && (
-        <p className="error-banner" role="alert">
-          {error}
-        </p>
-      )}
-      {change && (change.entered.length > 0 || change.left.length > 0) && (
-        <p className="change-banner" role="status">
-          Pareto set changed.
-          {change.entered.length > 0 && <> Entered: <strong>{change.entered.join(", ")}</strong>.</>}
-          {change.left.length > 0 && <> Left: <strong>{change.left.join(", ")}</strong>.</>}
-        </p>
-      )}
+        <div className="objectives" role="radiogroup" aria-label="What matters most">
+          {OBJECTIVES.map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              role="radio"
+              aria-checked={objective === o.id}
+              title={o.hint}
+              onClick={() => setObjective(o.id)}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
 
-      <main className="grid">
-        <section className="panel list-panel" aria-label="Routes">
-          {plan ? (
-            <>
-              <p className="plan-meta">
-                {plan.routes.length} routes from {plan.candidate_count} candidates · departs{" "}
-                {departureText(plan.depart_at)} · alerts: {plan.alert_source}
-              </p>
-              <RouteList
-                plan={plan}
-                alertHeaders={alertHeaders}
-                highlightedId={highlightedId}
-                chosenId={chosenId}
-                onHighlight={onHighlight}
-                onChoose={(id) => void choose(id)}
-              />
-              <details className="notes">
-                <summary>Caveats</summary>
-                <ul>
-                  {plan.notes.map((n) => (
-                    <li key={n}>{n}</li>
-                  ))}
-                  {Object.entries(plan.omitted).map(([k, v]) => (
-                    <li key={k}>
-                      {k} omitted: {v}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            </>
-          ) : (
-            <p className="empty">{busy ? "Planning…" : "Start with step 1, or pick a showcase trip."}</p>
-          )}
-        </section>
+        {synthetic && (
+          <label className="switch">
+            <input type="checkbox" checked={suspended} onChange={() => void toggleSuspension()} disabled={busy} />
+            <span>Simulate Red Line suspension</span>
+            <small>synthetic demo alert</small>
+          </label>
+        )}
 
-        <section className="panel map-panel" aria-label="Map">
-          <RouteMap plan={plan} live={live} highlightedId={highlightedId} onHighlight={onHighlight} />
-        </section>
+        {news && (
+          <p className="news" role="status">
+            {news}
+          </p>
+        )}
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
 
-        <aside className="panel side">
-          {plan && <TradeoffChart plan={plan} highlightedId={highlightedId} onHighlight={onHighlight} />}
-          {status && (
-            <ChatPanel
-              available={status.agent_available}
-              model={status.agent_model}
-              missingKeys={status.missing_model_keys}
+        {plan && (
+          <p className="meta">
+            {busy ? "Updating…" : `Leaving ${departureText(plan.depart_at)}`}
+            {plan.notes[0]?.startsWith("Planned as showcase") && " (fixed demo departure)"}
+            {plan.omitted.transit && ` · transit: ${plan.omitted.transit}`}
+          </p>
+        )}
+        {!plan && <p className="meta">{busy ? "Finding routes…" : "Enter a start and a destination."}</p>}
+
+        {plan && shown.length === 0 && (
+          <p className="meta">No route holds this label for this trip. Pick “All trade-offs”.</p>
+        )}
+        <ol className="cards" aria-label="Routes">
+          {shown.map((route) => (
+            <RouteCard
+              key={route.id}
+              route={route}
+              tradeoff={trades.get(route.id)}
+              selected={route.id === selectedId}
+              chosen={route.id === chosenId}
+              alertHeaders={alertHeaders}
+              onSelect={() => setSelectedId(route.id)}
+              onChoose={() => void choose(route.id)}
             />
-          )}
-        </aside>
-      </main>
+          ))}
+        </ol>
+        {plan && objective !== "all" && plan.routes.length > shown.length && (
+          <button type="button" className="link" onClick={() => setObjective("all")}>
+            Show all {plan.routes.length} trade-off routes
+          </button>
+        )}
+
+        {plan && (
+          <details className="caveats">
+            <summary>How to read these numbers</summary>
+            <ul>
+              {plan.notes.map((n) => (
+                <li key={n}>{n}</li>
+              ))}
+            </ul>
+          </details>
+        )}
+      </aside>
+
+      <button
+        type="button"
+        className="agent-fab"
+        aria-expanded={chatOpen}
+        aria-controls="agent-drawer"
+        onClick={() => setChatOpen((v) => !v)}
+      >
+        {chatOpen ? "Close agent" : "Ask the agent"}
+      </button>
+      <section id="agent-drawer" className={`drawer${chatOpen ? " open" : ""}`} inert={!chatOpen}>
+        {status && (
+          <ChatPanel available={status.agent_available} model={status.agent_model} missingKeys={status.missing_model_keys} />
+        )}
+      </section>
     </div>
   );
 }

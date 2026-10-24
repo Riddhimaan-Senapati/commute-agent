@@ -1151,13 +1151,16 @@ WS9 develops against `tests/fixtures/plan_result.json` served by `python -m http
 
 ### WS9b. Next.js presentation app (`webapp/`)
 
-Added 2026-10-24 for the three-minute demo. `web/` stays as the no-build fallback served by FastAPI.
+Added 2026-10-24 for the three-minute demo and reworked into one map-first page. `web/` stays as the no-build fallback served by FastAPI, with the linked scatter chart and strict offline tiles.
 
-- Next.js 16.4.3, React 19.3.0, TypeScript 5.9.3, `leaflet==1.9.4`, `zod==4.6.7`, all pinned exactly in `webapp/package.json`. No Tailwind, no `next/font/google`, so `npm run build` and the page work offline after `npm install`.
-- `next.config.ts` rewrites `/api/:path*` and `/basemap.geojson` to `COMMUTE_API_URL` (default `http://127.0.0.1:8000`). The browser talks only to Next.js, so there is no CORS and no new auth surface. `dev` and `start` bind `-H 127.0.0.1 -p 3000`.
-- `lib/api.ts` is the boundary: zod schemas mirror the `models.py` fields the page uses, and `api(path, schema, init)` parses every response or throws `ApiError` with the server's `detail`.
-- `app/page.tsx` (client) holds state: status, trips, alert sources, plan, Pareto change (by route summary, because ids are reassigned per plan), alert headers from `GET /api/alerts`, highlighted id, chosen id.
-- `components/RouteMap.tsx` (Leaflet, loaded with `next/dynamic` and `ssr: false`), `TradeoffChart.tsx` (inline SVG scatter, no chart library), `RouteList.tsx`, `ChatPanel.tsx`. The WS9 colour, line-style, single-highlight, and textContent-only rules apply. Agent text is rendered as React nodes (bold, bullets, `<mark>` on unsupported numbers and the removal marker); model output is never HTML.
+- Next.js 16.4.3, React 19.3.0, TypeScript 5.9.3, `leaflet==1.9.4`, `zod==4.6.7`, `@playwright/test==1.64.1`, all pinned exactly. No Tailwind and no `next/font/google`.
+- `next.config.ts` rewrites `/api/:path*` and `/basemap.geojson` to `COMMUTE_API_URL` (default `http://127.0.0.1:8000`) with `experimental.proxyTimeout` 120 s, because an agent turn with its rewrite can exceed the 30 s default. `dev` and `start` bind `-H 127.0.0.1 -p 3000`.
+- `lib/api.ts` is the boundary: zod schemas for the `models.py` fields the page uses. `api(path, schema, init)` parses every response or throws `ApiError` with the server's `detail`.
+- `GET /api/geocode?q=` (WS8) calls `geocode_place` and returns `GeocodeResult`.
+- `lib/format.ts` owns presentation rules: `visibleRoutes(plan, objective)` returns the route holding the chosen label, or every route by time for "all"; legs are coloured by official MBTA line colour or mode.
+- `components/RouteMap.tsx` (Leaflet via `next/dynamic`, `ssr: false`): OSM tiles; on the first `tileerror`, or when `navigator.onLine` is false, it adds `basemap.geojson` and the attribution "offline basemap". The selected route is drawn with a white casing; other visible routes are grey and clickable.
+- `components/PlaceInput.tsx`, `RouteCard.tsx` (directions, metrics, alert header, exposure note, sources, choose), `ChatPanel.tsx` (React nodes only, `<mark>` on unsupported numbers and the removal marker).
+- `e2e/demo.spec.ts` starts the API and the build and drives the demo; a second test blocks tile requests and checks the basemap fallback.
 
 ### WS10. Eval (`eval/`)
 

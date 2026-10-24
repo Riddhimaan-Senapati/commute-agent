@@ -116,3 +116,10 @@ def test_alert_source_lists_none_and_live(client: TestClient) -> None:
 def test_real_stdio_subprocess_serves_status() -> None:
     with TestClient(create_app(live=False)) as real_client:
         assert real_client.get("/api/status").json()["run_mode"] == "offline"
+
+
+def test_geocode_resolves_a_station_and_reports_unknown_places(client: TestClient) -> None:
+    found = client.get("/api/geocode", params={"q": "Park Street"}).json()
+    assert found["status"] == "ok"
+    assert found["candidates"][0]["name"] == "Park Street"
+    assert client.get("/api/geocode", params={"q": "Zzyzx"}).json()["status"] == "not_found"

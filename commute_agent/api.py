@@ -136,6 +136,10 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
     def alerts() -> dict:
         return call_tool(app, "get_active_alerts")
 
+    @app.get("/api/geocode")
+    def geocode(q: str) -> dict:
+        return call_tool(app, "geocode_place", query=q)
+
     @app.post("/api/choice")
     def choice(body: ChoiceBody) -> dict:
         return call_tool(app, "record_choice", query_id=body.query_id, route_id=body.route_id)
