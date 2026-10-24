@@ -53,6 +53,8 @@ const TradeoffSchema = z.object({
 
 export const PlanSchema = z.object({
   query_id: z.string(),
+  origin: PointSchema,
+  destination: PointSchema,
   depart_at: z.string(),
   run_mode: z.enum(["offline", "live"]),
   alert_source: z.string(),
@@ -107,7 +109,15 @@ export const ReplySchema = z.object({
   first_draft_unsupported: z.array(z.string()),
 });
 
+const PlaceSchema = z.object({ name: z.string(), point: PointSchema, source: z.string() });
+export const GeocodeSchema = z.object({
+  status: z.enum(["ok", "ambiguous", "not_found"]),
+  candidates: z.array(PlaceSchema),
+});
+
 export type Plan = z.infer<typeof PlanSchema>;
+export type Place = z.infer<typeof PlaceSchema>;
+export type Point = z.infer<typeof PointSchema>;
 export type Route = z.infer<typeof RouteSchema>;
 export type Leg = z.infer<typeof LegSchema>;
 export type LegModeName = z.infer<typeof LegMode>;

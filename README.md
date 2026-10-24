@@ -93,16 +93,19 @@ Open <http://127.0.0.1:8000/>.
 
 ### Next.js demo page
 
-`webapp/` is a second, more polished page for live demos. It uses the same API. Requires Node.js 20 or later.
+`webapp/` is a single map-first page for live demos. It uses the same API. Requires Node.js 20 or later.
 
 ```sh
 cd webapp
 npm install        # once, needs network
 npm run build
 npm run start      # http://127.0.0.1:3000/, keep the API running on port 8000
+npm run test:demo  # optional: Playwright drives the demo end to end (starts both servers)
 ```
 
-The header has three demo buttons: plan Fields Corner to Downtown Crossing, suspend the Red Line (synthetic), and ask the agent. Set `COMMUTE_API_URL` if the API runs elsewhere. After `npm install`, the page builds and runs offline. It loads no remote fonts and, in offline mode, no map tiles.
+It plans Fields Corner to Downtown Crossing on load and draws the selected route on a street map, with the other options muted. Use the From and To boxes (MBTA stations, Bluebikes docks, showcase places, or `lat,lon`) or the demo trip chips. Pick what matters with Fastest, Lowest CO₂, Safest, Least disrupted, or All trade-offs; a single objective shows only that route. The switch "Simulate Red Line suspension" applies the synthetic alert. "Ask the agent" opens the chat.
+
+The page loads OpenStreetMap tiles when it can reach them and falls back to the local basemap offline. Offline, transit is available only for cached trips; other trips show walk, bike, Bluebikes, and drive routes. Set `COMMUTE_API_URL` if the API runs elsewhere.
 
 | Flag | Effect |
 |---|---|
