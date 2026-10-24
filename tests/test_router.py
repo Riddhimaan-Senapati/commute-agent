@@ -172,3 +172,11 @@ def test_bluebikes_composition_three_legs(fixture_graph) -> None:
     assert opt.id == "bluebikes-1"
     assert [leg.mode for leg in opt.legs] == ["walk", "bluebikes", "walk"]
     assert opt.summary == "Bluebikes from Dock A to Dock B"
+
+
+def test_drive_route_cites_the_crash_source_label(fixture_graph):
+    routes, _ = street_routes(
+        _graphs(fixture_graph), _factors(), _point(fixture_graph, 0), _point(fixture_graph, 8)
+    )
+    drive = next(r for r in routes if r.kind == "drive")
+    assert drive.sources["crash_risk"] == CRASH_SOURCE

@@ -7,6 +7,8 @@ const API = process.env.COMMUTE_API_URL ?? "http://127.0.0.1:8000";
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // An agent turn with its grounding rewrite can exceed the 30 s proxy default.
+  experimental: { proxyTimeout: 120_000 },
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${API}/api/:path*` },

@@ -139,8 +139,17 @@ def _observations(agent: ToolCallingAgent, since: int) -> list[str]:
 def _redact(text: str, numbers: list[str]) -> str:
     """Replace each unsupported number token, longest first so 12.5 is not split by 12."""
     for token in sorted(numbers, key=len, reverse=True):
-        text = re.sub(rf"(?<![A-Za-z_\d.]){re.escape(token)}(?![\d]|\.\d)", UNVERIFIED, text)
+        pattern = rf"(?<![A-Za-z_\d.,]){_with_separators(token)}(?![\d]|[.,]\d)"
+        text = re.sub(pattern, UNVERIFIED, text)
     return text
+
+
+def _with_separators(token: str) -> str:
+    """Regex for token that also matches it written with thousands separators (2,849)."""
+    whole, dot, frac = token.partition(".")
+    head = len(whole) % 3 or 3
+    groups = [whole[:head]] + [whole[i : i + 3] for i in range(head, len(whole), 3)]
+    return ",?".join(groups) + (re.escape(dot + frac) if dot else "")
 
 
 def run_turn(conv: Conversation, text: str) -> AgentReply:

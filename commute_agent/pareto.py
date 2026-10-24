@@ -72,6 +72,11 @@ def _sort_key(route: RouteOption) -> tuple[int, float, str]:
     return (len(route.legs), route.objectives.time_min, route.id)
 
 
+def _strictly_dominates(a: Objectives, b: Objectives) -> bool:
+    pairs = [(getattr(a, o), getattr(b, o)) for o in OBJECTIVES]
+    return all(x <= y for x, y in pairs) and any(x < y for x, y in pairs)
+
+
 def pareto_front(candidates: list[RouteOption]) -> list[RouteOption]:
     """1. Sort by (len(legs), time_min, id).
     2. Keep candidates that no other candidate dominates.
@@ -87,6 +92,16 @@ def pareto_front(candidates: list[RouteOption]) -> list[RouteOption]:
             for other in candidates
         )
     ]
+    if not non_dominated:
+        # Tolerance dominance can form a cycle that removes every candidate; strict
+        # dominance is a partial order, so it always leaves at least one.
+        non_dominated = [
+            route
+            for route in ordered
+            if not any(
+                _strictly_dominates(other.objectives, route.objectives) for other in candidates
+            )
+        ]
     front: list[RouteOption] = []
     for route in non_dominated:
         if any(near_duplicate(route.objectives, kept.objectives) for kept in front):

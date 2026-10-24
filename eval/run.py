@@ -183,9 +183,11 @@ def check_alert_expectation(
     )
 
 
-def mean_unknown_exposure(fronts: list[list[RouteOption]]) -> tuple[float | None, int]:
-    """Mean unknown_exposure_share over walk and bike front members, and their count."""
-    shares = [r.unknown_exposure_share for f in fronts for r in f if r.kind in EXPOSURE_KINDS]
+def mean_unknown_exposure(
+    fronts: list[list[RouteOption]], kinds: frozenset[RouteKind] = EXPOSURE_KINDS
+) -> tuple[float | None, int]:
+    """Mean unknown_exposure_share over front members of the given kinds, and their count."""
+    shares = [r.unknown_exposure_share for f in fronts for r in f if r.kind in kinds]
     return (statistics.fmean(shares) if shares else None), len(shares)
 
 
@@ -366,8 +368,8 @@ def route_metrics(
         return Metric(name, f"{len(runs) - len(failed)} pass, {len(failed)} fail", len(runs), notes)
 
     metrics = [
-        pareto_metric("Pareto soundness", sound_fail),
-        pareto_metric("Pareto completeness", complete_fail),
+        pareto_metric("Pareto soundness (self-consistency)", sound_fail),
+        pareto_metric("Pareto completeness (self-consistency)", complete_fail),
     ]
 
     safety: dict[str, dict[str, list[float]]] = {}
@@ -447,6 +449,16 @@ def route_metrics(
             "mean unknown_exposure_share over walk and bike front members",
         )
     )
+    for kind in ("walk", "bike"):
+        share, n = mean_unknown_exposure([r.front for r in runs.values()], frozenset({kind}))
+        metrics.append(
+            Metric(
+                f"Unknown exposure share, {kind}",
+                "n/a" if share is None else f"{share:.3f}",
+                n,
+                f"mean unknown_exposure_share over {kind} front members",
+            )
+        )
 
     details = {
         "trips": {

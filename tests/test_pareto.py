@@ -271,3 +271,17 @@ def test_tradeoff_alerts_avoided_in_reference_order() -> None:
     }
     result = tradeoff(route, reference, alerts)
     assert [a.id for a in result.alerts_avoided] == ["a2"]
+
+
+def test_tolerance_cycle_still_leaves_a_non_empty_front() -> None:
+    # Found by fuzzing: under tolerance dominance every one of these is dominated by another.
+    routes = [
+        make_route("r0", "walk", 11.0, 0.9, 0.041, 0.01),
+        make_route("r1", "walk", 10.6, 2.0, 0.018, 0.01),
+        make_route("r2", "walk", 10.3, 1.2, 0.030, 0.02),
+        make_route("r3", "walk", 10.9, 0.4, 0.023, 0.02),
+    ]
+    assert all(
+        any(o is not r and dominates(o.objectives, r.objectives) for o in routes) for r in routes
+    )
+    assert sorted(r.id for r in pareto_front(routes)) == ["r0", "r1", "r2", "r3"]

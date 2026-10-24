@@ -190,3 +190,15 @@ def test_load_env_reads_the_file_without_overriding_the_shell(tmp_path, monkeypa
     assert os.environ["COMMUTE_TEST_FROM_FILE"] == "file"
     assert os.environ["COMMUTE_TEST_SHELL_WINS"] == "shell"
     monkeypatch.delenv("COMMUTE_TEST_FROM_FILE")
+
+
+def test_redaction_catches_numbers_written_with_thousands_separators() -> None:
+    from commute_agent.agent import _redact
+
+    assert _redact("Drive emits 2,849 g, about 2849 g.", ["2849"]) == (
+        f"Drive emits {UNVERIFIED} g, about {UNVERIFIED} g."
+    )
+    assert (
+        _redact("Bike risk 1,315.4 and 12,849.", ["1315.4"])
+        == f"Bike risk {UNVERIFIED} and 12,849."
+    )

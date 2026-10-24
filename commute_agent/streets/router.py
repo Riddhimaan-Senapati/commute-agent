@@ -137,7 +137,9 @@ def street_routes(
                 )
             )
 
-    drive_option, drive_reason = _drive_route(graphs.drive, origin, destination, factors)
+    drive_option, drive_reason = _drive_route(
+        graphs.drive, origin, destination, factors, graphs.crash_source
+    )
     if drive_option is not None:
         options.append(drive_option)
     else:
@@ -414,6 +416,7 @@ def _drive_route(
     origin: Point,
     destination: Point,
     factors: dict[LegMode, EmissionFactor],
+    crash_source: str,
 ) -> tuple[RouteOption | None, str]:
     s, t = _snap_nodes(G, origin, destination)
     node_path = ox.routing.shortest_path(G, s, t, weight="travel_time")
@@ -438,7 +441,7 @@ def _drive_route(
         legs=[leg],
         time_source=SPEED_SOURCE["drive"],
         co2_source=co2_source(factors, ["drive"]),
-        crash_source=DRIVE_TIME_SOURCE,
+        crash_source=crash_source,
     )
     return option, ""
 
