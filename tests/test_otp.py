@@ -102,6 +102,49 @@ def test_fetch_offline_hit(tmp_path: Path) -> None:
     assert raw == payload
 
 
+def test_offline_miss_asks_the_configured_otp_and_caches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    origin = Point(lat=42.3097, lon=-71.1151)
+    dest = Point(lat=42.3503, lon=-71.0810)
+    depart = datetime(2026, 10, 27, 8, 15, tzinfo=otp.TIMEZONE)
+    payload = {"data": {"planConnection": {"edges": []}}}
+    seen: list[str] = []
+
+    def fake_post(url: str, **kwargs):
+        seen.append(url)
+        return httpx.Response(200, json=payload, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(otp.httpx, "post", fake_post)
+    monkeypatch.setenv("COMMUTE_OTP_URL", "http://otp.internal:8080/otp/gtfs/v1")
+
+    first = otp.fetch_itineraries(origin, dest, depart, live=False, cache_dir=tmp_path)
+    second = otp.fetch_itineraries(origin, dest, depart, live=False, cache_dir=tmp_path)
+
+    assert first == second == (payload, None)
+    assert seen == ["http://otp.internal:8080/otp/gtfs/v1"]  # the second call hit the cache
+
+
+def test_offline_miss_with_otp_http_error_is_unreachable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fake_post(url: str, **kwargs):
+        return httpx.Response(503, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(otp.httpx, "post", fake_post)
+    monkeypatch.setenv("COMMUTE_OTP_URL", "http://otp.internal:8080/otp/gtfs/v1")
+    depart = datetime(2026, 10, 27, 8, 15, tzinfo=otp.TIMEZONE)
+    raw, reason = otp.fetch_itineraries(
+        Point(lat=42.3097, lon=-71.1151),
+        Point(lat=42.3503, lon=-71.0810),
+        depart,
+        live=False,
+        cache_dir=tmp_path,
+    )
+    assert (raw, reason) == (None, "OTP unreachable")
+    assert not list(tmp_path.iterdir())
+
+
 def test_fetch_live_unreachable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     origin = Point(lat=42.3003, lon=-71.0614)
     dest = Point(lat=42.3555, lon=-71.0603)

@@ -16,6 +16,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from mcp import StdioServerParameters
+from mcp.client.stdio import get_default_environment
 from pydantic import BaseModel
 from smolagents import MCPClient
 
@@ -37,6 +38,8 @@ NO_AUTH_NOTICE = "No authentication. Local demo use only."
 HOST = "127.0.0.1"
 # The MCP subprocess loads ~330 MB of street graphs before it answers; slow hosts need minutes.
 MCP_CONNECT_TIMEOUT_S = 300
+# The MCP stdio client starts the server with a minimal environment; these pass through.
+MCP_ENV_PASSTHROUGH = ("COMMUTE_OTP_URL",)
 # Each browser tab sends an X-Session-Id and gets its own alert source. Requests without
 # one share the "" session. The oldest sessions are forgotten past MAX_SESSIONS.
 DEFAULT_ALERT_SOURCE = "none"
@@ -97,7 +100,10 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
                 app.state.tools = tool_source()
             else:
                 args = ["-m", "commute_agent.mcp_server", *(["--live"] if live else [])]
-                params = StdioServerParameters(command=sys.executable, args=args)
+                env = get_default_environment() | {
+                    name: os.environ[name] for name in MCP_ENV_PASSTHROUGH if name in os.environ
+                }
+                params = StdioServerParameters(command=sys.executable, args=args, env=env)
                 tools = stack.enter_context(
                     MCPClient(
                         params,

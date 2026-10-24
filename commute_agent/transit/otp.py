@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -31,6 +32,9 @@ from commute_agent.routes import assemble_route
 from commute_agent.streets import StreetGraphs, score_walk_coords
 
 OTP_URL = "http://localhost:8080/otp/gtfs/v1"
+# When set, offline mode asks this OTP server for trips the cache lacks (and caches them),
+# and live mode uses it instead of OTP_URL.
+OTP_URL_ENV = "COMMUTE_OTP_URL"
 FEED_PREFIX = "mbta:"
 TIMEZONE = ZoneInfo("America/New_York")
 OTP_TIMEOUT_S = 20.0
@@ -123,19 +127,22 @@ def fetch_itineraries(
 ) -> tuple[dict | None, str | None]:
     """Return ``(raw_response, None)`` or ``(None, omit_reason)``.
 
-    Offline reads ``cache_dir/<key>.json`` or returns ``NOT_CACHED``. Live posts
+    Offline reads ``cache_dir/<key>.json``. On a miss it returns ``NOT_CACHED``, unless
+    ``COMMUTE_OTP_URL`` is set, in which case it queries OTP as live mode does. Live posts
     ``PLAN_QUERY`` to OTP (20 s timeout), writes the cache, and returns
-    ``OTP_UNREACHABLE`` on ``httpx.ConnectError`` or ``httpx.TimeoutException``.
+    ``OTP_UNREACHABLE`` on any ``httpx.HTTPError``.
     ``exclude_routes`` holds MBTA route ids (no feed prefix) that OTP must not use; the
     excluding request has its own cache entry.
     """
     key = _cache_key_for_datetime(origin, destination, depart_at, exclude_routes)
     cache_path = cache_dir / f"{key}.json"
 
+    url = os.environ.get(OTP_URL_ENV)
     if not live:
         if cache_path.exists():
             return json.loads(cache_path.read_text()), None
-        return None, NOT_CACHED
+        if not url:
+            return None, NOT_CACHED
 
     local = depart_at.astimezone(TIMEZONE)
     variables = {
@@ -149,13 +156,13 @@ def fetch_itineraries(
         query = PLAN_QUERY_EXCLUDING
     try:
         response = httpx.post(
-            OTP_URL,
+            url or OTP_URL,
             json={"query": query, "variables": variables},
             timeout=OTP_TIMEOUT_S,
         )
         response.raise_for_status()
         raw = response.json()
-    except (httpx.ConnectError, httpx.TimeoutException):
+    except httpx.HTTPError:
         return None, OTP_UNREACHABLE
 
     cache_dir.mkdir(parents=True, exist_ok=True)

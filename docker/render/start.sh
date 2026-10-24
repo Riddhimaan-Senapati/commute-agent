@@ -2,6 +2,10 @@
 # Start the API on the container's loopback, wait for it, then serve Next.js on $PORT.
 set -eu
 cd /app
+# Render gives the OTP private service as host:port; the planner wants the GraphQL URL.
+if [ -n "${COMMUTE_OTP_HOSTPORT:-}" ] && [ -z "${COMMUTE_OTP_URL:-}" ]; then
+  export COMMUTE_OTP_URL="http://${COMMUTE_OTP_HOSTPORT}/otp/gtfs/v1"
+fi
 /app/.venv/bin/python -m commute_agent.api --host 127.0.0.1 --port 8000 &
 API_PID=$!
 
