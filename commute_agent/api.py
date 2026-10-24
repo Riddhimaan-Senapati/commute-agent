@@ -214,7 +214,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     logging.basicConfig(level=logging.INFO)
     logger.warning(NO_AUTH_NOTICE)
-    uvicorn.run(create_app(live=args.live), host=args.host, port=args.port)
+    # One process: the MCP subprocess holds all session state. Hosts that set
+    # WEB_CONCURRENCY must not fork extra workers.
+    uvicorn.run(create_app(live=args.live), host=args.host, port=args.port, workers=1)
     return 0
 
 
