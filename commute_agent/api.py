@@ -8,11 +8,11 @@ import uuid
 from collections.abc import AsyncIterator, Callable
 from contextlib import ExitStack, asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import anyio
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from mcp import StdioServerParameters
@@ -37,6 +37,12 @@ NO_AUTH_NOTICE = "No authentication. Local demo use only."
 HOST = "127.0.0.1"
 # The MCP subprocess loads ~330 MB of street graphs before it answers; slow hosts need minutes.
 MCP_CONNECT_TIMEOUT_S = 300
+# Each browser tab sends an X-Session-Id and gets its own alert source. Requests without
+# one share the "" session. The oldest sessions are forgotten past MAX_SESSIONS.
+DEFAULT_ALERT_SOURCE = "none"
+MAX_SESSIONS = 10_000
+
+SessionId = Annotated[str, Header(alias="X-Session-Id", max_length=64)]
 
 logger = logging.getLogger("commute_agent.api")
 
@@ -85,6 +91,7 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
         app.state.model_config = config
         app.state.missing_keys = missing_model_keys(config)
         app.state.conversations = {}
+        app.state.alert_sources = {}
         with ExitStack() as stack:
             if tool_source is not None:
                 app.state.tools = tool_source()
@@ -102,6 +109,16 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
             yield
 
     app = FastAPI(title="Pareto Commute", lifespan=lifespan)
+
+    def alert_source(session: str) -> str:
+        return app.state.alert_sources.get(session, DEFAULT_ALERT_SOURCE)
+
+    def remember_alert_source(session: str, name: str) -> None:
+        sources: dict[str, str] = app.state.alert_sources
+        sources.pop(session, None)
+        sources[session] = name
+        if len(sources) > MAX_SESSIONS:
+            del sources[next(iter(sources))]
 
     @app.get("/healthz")
     def healthz() -> dict:
@@ -124,7 +141,7 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
         return call_tool(app, "list_showcase_trips")
 
     @app.post("/api/plan")
-    def plan(body: PlanBody) -> dict:
+    def plan(body: PlanBody, session: SessionId = "") -> dict:
         created = call_tool(
             app,
             "plan_trip",
@@ -133,20 +150,24 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
             destination_lat=body.destination.lat,
             destination_lon=body.destination.lon,
             depart_at=body.depart_at,
+            alert_source=alert_source(session),
         )
         return call_tool(app, "get_plan", query_id=created["query_id"])
 
     @app.get("/api/alert-sources")
-    def alert_sources() -> dict:
-        return call_tool(app, "list_alert_sources")
+    def alert_sources(session: SessionId = "") -> dict:
+        return {**call_tool(app, "list_alert_sources"), "active": alert_source(session)}
 
     @app.post("/api/alert-source")
-    def set_alert_source(body: AlertSourceBody) -> dict:
-        return call_tool(app, "set_alert_source", name=body.name)
+    def set_alert_source(body: AlertSourceBody, session: SessionId = "") -> dict:
+        # get_active_alerts rejects an unknown source, or live in offline mode, with a 422.
+        call_tool(app, "get_active_alerts", alert_source=body.name)
+        remember_alert_source(session, body.name)
+        return alert_sources(session)
 
     @app.get("/api/alerts")
-    def alerts() -> dict:
-        return call_tool(app, "get_active_alerts")
+    def alerts(session: SessionId = "") -> dict:
+        return call_tool(app, "get_active_alerts", alert_source=alert_source(session))
 
     @app.get("/api/geocode")
     def geocode(q: str) -> dict:
@@ -165,7 +186,7 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
         return call_tool(app, "clear_preferences")
 
     @app.post("/api/chat", response_model=AgentReply)
-    async def chat(body: ChatBody) -> AgentReply:
+    async def chat(body: ChatBody, session: SessionId = "") -> AgentReply:
         config = app.state.model_config
         missing = app.state.missing_keys
         if missing:
@@ -174,7 +195,9 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
         conversations: dict[str, Conversation] = app.state.conversations
         conv = conversations.get(body.conversation_id or "")
         if conv is None:
-            agent = build_agent(list(app.state.tools.values()), config)
+            agent = build_agent(
+                list(app.state.tools.values()), config, lambda: alert_source(session)
+            )
             conv = Conversation(id=uuid.uuid4().hex[:8], agent=agent)
             conversations[conv.id] = conv
         return await anyio.to_thread.run_sync(run_turn, conv, body.message)
@@ -214,7 +237,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     logging.basicConfig(level=logging.INFO)
     logger.warning(NO_AUTH_NOTICE)
-    # One process: the MCP subprocess holds all session state. Hosts that set
+    # One process: the MCP subprocess holds plans and choices, and this process holds
+    # each session's alert source and conversations. Hosts that set
     # WEB_CONCURRENCY must not fork extra workers.
     uvicorn.run(create_app(live=args.live), host=args.host, port=args.port, workers=1)
     return 0

@@ -70,7 +70,7 @@ flowchart LR
   SR & TR & AL & PR --> DS
 ```
 
-All planner state lives in the MCP subprocess. The REST handlers call MCP tools for planning, alert source changes, and choices. The agent calls the same tools. A `query_id` that the map shows is therefore the same `query_id` the agent can compare and record. The API process holds only conversations.
+Plans and choices live in the MCP subprocess. The REST handlers call MCP tools for planning, alerts, and choices. The agent calls the same tools. A `query_id` that the map shows is therefore the same `query_id` the agent can compare and record. The API process holds conversations and one alert source per browser session, keyed by the `X-Session-Id` header, and passes that source to `plan_trip` and `get_active_alerts` on every call.
 
 ### Request flow for one plan
 
@@ -937,10 +937,10 @@ class SessionState:
 | Tool | Arguments | Returns | Agent may call |
 |---|---|---|---|
 | `geocode_place` | `query: str` | `GeocodeResult` | yes |
-| `plan_trip` | `origin_lat, origin_lon, destination_lat, destination_lon: float`, `depart_at: str \| None` (ISO 8601) | `PlanResult` with every leg's `coords` emptied | yes |
+| `plan_trip` | `origin_lat, origin_lon, destination_lat, destination_lon: float`, `depart_at: str \| None` (ISO 8601), `alert_source: str \| None` | `PlanResult` with every leg's `coords` emptied | yes |
 | `get_plan` | `query_id: str` | full `PlanResult` with coords | no |
 | `compare_routes` | `query_id, route_id, reference_route_id: str` | `Tradeoff` | yes |
-| `get_active_alerts` | none | `AlertsView` | yes |
+| `get_active_alerts` | `alert_source: str \| None` | `AlertsView` | yes |
 | `record_choice` | `query_id, route_id: str` | `PreferenceWeights` | yes |
 | `get_preferences` | none | `PreferenceWeights` | yes |
 | `list_alert_sources` | none | `AlertSources` | no |
@@ -950,7 +950,7 @@ class SessionState:
 
 Each tool docstring is one or two sentences, because the model reads it as the tool description. Route coordinates are thousands of numbers that would cost tokens and make every number look supported, so only the UI reads them through `get_plan`. Arguments use `Annotated[float, Field(description=...)]`.
 
-A tool that raises returns an error result through the SDK. The server does not wrap tools in `try`. Unknown `query_id` or `route_id` raises `KeyError` with a message naming the id. `set_alert_source` raises `ValueError` for an unknown name and for `live` in Offline_Mode.
+A tool that raises returns an error result through the SDK. The server does not wrap tools in `try`. Unknown `query_id` or `route_id` raises `KeyError` with a message naming the id. `set_alert_source` raises `ValueError` for an unknown name and for `live` in Offline_Mode. An `alert_source` argument is checked the same way; `None` means the source stored by `set_alert_source`. The agent's copies of `plan_trip` and `get_active_alerts` are wrapped in `AlertSourceTool`, which hides `alert_source` from the model and fills it with the conversation's browser session source.
 
 `record_choice` builds a `ChoiceEvent` from the stored plan, with every other route as rejected, then returns `current_weights()`.
 
@@ -1097,9 +1097,9 @@ def call_tool(app: FastAPI, name: str, **arguments) -> dict:
 |---|---|---|
 | `GET /api/status` | | `{"run_mode": "offline", "agent_model": "deepseek/deepseek-v4.1-flash-1017", "agent_available": true, "missing_model_keys": [], "notice": IDENTITY_NOTICE}` |
 | `GET /api/showcase-trips` | | `ShowcaseTrips` |
-| `POST /api/plan` | `{"origin": Point, "destination": Point, "depart_at": "ISO 8601" or null}` | `PlanResult` |
+| `POST /api/plan` | `{"origin": Point, "destination": Point, "depart_at": "ISO 8601" or null}` | `PlanResult`, planned with the session's alert source |
 | `GET /api/alert-sources` | | `AlertSources` |
-| `POST /api/alert-source` | `{"name": str}` | `AlertSources` |
+| `POST /api/alert-source` | `{"name": str}` | `AlertSources`; sets the alert source for this `X-Session-Id` only (requests without the header share one session) |
 | `POST /api/choice` | `{"query_id": str, "route_id": str}` | `PreferenceWeights` |
 | `GET /api/preferences` | | `PreferenceWeights` |
 | `DELETE /api/preferences` | | `PreferenceWeights` |

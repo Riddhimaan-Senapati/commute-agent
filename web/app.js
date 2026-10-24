@@ -41,8 +41,23 @@ let chart = null;
 
 /* ---------------- networking ---------------- */
 
-async function api(path, options) {
-  const res = await fetch(path, options);
+// The server keeps one alert source per session id, so each tab has its own.
+const SESSION_ID = (() => {
+  try {
+    let id = sessionStorage.getItem("commute-session-id");
+    if (!id) {
+      id = crypto.randomUUID();
+      sessionStorage.setItem("commute-session-id", id);
+    }
+    return id;
+  } catch (_) {
+    return crypto.randomUUID();
+  }
+})();
+
+async function api(path, options = {}) {
+  const headers = { ...(options.headers || {}), "X-Session-Id": SESSION_ID };
+  const res = await fetch(path, { ...options, headers });
   if (!res.ok) {
     let detail = res.statusText;
     try {

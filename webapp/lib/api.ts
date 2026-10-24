@@ -133,14 +133,39 @@ const ErrorSchema = z.object({ detail: z.string() });
 
 export class ApiError extends Error {}
 
+// The server keeps one alert source per session id, so each tab can simulate a
+// disruption without changing what other visitors see.
+const SESSION_KEY = "commute-session-id";
+let sessionId: string | null = null;
+
+function getSessionId(): string {
+  if (sessionId) return sessionId;
+  try {
+    sessionId = sessionStorage.getItem(SESSION_KEY);
+  } catch {
+    // Storage blocked: keep the id in memory for this page load.
+  }
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    try {
+      sessionStorage.setItem(SESSION_KEY, sessionId);
+    } catch {
+      // Same as above.
+    }
+  }
+  return sessionId;
+}
+
 export async function api<T>(
   path: string,
   schema: z.ZodType<T>,
   init?: { method: "POST" | "DELETE"; body?: unknown },
 ): Promise<T> {
+  const headers: Record<string, string> = { "x-session-id": getSessionId() };
+  if (init?.body !== undefined) headers["content-type"] = "application/json";
   const response = await fetch(path, {
     method: init?.method ?? "GET",
-    headers: init?.body === undefined ? undefined : { "content-type": "application/json" },
+    headers,
     body: init?.body === undefined ? undefined : JSON.stringify(init.body),
   });
   const payload: unknown = await response.json().catch(() => null);

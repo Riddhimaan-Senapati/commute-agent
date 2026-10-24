@@ -2,12 +2,13 @@
 
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from smolagents import OpenAIModel, ToolCallingAgent
+from smolagents import OpenAIModel, Tool, ToolCallingAgent
 from smolagents.memory import ActionStep
 
 from commute_agent.grounding import numbers_in, unsupported_numbers
@@ -26,6 +27,7 @@ AGENT_TOOLS = (
     "record_choice",
     "get_preferences",
 )
+ALERT_SOURCE_ARG = "alert_source"
 TOOL_ERROR_PREFIX = "Error executing tool"
 UNVERIFIED = "[number removed: not in tool results]"
 GROUNDING_RETRY = (
@@ -87,12 +89,43 @@ def missing_model_keys(config: ModelConfig) -> list[str]:
     return [config.api_key_env]
 
 
-def build_agent(tools: list[Any], config: ModelConfig) -> ToolCallingAgent:
-    """Agent over the AGENT_TOOLS subset of tools, on one OpenAI-compatible model."""
+class AlertSourceTool(Tool):
+    """Wraps a tool that takes alert_source. The model never sees the argument; each call
+    passes ``alert_source()``, so the agent plans with its browser session's source."""
+
+    skip_forward_signature_validation = True
+
+    def __init__(self, tool: Any, alert_source: Callable[[], str | None]) -> None:
+        self.tool = tool
+        self.alert_source = alert_source
+        self.name = tool.name
+        self.description = tool.description
+        self.inputs = {k: v for k, v in tool.inputs.items() if k != ALERT_SOURCE_ARG}
+        self.output_type = tool.output_type
+        self.output_schema = getattr(tool, "output_schema", None)
+        self.is_initialized = True
+
+    def forward(self, **kwargs: Any) -> Any:
+        return self.tool(**kwargs, alert_source=self.alert_source())
+
+
+def build_agent(
+    tools: list[Any],
+    config: ModelConfig,
+    alert_source: Callable[[], str | None] = lambda: None,
+) -> ToolCallingAgent:
+    """Agent over the AGENT_TOOLS subset of tools, on one OpenAI-compatible model.
+
+    Tools that take alert_source get ``alert_source()`` on every call; None means the
+    MCP server's stored source."""
     api_key = os.environ[config.api_key_env] if config.api_key_env else "not-needed"
     model = OpenAIModel(model_id=config.model_id, api_base=config.api_base, api_key=api_key)
     return ToolCallingAgent(
-        tools=[tool for tool in tools if tool.name in AGENT_TOOLS],
+        tools=[
+            AlertSourceTool(tool, alert_source) if ALERT_SOURCE_ARG in tool.inputs else tool
+            for tool in tools
+            if tool.name in AGENT_TOOLS
+        ],
         model=model,
         instructions=SYSTEM_PROMPT,
         max_steps=MAX_STEPS,

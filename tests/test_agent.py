@@ -130,6 +130,28 @@ def test_build_agent_exposes_only_agent_tools(monkeypatch) -> None:
     assert set(built.tools) - {"final_answer"} == {"plan_trip", "geocode_place"}
 
 
+@tool
+def get_active_alerts(alert_source: str | None = None) -> str:
+    """Return the active alerts.
+
+    Args:
+        alert_source: The alert source to read.
+    """
+    return f"source={alert_source}"
+
+
+def test_build_agent_fills_alert_source_and_hides_it(monkeypatch) -> None:
+    monkeypatch.setattr(agent_module, "OpenAIModel", lambda **kwargs: ScriptedModel([]))
+    built = build_agent(
+        [get_active_alerts],
+        ModelConfig(model_id="m", api_base="http://localhost:11434/v1", api_key_env=None),
+        lambda: "synthetic",
+    )
+    wrapped = built.tools["get_active_alerts"]
+    assert "alert_source" not in wrapped.inputs
+    assert wrapped() == "source=synthetic"
+
+
 def test_build_agent_passes_endpoint_and_key(monkeypatch) -> None:
     seen = {}
 

@@ -1,4 +1,7 @@
-"""MCP tool server. Owns all planner state for one session: alert source, plans, and choices."""
+"""MCP tool server. Owns all planner state for one session: alert source, plans, and choices.
+
+plan_trip and get_active_alerts also take an alert_source argument, which the API uses to
+give each browser session its own source without changing the stored one."""
 
 import sys
 import time
@@ -111,6 +114,22 @@ def _alert_source_view() -> AlertSources:
     )
 
 
+def _check_alert_source(name: str) -> None:
+    known = alert_source_names(ALERT_SNAPSHOTS)
+    if name not in known:
+        raise ValueError(f"Unknown alert source {name!r}. Known sources: {known}")
+    if name == LIVE_SOURCE and not _state().ctx.live:
+        raise ValueError("The live alert source needs --live mode.")
+
+
+def _source(alert_source: str | None) -> str:
+    """The given alert source after validation, or the one set with set_alert_source."""
+    if alert_source is None:
+        return _state().alert_source
+    _check_alert_source(alert_source)
+    return alert_source
+
+
 def _is_synthetic(source: str) -> bool:
     if source in (NO_ALERTS, LIVE_SOURCE):
         return False
@@ -138,6 +157,10 @@ def plan_trip(
     depart_at: Annotated[
         str | None, Field(description="Departure time in ISO 8601, or null for the default.")
     ] = None,
+    alert_source: Annotated[
+        str | None,
+        Field(description="Alert source to use, or null for the one set with set_alert_source."),
+    ] = None,
 ) -> PlanResult:
     """Plan a trip inside Boston and return the Pareto set of routes with trade-offs."""
     state = _state()
@@ -154,10 +177,9 @@ def plan_trip(
             f"Planned as showcase trip '{trip.origin_name} to {trip.destination_name}' "
             f"at its fixed demo departure, {trip.weekday.capitalize()} {trip.depart_local}."
         )
-    alerts, clock = _load_alerts_for_source(state.alert_source)
-    plan = planner.plan_trip(
-        state.ctx, origin, destination, depart, state.alert_source, alerts, clock
-    )
+    source = _source(alert_source)
+    alerts, clock = _load_alerts_for_source(source)
+    plan = planner.plan_trip(state.ctx, origin, destination, depart, source, alerts, clock)
     if showcase_note:
         plan = plan.model_copy(update={"notes": [showcase_note, *plan.notes]})
     state.plans[plan.query_id] = plan
@@ -191,16 +213,21 @@ def compare_routes(
 
 
 @mcp.tool()
-def get_active_alerts() -> AlertsView:
+def get_active_alerts(
+    alert_source: Annotated[
+        str | None,
+        Field(description="Alert source to use, or null for the one set with set_alert_source."),
+    ] = None,
+) -> AlertsView:
     """Return the alert source in use and its alerts."""
-    state = _state()
-    alerts, clock = _load_alerts_for_source(state.alert_source)
+    source = _source(alert_source)
+    alerts, clock = _load_alerts_for_source(source)
     refs = [
         AlertRef(id=a.id, header=a.header, effect=a.effect, score=effect_score(a)) for a in alerts
     ]
     return AlertsView(
-        source=state.alert_source,
-        synthetic=_is_synthetic(state.alert_source),
+        source=source,
+        synthetic=_is_synthetic(source),
         alert_clock=clock,
         alerts=refs,
     )
@@ -243,13 +270,8 @@ def set_alert_source(
     name: Annotated[str, Field(description="none, a snapshot label, or live in live mode.")],
 ) -> AlertSources:
     """Select the alert source that later plans use."""
-    state = _state()
-    known = alert_source_names(ALERT_SNAPSHOTS)
-    if name not in known:
-        raise ValueError(f"Unknown alert source {name!r}. Known sources: {known}")
-    if name == LIVE_SOURCE and not state.ctx.live:
-        raise ValueError("The live alert source needs --live mode.")
-    state.alert_source = name
+    _check_alert_source(name)
+    _state().alert_source = name
     return _alert_source_view()
 
 

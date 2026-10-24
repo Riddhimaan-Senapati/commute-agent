@@ -52,6 +52,18 @@ def test_live_alert_source_is_rejected_offline(server: SessionState) -> None:
     assert "live" in message
 
 
+def test_alert_source_argument_overrides_the_stored_source(server: SessionState) -> None:
+    synthetic = "Synthetic: Red Line suspended JFK/UMass to Park Street"
+    plan = call("plan_trip", {**PLAN_ARGS, "alert_source": synthetic})
+    assert plan["alert_source"] == synthetic
+    assert call("get_active_alerts", {"alert_source": synthetic})["synthetic"] is True
+    assert call("list_alert_sources", {})["active"] == "none"
+
+
+def test_unknown_alert_source_argument_is_an_error(server: SessionState) -> None:
+    assert "nope" in call_error("get_active_alerts", {"alert_source": "nope"})
+
+
 def test_geocode_unknown_place_is_not_found(server: SessionState) -> None:
     assert call("geocode_place", {"query": "Zzyzx"})["status"] == "not_found"
 

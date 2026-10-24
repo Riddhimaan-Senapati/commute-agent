@@ -1,12 +1,16 @@
 # commute-agent
 
-A Pareto-optimal commute planner for Boston. For one trip it returns every route that no other route beats on all of travel time, CO₂, crash risk, and MBTA disruption risk. An LLM agent explains the options through MCP tools. The agent is an independent prototype, not an MBTA or City of Boston service.
+commute-agent plans trips inside Boston and shows the trade-offs instead of picking one answer for you. For a trip, it compares walk, bike, Bluebikes, drive, and MBTA routes on four numbers: travel time, CO₂, crash risk on the walking and biking parts, and MBTA disruption risk. It keeps every route that no other route beats on all four (the Pareto set) and drops the rest. An LLM agent then explains the options through MCP tools, and it may quote only numbers the planner returned.
 
-The demo runs offline by default. Transit comes from a cached OpenTripPlanner response, the map from a local basemap, and alerts from recorded snapshots.
+This is an independent prototype. It is not an MBTA or City of Boston service.
+
+The hosted demo is at <https://commute-agent-5hla.onrender.com>. [DEMO.md](DEMO.md) is a script for presenting it.
+
+Run locally, the app works offline by default. Transit comes from cached OpenTripPlanner responses, the map from a local basemap, and alerts from recorded snapshots.
 
 ## Setup
 
-Requires Python 3.12, [uv](https://docs.astral.sh/uv/), and Docker (only to rebuild or serve OTP).
+You need Python 3.12 and [uv](https://docs.astral.sh/uv/). Docker is only needed to rebuild or serve OTP.
 
 ```sh
 uv sync
@@ -93,7 +97,7 @@ Open <http://127.0.0.1:8000/>.
 
 ### Next.js demo page
 
-`webapp/` is a single map-first page for live demos. It uses the same API. Requires Node.js 20 or later.
+`webapp/` is a single map-first page for live demos. It talks to the same API and needs Node.js 20 or later.
 
 ```sh
 cd webapp
@@ -125,11 +129,22 @@ The server has no authentication. It binds to 127.0.0.1 only. Use it for local d
 
 `.github/workflows/deploy.yml` runs the tests on every push to `main`, then deploys that commit with the Render CLI and waits for it to go live. It needs two repository secrets: `RENDER_API_KEY` and `RENDER_SERVICE_ID`. Set `OPENROUTER_API_KEY` on the Render service for the chat.
 
-The hosted demo has no login. Anyone with the link can use the chat, which spends the OpenRouter key; keep a credit limit on it.
+The hosted demo has no login. Anyone with the link can use the chat, which spends the OpenRouter key; keep a credit limit on it. Each browser tab sends an `X-Session-Id` header and gets its own alert source, so one visitor's "Simulate Red Line suspension" does not change anyone else's plans. Route choices ("I'll take this route") are still shared: they all go into one preference store, which orders routes for every visitor.
 
-## Offline demo script
+## How the Pareto set is computed
 
-Turn Wi-Fi off before you start.
+Each candidate route gets four numbers, and lower is better for all of them:
+
+- `time_min`: the sum of leg durations. Drive time is free flow.
+- `co2_g`: the sum over legs of distance times the mode's factor in `data/emission_factors.yaml`.
+- `crash_risk`: the sum of edge risk along walk and bike legs, where edge risk is `(crashes + p * length_km) / exposure * 1000` and `p` is the network mean crashes per km. Drive legs and transit vehicle legs count as 0 because they are not modeled.
+- `disruption_risk`: the highest alert score on any transit leg (suspension 1.0, shuttle 0.8, detour 0.5, and so on, in `EFFECT_SCORES` in `commute_agent/transit/alerts.py`).
+
+Route A dominates route B when A is no worse than B on every objective, allowing a tolerance, and better than B by more than the tolerance on at least one. The tolerance for each pair is `max(abs_tol, rel_tol * max(|a|, |b|))`: 0.5 min for time, 1 g or 1% for CO₂, 0.01 or 2% for crash risk, and 0.01 for disruption. `pareto_front` in `commute_agent/pareto.py` keeps every candidate that no other candidate dominates, then drops any route within tolerance of one already kept on all four objectives. If the tolerance creates a cycle that removes every route, it falls back to plain dominance with no tolerance.
+
+## Offline demo
+
+[DEMO.md](DEMO.md) covers the hosted page. These steps run the local page with Wi-Fi off.
 
 1. Run `uv run python -m commute_agent.check_offline`. It must print `offline ready`.
 2. Run `uv run python -m commute_agent.api` and open <http://127.0.0.1:8000/>.
@@ -186,7 +201,7 @@ How to read these numbers:
 ## Data notes
 
 - Exposure calibration: R² is 0.09 (0.0906). It matched 35 counters: 17 Cambridge citywide, 15 Somerville, and 3 Numina. 18 more counters were over 30 m from any edge and were not matched. Source: `data/processed/exposure_calibration.json`.
-- Cambridge crash coverage is about half the records. Only 8,878 of 17,230 Cambridge police crash rows have coordinates. 1,815 have an empty location and 6,537 have an address only. These rows are dropped. Of the rows with coordinates, 615 involve a cyclist and 364 a pedestrian; these enter the risk build.
+- Cambridge crash coverage is about half the records. Only 8,878 of 17,230 Cambridge police crash rows have coordinates. 1,815 have an empty location and 6,537 have an address only. The risk build drops these rows. Of the rows with coordinates, 615 involve a cyclist and 364 a pedestrian; these enter the risk build.
 - The risk build snapped 4,564 bike and 7,267 pedestrian crashes to street edges. It discarded 123 bike and 96 pedestrian crashes more than 30 m from any edge. Source: `data/processed/risk_meta.json`.
 - Boston Vision Zero and Cambridge police records use different crash definitions. Neither is the MassDOT state crash file.
 

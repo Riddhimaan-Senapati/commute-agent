@@ -99,6 +99,25 @@ def test_alerts_maps_ids_to_headers_for_the_active_source(client: TestClient) ->
     assert headers["synthetic-red-1"].startswith("Synthetic demo alert: Red Line suspended")
 
 
+def test_alert_source_is_per_session(client: TestClient) -> None:
+    synthetic = "Synthetic: Red Line suspended JFK/UMass to Park Street"
+    tab_a = {"X-Session-Id": "tab-a"}
+    tab_b = {"X-Session-Id": "tab-b"}
+    set_a = client.post("/api/alert-source", json={"name": synthetic}, headers=tab_a)
+    assert set_a.json()["active"] == synthetic
+    assert client.get("/api/alert-sources", headers=tab_b).json()["active"] == "none"
+    assert client.get("/api/alerts", headers=tab_b).json()["alerts"] == []
+    assert client.post("/api/plan", json=PLAN_BODY, headers=tab_a).json()["alert_source"] == (
+        synthetic
+    )
+    assert client.post("/api/plan", json=PLAN_BODY, headers=tab_b).json()["alert_source"] == "none"
+
+
+def test_unknown_alert_source_is_422_and_not_stored(client: TestClient) -> None:
+    assert client.post("/api/alert-source", json={"name": "nope"}).status_code == 422
+    assert client.get("/api/alert-sources").json()["active"] == "none"
+
+
 def test_alert_source_lists_none_and_live(client: TestClient) -> None:
     body = client.get("/api/alert-sources").json()
     assert body["active"] == "none"

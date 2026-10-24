@@ -19,7 +19,7 @@ A commute planner for trips inside Boston. For one trip it returns every route t
 | Street routing | `commute_agent/streets/router.py` | OSMnx graphs, crash-risk-weighted sweep for safer variants. Graphs are projected once at load. |
 | Transit | `commute_agent/transit/otp.py`, `alerts.py` | OpenTripPlanner 2.10.0 in Docker, cached in `data/cache/otp/`. A suspending alert triggers a second OTP query that excludes the suspended route. |
 | Pareto and planner | `commute_agent/pareto.py`, `planner.py` | Tolerance dominance, with a strict-dominance fallback if tolerance forms a cycle. |
-| MCP tool server | `commute_agent/mcp_server.py` | Owns all session state (plans, alert source). Offline, a request within 300 m of a showcase trip uses that trip's points and fixed Tuesday 08:15 departure. |
+| MCP tool server | `commute_agent/mcp_server.py` | Owns plans and choices. The API keeps one alert source per browser tab (`X-Session-Id`) and passes it to `plan_trip` and `get_active_alerts`. Offline, a request within 300 m of a showcase trip uses that trip's points and fixed Tuesday 08:15 departure. |
 | Agent | `commute_agent/agent.py`, `grounding.py` | smolagents `ToolCallingAgent` on an OpenAI-compatible endpoint (OpenRouter by default). A reply with numbers not found in tool output is rewritten once; numbers still unsupported are replaced with a removal marker. |
 | API | `commute_agent/api.py` | FastAPI, binds 127.0.0.1 by default, no auth. Starts the MCP server as a subprocess. |
 | Web pages | `webapp/` (Next.js, main demo), `web/` (vanilla fallback) | `webapp/` is one map-first page: street map, From/To search, objective picker, directions, Red Line suspension switch, agent drawer. |
