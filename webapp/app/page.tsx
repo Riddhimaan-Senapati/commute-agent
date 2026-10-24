@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ChatPanel from "@/components/ChatPanel";
 import PlaceInput from "@/components/PlaceInput";
+import FilteredRoutes from "@/components/FilteredRoutes";
 import RouteCard from "@/components/RouteCard";
 import {
   type AlertSources,
@@ -232,6 +233,11 @@ export default function Home() {
         {plan && shown.length === 0 && (
           <p className="meta">No route holds this label for this trip. Pick “All trade-offs”.</p>
         )}
+        {plan && objective === "all" && (
+          <h2 className="list-head">
+            On the Pareto frontier: {plan.routes.length} of {plan.candidate_count} routes
+          </h2>
+        )}
         <ol className="cards" aria-label="Routes">
           {shown.map((route) => (
             <RouteCard
@@ -246,6 +252,7 @@ export default function Home() {
             />
           ))}
         </ol>
+        {plan && objective === "all" && <FilteredRoutes filtered={plan.filtered} />}
         {plan && objective !== "all" && plan.routes.length > shown.length && (
           <button type="button" className="link" onClick={() => setObjective("all")}>
             Show all {plan.routes.length} trade-off routes

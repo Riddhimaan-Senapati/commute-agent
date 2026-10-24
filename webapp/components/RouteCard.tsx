@@ -13,6 +13,21 @@ type Props = {
   onChoose: () => void;
 };
 
+export function RouteSegments({ route }: { route: Route }) {
+  return (
+    <span className="card-summary">
+      {route.legs
+        .filter((leg) => leg.transit || route.kind !== "transit")
+        .slice(0, 4)
+        .map((leg, i) => (
+          <span key={i} className="seg" style={{ background: legColor(leg) }}>
+            {legTitle(leg)}
+          </span>
+        ))}
+    </span>
+  );
+}
+
 function versusFastest(route: Route, t: Tradeoff | undefined): string | null {
   if (!t || route.labels.includes("fastest")) return null;
   const co2 = t.pct.co2_g;
@@ -29,16 +44,7 @@ export default function RouteCard({ route, tradeoff, selected, chosen, alertHead
     <li className={`card${selected ? " selected" : ""}${o.disruption_risk > 0 ? " disrupted" : ""}`}>
       <button type="button" className="card-head" onClick={onSelect} aria-expanded={selected} aria-label={`Route: ${route.summary}`}>
         <span className="card-time">{minutes(o.time_min)}</span>
-        <span className="card-summary">
-          {route.legs
-            .filter((leg) => leg.transit || route.kind !== "transit")
-            .slice(0, 4)
-            .map((leg, i) => (
-              <span key={i} className="seg" style={{ background: legColor(leg) }}>
-                {legTitle(leg)}
-              </span>
-            ))}
-        </span>
+        <RouteSegments route={route} />
         <span className="card-co2">{grams(o.co2_g)}</span>
       </button>
       {route.labels.length > 0 && (

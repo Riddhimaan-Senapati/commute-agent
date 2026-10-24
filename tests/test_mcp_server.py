@@ -34,6 +34,8 @@ def test_plan_trip_strips_coords_and_get_plan_keeps_them(server: SessionState) -
 
     full = PlanResult.model_validate(call("get_plan", {"query_id": agent_view.query_id}))
     assert full.query_id == agent_view.query_id
+    assert agent_view.filtered == []
+    assert len(full.routes) + len(full.filtered) == full.candidate_count
     assert any(leg.coords for route in full.routes for leg in route.legs)
 
 

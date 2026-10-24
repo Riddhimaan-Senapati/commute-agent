@@ -89,7 +89,9 @@ def _without_coords(route: RouteOption) -> RouteOption:
 
 
 def _agent_view(plan: PlanResult) -> PlanResult:
-    return plan.model_copy(update={"routes": [_without_coords(r) for r in plan.routes]})
+    # The agent describes every route it gets, so it never sees routes outside the set.
+    routes = [_without_coords(r) for r in plan.routes]
+    return plan.model_copy(update={"routes": routes, "filtered": []})
 
 
 def _route(plan: PlanResult, route_id: str) -> RouteOption:

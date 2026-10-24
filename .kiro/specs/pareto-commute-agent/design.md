@@ -267,6 +267,13 @@ class ChoiceEvent(BaseModel):
     rejected: list[Objectives]
 
 
+class FilteredRoute(BaseModel):          # pareto.filtered_out: why a candidate left the set
+    route: RouteOption
+    reason: Literal["dominated", "near_duplicate"]
+    by_route_id: str                     # a dominating route, a frontier one when possible
+    by_summary: str
+    by_objectives: Objectives
+
 class PlanResult(BaseModel):
     query_id: str
     origin: Point
@@ -281,6 +288,7 @@ class PlanResult(BaseModel):
     unscored_alerts: list[AlertRef]
     preference: PreferenceWeights
     notes: list[str]                     # fixed caveats, e.g. "Drive time is free-flow and ignores traffic."
+    filtered: list[FilteredRoute] = []   # candidates outside the Pareto set, for the UI only
 
 
 class AlertsView(BaseModel):

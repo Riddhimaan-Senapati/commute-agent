@@ -34,6 +34,11 @@ test("map-first demo: route on the map, pick an objective, suspend the Red Line,
   await page.getByRole("radio", { name: "All trade-offs" }).click();
   await expect(cards).toHaveCount(allCount);
 
+  // Routes outside the Pareto set are listed under it, each naming the route that beats it.
+  await expect(page.getByRole("heading", { name: /On the Pareto frontier/ })).toBeVisible();
+  const dropped = page.getByRole("list", { name: "Not on the frontier" }).locator("> li");
+  await expect(dropped.first()).toContainText("Beaten by");
+
   // Selecting the Red Line card shows its legs.
   await page.getByRole("button", { name: "Route: Red Line" }).click();
   const red = cards.filter({ has: page.getByRole("button", { name: "Route: Red Line" }) });

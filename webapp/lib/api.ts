@@ -51,6 +51,14 @@ const TradeoffSchema = z.object({
   pct: z.record(Objective, z.number().nullable()),
 });
 
+const FilteredSchema = z.object({
+  route: RouteSchema,
+  reason: z.enum(["dominated", "near_duplicate"]),
+  by_route_id: z.string(),
+  by_summary: z.string(),
+  by_objectives: ObjectivesSchema,
+});
+
 export const PlanSchema = z.object({
   query_id: z.string(),
   origin: PointSchema,
@@ -63,6 +71,7 @@ export const PlanSchema = z.object({
   omitted: z.record(z.string(), z.string()),
   candidate_count: z.number(),
   notes: z.array(z.string()),
+  filtered: z.array(FilteredSchema).default([]),
 });
 
 export const StatusSchema = z.object({
@@ -119,6 +128,7 @@ export type Plan = z.infer<typeof PlanSchema>;
 export type Place = z.infer<typeof PlaceSchema>;
 export type Point = z.infer<typeof PointSchema>;
 export type Route = z.infer<typeof RouteSchema>;
+export type Filtered = z.infer<typeof FilteredSchema>;
 export type Leg = z.infer<typeof LegSchema>;
 export type LegModeName = z.infer<typeof LegMode>;
 export type Tradeoff = z.infer<typeof TradeoffSchema>;

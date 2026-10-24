@@ -7,9 +7,12 @@ candidate against every other candidate (not only against kept ones), which is
 what makes the result independent of input order.
 """
 
+from typing import Literal
+
 from commute_agent.models import (
     OBJECTIVES,
     AlertRef,
+    FilteredRoute,
     Label,
     Objective,
     Objectives,
@@ -108,6 +111,41 @@ def pareto_front(candidates: list[RouteOption]) -> list[RouteOption]:
             continue
         front.append(route)
     return front
+
+
+def filtered_out(candidates: list[RouteOption], front: list[RouteOption]) -> list[FilteredRoute]:
+    """Each candidate not in the front, in sorted order, with the route that removed it.
+
+    A front route that dominates it is preferred, then any other candidate that does. A
+    route nothing dominates was dropped as a near_duplicate of a front route. In the
+    strict-dominance fallback every candidate is tolerance-dominated, so one is always found.
+    """
+    front_ids = {route.id for route in front}
+    rest = [route for route in candidates if route.id not in front_ids]
+    out: list[FilteredRoute] = []
+    for route in sorted(rest, key=_sort_key):
+        reason: Literal["dominated", "near_duplicate"] = "dominated"
+        by = next(
+            (
+                other
+                for other in [*front, *rest]
+                if other is not route and dominates(other.objectives, route.objectives)
+            ),
+            None,
+        )
+        if by is None:
+            reason = "near_duplicate"
+            by = next(r for r in front if near_duplicate(r.objectives, route.objectives))
+        out.append(
+            FilteredRoute(
+                route=route,
+                reason=reason,
+                by_route_id=by.id,
+                by_summary=by.summary,
+                by_objectives=by.objectives,
+            )
+        )
+    return out
 
 
 def assign_labels(front: list[RouteOption]) -> list[RouteOption]:

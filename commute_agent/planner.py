@@ -27,7 +27,7 @@ from commute_agent.models import (
     RouteOption,
     Tradeoff,
 )
-from commute_agent.pareto import assign_labels, pareto_front, tradeoff
+from commute_agent.pareto import assign_labels, filtered_out, pareto_front, tradeoff
 from commute_agent.paths import PREFERENCES_DB, PROCESSED
 from commute_agent.preferences import current_weights, order_routes
 from commute_agent.streets import StreetGraphs, load_street_graphs, street_routes
@@ -172,7 +172,8 @@ def plan_trip(
     candidates, omitted, unscored = gather_candidates(
         ctx, origin, destination, depart, alerts, alert_clock
     )
-    labeled = assign_labels(pareto_front(candidates))
+    front = pareto_front(candidates)
+    labeled = assign_labels(front)
     weights = current_weights(ctx.preferences_db)
     ordered = order_routes(labeled, weights)
 
@@ -195,4 +196,5 @@ def plan_trip(
         unscored_alerts=unscored,
         preference=weights,
         notes=list(FIXED_NOTES),
+        filtered=filtered_out(candidates, front),
     )

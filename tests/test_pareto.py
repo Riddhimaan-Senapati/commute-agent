@@ -15,6 +15,7 @@ from commute_agent.pareto import (
     LABEL_FOR,
     assign_labels,
     dominates,
+    filtered_out,
     near_duplicate,
     pareto_front,
     tradeoff,
@@ -90,6 +91,48 @@ def test_property_2_pareto_completeness(candidates: list[RouteOption]) -> None:
         if candidate.id in front_ids:
             continue
         assert any(near_duplicate(candidate.objectives, member.objectives) for member in front)
+
+
+@settings(max_examples=200)
+@given(candidates=candidate_lists())
+def test_filtered_out_explains_every_candidate_outside_the_front(
+    candidates: list[RouteOption],
+) -> None:
+    """Every candidate is in the front or in filtered_out, never both, and each filtered
+    route's reason holds against the route named for it."""
+    front = pareto_front(candidates)
+    filtered = filtered_out(candidates, front)
+    front_ids = {r.id for r in front}
+    filtered_ids = [f.route.id for f in filtered]
+    assert sorted([*front_ids, *filtered_ids]) == sorted(r.id for r in candidates)
+    by_id = {r.id: r for r in candidates}
+    for f in filtered:
+        by = by_id[f.by_route_id]
+        assert f.by_objectives == by.objectives
+        if f.reason == "dominated":
+            assert dominates(by.objectives, f.route.objectives)
+        else:
+            assert by.id in front_ids
+            assert near_duplicate(by.objectives, f.route.objectives)
+
+
+def test_filtered_out_names_the_dominating_front_route() -> None:
+    fast = make_route("fast", "transit", 10.0, 100.0, 1.0, 0.0)
+    slow = make_route("slow", "transit", 20.0, 200.0, 2.0, 0.0)
+    (dropped,) = filtered_out([fast, slow], pareto_front([fast, slow]))
+    assert (dropped.route.id, dropped.reason, dropped.by_route_id) == ("slow", "dominated", "fast")
+
+
+def test_filtered_out_reports_near_duplicates() -> None:
+    few = make_route(
+        "few", "transit", time_min=10.0, co2_g=100.0, crash_risk=0.0, disruption_risk=0.0, n_legs=1
+    )
+    many = make_route(
+        "many", "transit", time_min=10.3, co2_g=100.0, crash_risk=0.0, disruption_risk=0.0, n_legs=3
+    )
+    (dropped,) = filtered_out([few, many], pareto_front([few, many]))
+    assert (dropped.route.id, dropped.reason) == ("many", "near_duplicate")
+    assert dropped.by_route_id == "few"
 
 
 # --- Property 3: Dominance is irreflexive and asymmetric ----------------------

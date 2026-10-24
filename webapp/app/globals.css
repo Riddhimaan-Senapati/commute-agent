@@ -676,3 +676,33 @@ mark {
   opacity: 0.5;
   cursor: default;
 }
+
+.list-head {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.filtered {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.card.dominated {
+  background: #f6f7f9;
+}
+
+.card.dominated .card-head {
+  cursor: default;
+}
+
+.card.dominated .card-time {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.card.dominated .seg {
+  opacity: 0.55;
+}

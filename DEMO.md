@@ -25,11 +25,15 @@ Tap **Fastest**. Only the drive shows: about 10 minutes and 1.4 kg of CO₂.
 
 Tap **Lowest CO₂**. The bike route shows: about 33 minutes, zero grams.
 
-Tap **All trade-offs**. The full list comes back, around ten routes.
+Tap **All trade-offs**. The full list comes back. Point at the heading above it, "On the Pareto frontier: N of M routes".
 
-> "These are all the routes where nothing else beats them on time, CO₂, crash risk, and disruption risk at once. That's a Pareto set. The planner built about 20 candidates for this trip and threw out the ones that something else beat on all four."
+> "These are all the routes where nothing else beats them on time, CO₂, crash risk, and disruption risk at once. That's the Pareto frontier. The planner built M candidate routes for this trip, and only these N survived."
 
-Open the **Red Line** card: about 23 minutes and 411 g of CO₂, roughly 72% less than driving for 13 more minutes. Open **Sources** to show where the numbers come from.
+Scroll past the frontier to **Not on the frontier**. These cards are greyed out, and each one names the route that beats it and how, for example "Beaten by Red Line: 12 min faster, 30 g less CO₂, and no worse on the rest".
+
+> "Here's what got thrown out. Each of these loses to a route above on at least one thing and doesn't win on anything, so there's no reason anyone would pick it. Everything left at the top is a real choice: you can't get faster without giving something up."
+
+Scroll back up and open the **Red Line** card: about 23 minutes and 411 g of CO₂, roughly 72% less than driving for 13 more minutes. Open **Sources** to show where the numbers come from.
 
 Scroll to the walk routes and point at the safest one.
 

@@ -130,6 +130,16 @@ class ChoiceEvent(BaseModel):
     rejected: list[Objectives]
 
 
+class FilteredRoute(BaseModel):
+    """A candidate left out of the Pareto set, and the route that put it out."""
+
+    route: RouteOption
+    reason: Literal["dominated", "near_duplicate"]
+    by_route_id: str
+    by_summary: str
+    by_objectives: Objectives
+
+
 class PlanResult(BaseModel):
     query_id: str
     origin: Point
@@ -144,6 +154,7 @@ class PlanResult(BaseModel):
     unscored_alerts: list[AlertRef]
     preference: PreferenceWeights
     notes: list[str]  # fixed caveats, e.g. "Drive time is free-flow and ignores traffic."
+    filtered: list[FilteredRoute] = []  # candidates outside the Pareto set; not shown to the agent
 
 
 class AlertsView(BaseModel):
