@@ -6,7 +6,7 @@ import { grams, minutes } from "@/lib/format";
 
 // Thresholds match the planner's absolute tolerances, so every dominated route has a reason.
 function why(f: Filtered): string {
-  if (f.reason === "near_duplicate") return `Almost the same as ${f.by_summary} on all four`;
+  if (f.reason === "near_duplicate") return `Duplicate of ${f.by_summary}: the same on all four, within the planner's tolerance`;
   const a = f.route.objectives;
   const b = f.by_objectives;
   const better: string[] = [];
@@ -15,7 +15,7 @@ function why(f: Filtered): string {
   if (a.crash_risk - b.crash_risk > 0.01) better.push("lower crash risk");
   if (a.disruption_risk - b.disruption_risk > 0.01) better.push("less disrupted");
   const rest = better.length < 4 ? ", and no worse on the rest" : "";
-  return `${f.by_summary}: ${better.join(", ")}${rest}`;
+  return `Beaten by ${f.by_summary}: ${better.join(", ")}${rest}`;
 }
 
 export default function FilteredRoutes({ filtered }: { filtered: Filtered[] }) {
@@ -23,7 +23,7 @@ export default function FilteredRoutes({ filtered }: { filtered: Filtered[] }) {
   return (
     <section className="filtered">
       <h2 className="list-head">Not on the frontier: {filtered.length}</h2>
-      <p className="meta">Another route beats each of these, so the planner drops it.</p>
+      <p className="meta">Each of these is beaten by, or duplicates, a route above, so the planner drops it.</p>
       <ol className="cards" aria-label="Not on the frontier">
         {filtered.map((f) => (
           <li key={f.route.id} className="card dominated">
@@ -32,7 +32,7 @@ export default function FilteredRoutes({ filtered }: { filtered: Filtered[] }) {
               <RouteSegments route={f.route} />
               <span className="card-co2">{grams(f.route.objectives.co2_g)}</span>
             </div>
-            <p className="compare">Beaten by {why(f)}</p>
+            <p className="compare">{why(f)}</p>
           </li>
         ))}
       </ol>

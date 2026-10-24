@@ -25,13 +25,13 @@ Tap **Fastest**. Only the drive shows: about 10 minutes and 1.4 kg of CO₂.
 
 Tap **Lowest CO₂**. The bike route shows: about 33 minutes, zero grams.
 
-Tap **All trade-offs**. The full list comes back. Point at the heading above it, "On the Pareto frontier: N of M routes".
+Tap **All trade-offs**. The full list comes back. Point at the heading above it: "On the Pareto frontier: 10 of 15 routes".
 
-> "These are all the routes where nothing else beats them on time, CO₂, crash risk, and disruption risk at once. That's the Pareto frontier. The planner built M candidate routes for this trip, and only these N survived."
+> "These are all the routes where nothing else beats them on time, CO₂, crash risk, and disruption risk at once. That's the Pareto frontier. The planner built 15 candidate routes for this trip, and 10 survived."
 
-Scroll past the frontier to **Not on the frontier**. These cards are greyed out, and each one names the route that beats it and how, for example "Beaten by Red Line: 12 min faster, 30 g less CO₂, and no worse on the rest".
+Scroll past the frontier to **Not on the frontier: 5**. These cards are greyed out, and each says why it was dropped. Four are "Duplicate of Red Line": other Red Line itineraries with the same numbers as the one above. The fifth is a Bluebikes trip, "Beaten by Bike, fastest: 14 min faster, and no worse on the rest".
 
-> "Here's what got thrown out. Each of these loses to a route above on at least one thing and doesn't win on anything, so there's no reason anyone would pick it. Everything left at the top is a real choice: you can't get faster without giving something up."
+> "Here's what got thrown out. Bluebikes loses to riding your own bike: it's 14 minutes slower and doesn't win on anything else, so nobody should pick it. The Red Line repeats have the same numbers as the one above, so showing them adds nothing. Everything left at the top is a real choice: you can't get faster without giving something up."
 
 Scroll back up and open the **Red Line** card: about 23 minutes and 411 g of CO₂, roughly 72% less than driving for 13 more minutes. Open **Sources** to show where the numbers come from.
 

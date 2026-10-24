@@ -37,7 +37,7 @@ test("map-first demo: route on the map, pick an objective, suspend the Red Line,
   // Routes outside the Pareto set are listed under it, each naming the route that beats it.
   await expect(page.getByRole("heading", { name: /On the Pareto frontier/ })).toBeVisible();
   const dropped = page.getByRole("list", { name: "Not on the frontier" }).locator("> li");
-  await expect(dropped.first()).toContainText("Beaten by");
+  await expect(dropped.first()).toContainText(/Beaten by|Duplicate of/);
 
   // Selecting the Red Line card shows its legs.
   await page.getByRole("button", { name: "Route: Red Line" }).click();
