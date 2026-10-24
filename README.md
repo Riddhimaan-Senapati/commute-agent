@@ -14,27 +14,14 @@ uv sync
 
 ### Files you supply
 
-Two files are not in the repository. Every entry point that loads emission factors exits with code 2 until the first one exists.
+Two inputs need your attention before the first run.
 
-1. `data/emission_factors.yaml`. Copy `data/emission_factors.example.yaml` and give every mode a numeric `value`, a `unit` of `g_per_passenger_km` or `g_per_passenger_mile`, and a non-empty `source`. The example file has this shape:
+1. `data/emission_factors.yaml` is committed with sourced factors (EPA GHG Emission Factors Hub 2025, Table 10, and UK DESNZ 2026 for ferry; each entry names its source). To use other factors, keep the shape of `data/emission_factors.example.yaml`: every mode needs a numeric `value`, a `unit` of `g_per_passenger_km` or `g_per_passenger_mile`, and a non-empty `source`. Every entry point exits with code 2 if the file is missing or invalid.
 
-   ```yaml
-   # Copy to emission_factors.yaml and fill every value with a sourced factor.
-   walk:          {value: null, unit: g_per_passenger_km, source: ""}
-   bike:          {value: null, unit: g_per_passenger_km, source: ""}
-   bluebikes:     {value: null, unit: g_per_passenger_km, source: ""}
-   drive:         {value: null, unit: g_per_passenger_km, source: ""}
-   subway:        {value: null, unit: g_per_passenger_km, source: ""}
-   light_rail:    {value: null, unit: g_per_passenger_km, source: ""}
-   bus:           {value: null, unit: g_per_passenger_km, source: ""}
-   commuter_rail: {value: null, unit: g_per_passenger_km, source: ""}
-   ferry:         {value: null, unit: g_per_passenger_km, source: ""}
-   ```
-
-2. `data/raw/numina_zones.csv`. This maps each Boston Numina zone id to its sensor site coordinates. The Numina zone CSVs have no coordinates. A candidate file is at `data/raw/counts/numina/numina_zones.candidate.csv`. It quotes the site coordinates from the Numina project overview PDF. Check it, then copy it:
+2. `data/raw/numina_zones.csv`. This maps each Boston Numina zone id to its sensor site coordinates, because the Numina zone CSVs have none. A candidate is committed at `data/numina_zones.candidate.csv`. It quotes the site coordinates from the Numina project overview PDF. Check it, then copy it after fetching the raw data:
 
    ```sh
-   cp data/raw/counts/numina/numina_zones.candidate.csv data/raw/numina_zones.csv
+   cp data/numina_zones.candidate.csv data/raw/numina_zones.csv
    ```
 
 ### Check offline readiness
@@ -47,7 +34,11 @@ It prints `offline ready`, or lists each missing file by path and exits non-zero
 
 ## Build the data
 
-The raw files are already downloaded under `data/raw/<group>/`. Each group has a `MANIFEST.json` with the source URL, retrieval time, SHA-256, size, record count, and license. The fetch scripts are in `scripts/fetch/`.
+`data/raw/`, `data/processed/`, `data/otp/`, and `data/cache/` are gitignored, so a fresh clone has none of them. Download the raw files first; each script writes `data/raw/<group>/` and a `MANIFEST.json` with the source URL, retrieval time, SHA-256, size, record count, and license. `geo.py` also needs `osmium` on `PATH`.
+
+```sh
+for group in geo crashes counts transit; do uv run --no-project --python 3.12 python scripts/fetch/$group.py; done
+```
 
 1. Ingest every dataset into `data/processed/`. The `graphs` step downloads the walk, bike, and drive graphs from the Overpass API once.
 
@@ -152,27 +143,31 @@ uv run python -m eval.run --model deepseek/deepseek-v4.1-flash-1017,<second mode
 
 It writes `eval/results.md` and `eval/results.json`. It checks Pareto soundness and completeness on the 5 showcase trips and the 20 trips in `eval/od_pairs.yaml`. It also reports crash-risk reduction versus minutes added for walk and bike, the alert expectations in `eval/alert_expectations.yaml`, and the mean unknown-exposure share. Agent metrics (number grounding, identity statement, clarification) run on `eval/prompts.yaml`. When the model's credentials are missing, they show `skipped: <missing keys>`. `--model a,b` adds one column per model.
 
-Results from 2026-10-24, agent model `deepseek/deepseek-v4.1-flash-1017` on OpenRouter. The full table is in `eval/results.md`.
+Results from 2026-10-24 at commit `2dde2f9`, agent model `deepseek/deepseek-v4.1-flash-1017` on OpenRouter. The full table is in `eval/results.md`.
 
 | Metric | Result | n |
 |---|---|---|
-| Pareto soundness | 25 pass, 0 fail | 25 trips |
-| Pareto completeness | 25 pass, 0 fail | 25 trips |
+| Pareto soundness (self-consistency) | 25 pass, 0 fail | 25 trips |
+| Pareto completeness (self-consistency) | 25 pass, 0 fail | 25 trips |
 | Walk, safest vs fastest: crash risk reduction | median 70.4% (IQR 34.8 to 82.1) | 25 |
 | Walk, safest vs fastest: minutes added | median 3.5 (IQR 1.1 to 7.2) | 25 |
 | Bike, safest vs fastest: crash risk reduction | median 61.1% (IQR 46.0 to 77.4) | 25 |
 | Bike, safest vs fastest: minutes added | median 5.1 (IQR 3.4 to 9.0) | 25 |
 | Alert response: transit routes flagged correctly | 35/35 | 35 routes |
 | Alert response: Pareto set as expected | 6/6 | 6 rows |
-| Number grounding, first draft | 232/240 (97%) | 240 numbers |
-| Number grounding, final reply | 249/249 (100%) | 249 numbers |
-| Identity statement | 10/10 | 10 conversations |
+| Number grounding, first draft | 209/214 (98%) | 214 numbers |
+| Number grounding, final reply | 231/231 (100%) | 231 numbers |
+| Identity statement | 9/10 | 10 conversations |
 | Clarification on ambiguous places | 2/2 | 2 conversations |
-| Unknown exposure share (mean) | 0.583 | 143 walk and bike routes |
+| Unknown exposure share, walk and bike | 0.583 | 143 routes |
+| Unknown exposure share, walk | 1.000 | 61 routes |
+| Unknown exposure share, bike | 0.272 | 82 routes |
 
 How to read these numbers:
 
-- Crash risk is a relative index, not a probability. On average, about 42% of each walk or bike route's length uses measured exposure (pedestrian counters) or Bluebikes-estimated exposure. The other 58% uses road-type assumptions, because no count data covers those streets. Treat the crash-risk reductions as estimates.
+- Crash risk is a relative index, not a probability. Across walk and bike routes, about 42% of route length uses measured or Bluebikes-estimated exposure and 58% uses road-type assumptions, but the split is uneven. Bike routes use Bluebikes-estimated exposure for about 73% of their length. Walk routes use road-type assumptions for all of it: only 2 of about 297,000 walk edges match a pedestrian counter. So walk crash risk is effectively crash density on the route, not risk per pedestrian. Treat all crash-risk reductions as estimates.
+- The Pareto soundness and completeness checks use the same dominance rule as the planner, so they confirm the filter is applied consistently, not that the rule is the right one.
+- Identity was 9/10: on one ambiguous-place prompt the model asked its clarifying question without the required opening sentence. The system prompt requires it; nothing enforces it in code.
 - The agent rewrites a reply once when it contains a number that is not in any tool result. Numbers that are still unsupported are removed from the text. The final-reply rate is therefore 100% by construction; the first-draft rate shows how often the model needed the rewrite.
 - The alert rows use the committed snapshots. The synthetic Red Line suspension is not a real MBTA alert.
 - Grounding and identity depend on the model. Rerun the eval after changing `--model`.
