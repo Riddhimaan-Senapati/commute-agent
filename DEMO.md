@@ -29,6 +29,17 @@ Tap **All trade-offs**. The full list comes back. Point at the heading above it:
 
 > "These are all the routes where nothing else beats them on time, CO₂, crash risk, and disruption risk at once. That's the Pareto frontier. The planner built 15 candidate routes for this trip, and 10 survived."
 
+If someone asks how the frontier is computed (or you want to show it), say:
+
+> "A route makes the frontier if no other route is at least as good on all four, and clearly better on at least one."
+
+The math, if you want it on a slide:
+
+- Objectives, lower is better: time T = Σ leg durations; CO₂ C = Σ leg distance × mode emission factor; crash risk R = Σ over walk and bike segments of (crashes + p × length_km) ÷ exposure × 1000, where p is the network's mean crashes per km; disruption D = the highest alert score on any transit leg (suspension 1.0, shuttle 0.8, detour 0.5).
+- Route a beats route b when aₖ ≤ bₖ + tolₖ for every objective k, and aₖ < bₖ − tolₖ for at least one.
+- The tolerance is tolₖ = max(floorₖ, pctₖ × max(|aₖ|, |bₖ|)): 0.5 min for time, 1 g or 1% for CO₂, 0.01 or 2% for crash risk, 0.01 for disruption.
+- Frontier = { r : no other candidate beats r }. Routes within the tolerance of a kept route on all four are dropped as duplicates.
+
 Scroll past the frontier to **Not on the frontier: 5**. These cards are greyed out, and each says why it was dropped. Four are "Duplicate of Red Line": other Red Line itineraries with the same numbers as the one above. The fifth is a Bluebikes trip, "Beaten by Bike, fastest: 14 min faster, and no worse on the rest".
 
 > "Here's what got thrown out. Bluebikes loses to riding your own bike: it's 14 minutes slower and doesn't win on anything else, so nobody should pick it. The Red Line repeats have the same numbers as the one above, so showing them adds nothing. Everything left at the top is a real choice: you can't get faster without giving something up."
