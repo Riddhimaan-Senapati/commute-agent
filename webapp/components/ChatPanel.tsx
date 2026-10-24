@@ -63,6 +63,12 @@ export default function ChatPanel({ available, model, missingKeys }: Props) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
 
+  function newChat() {
+    setMessages([]);
+    setConversationId(null);
+    setDraft("");
+  }
+
   async function send(text: string) {
     if (!text.trim() || busy) return;
     setMessages((m) => [...m, { who: "user", text }]);
@@ -93,6 +99,11 @@ export default function ChatPanel({ available, model, missingKeys }: Props) {
       <header className="chat-head">
         <h2>Ask the agent</h2>
         <span className="model">{model}</span>
+        {messages.length > 0 && (
+          <button type="button" className="new-chat" onClick={newChat} disabled={busy}>
+            New chat
+          </button>
+        )}
       </header>
       {!available && (
         <p className="warn">Chat needs {missingKeys.join(", ")}. The map and routes still work.</p>

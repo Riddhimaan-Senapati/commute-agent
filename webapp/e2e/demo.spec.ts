@@ -67,6 +67,12 @@ test("map-first demo: route on the map, pick an objective, suspend the Red Line,
   await expect(reply).toBeVisible({ timeout: 110_000 });
   await expect(reply.locator("p").first()).toHaveText(IDENTITY);
 
+
+  // New chat clears the conversation, and so does picking another trip.
+  await page.getByRole("button", { name: "New chat" }).click();
+  await expect(page.locator(".msg")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Try: / })).toBeVisible();
+
   await page.screenshot({ path: "test-results/demo-final.png" });
   expect(consoleErrors).toEqual([]);
 });
