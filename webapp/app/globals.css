@@ -310,6 +310,38 @@ input {
   font-size: 11px;
 }
 
+.picker {
+  display: grid;
+  gap: 6px;
+}
+
+.picker-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.picker-row > span {
+  color: var(--muted);
+}
+
+.picker-row select,
+.picker-row input {
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.picker-row select:focus,
+.picker-row input:focus {
+  background: #fff;
+  border-color: var(--accent);
+}
+
 .news,
 .error {
   margin: 0;

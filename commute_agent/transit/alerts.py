@@ -26,6 +26,9 @@ from commute_agent.models import (
 from commute_agent.paths import ALERT_SNAPSHOTS
 
 MBTA_ALERTS_URL = "https://api-v3.mbta.com/alerts"
+# Selectable without --live: the live MBTA loader, with the server's 60 s cache and a note
+# instead of an error when the fetch fails.
+MBTA_LIVE_SOURCE = "MBTA live"
 
 # Prototype heuristic effect table. DELAY is handled in effect_score, not here.
 EFFECT_SCORES: dict[str, float] = {
@@ -133,13 +136,13 @@ def _slug(label: str) -> str:
 
 
 def list_alert_sources(snapshot_dir: Path = ALERT_SNAPSHOTS) -> list[str]:
-    """Return selectable alert sources: ['none', 'live', <snapshot labels sorted>]."""
+    """Return selectable alert sources: ['none', 'live', 'MBTA live', <snapshot labels sorted>]."""
     labels: list[str] = []
     if snapshot_dir.is_dir():
         for path in snapshot_dir.glob("*.json"):
             snapshot = AlertSnapshot.model_validate_json(path.read_text())
             labels.append(snapshot.label)
-    return ["none", "live", *sorted(labels)]
+    return ["none", "live", MBTA_LIVE_SOURCE, *sorted(labels)]
 
 
 def _fetch_live() -> list[Alert]:
@@ -164,6 +167,8 @@ def load_alerts(
     - ``'none'`` -> ``([], None)``.
     - ``'live'`` -> fetched alerts with clock None (meaning "use the departure time").
       Refused with an empty result when ``live`` is False.
+    - ``'MBTA live'`` -> fetched alerts with clock None, whatever ``live`` is. A failed
+      fetch raises ``httpx.HTTPError`` or ``ValueError``; the caller turns that into a note.
     - a snapshot label -> its alerts and its ``recorded_at`` clock.
     """
     if source == "none":
@@ -171,6 +176,8 @@ def load_alerts(
     if source == "live":
         if not live:
             return [], None
+        return _fetch_live(), None
+    if source == MBTA_LIVE_SOURCE:
         return _fetch_live(), None
 
     if snapshot_dir.is_dir():
