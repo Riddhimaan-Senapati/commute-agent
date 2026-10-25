@@ -172,8 +172,9 @@ def record_transit_lookups(monkeypatch: pytest.MonkeyPatch) -> list[datetime]:
     """Record the departure of every transit lookup; every lookup reports 'not cached'."""
     seen: list[datetime] = []
 
-    def fetch(origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=()):
-        seen.append(depart_at)
+    def fetch(origin, destination, depart_at, *, live, access="walk", **_options):
+        if access == "walk":  # bike-access lookups use the same departure
+            seen.append(depart_at)
         return None, "transit not cached for this trip"
 
     monkeypatch.setattr(planner, "fetch_itineraries", fetch)
