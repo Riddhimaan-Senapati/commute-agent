@@ -129,9 +129,11 @@ def _alternatives(
     transit: list[RouteOption],
     alerts: list[Alert],
     at: datetime,
+    first_id: int,
 ) -> list[RouteOption]:
     """Transit itineraries that avoid every route an active alert suspends, or [] when
-    nothing is suspended or the excluding request is not available (not cached offline)."""
+    nothing is suspended or the excluding request is not available (not cached offline).
+    ``transit`` holds every transit candidate so far, for the suspended-route check."""
     used = {leg.transit.route_id for r in transit for leg in r.legs if leg.transit}
     suspended = suspended_routes(alerts, at, used)
     if not suspended:
@@ -141,7 +143,18 @@ def _alternatives(
     )
     if raw is None:
         return []
-    return transit_routes(raw, ctx.graphs, ctx.factors, first_id=len(transit) + 1)
+    return transit_routes(raw, ctx.graphs, ctx.factors, first_id=first_id)
+
+
+def _bike_transit(
+    ctx: PlannerContext, origin: Point, destination: Point, depart_at: datetime, first_id: int
+) -> list[RouteOption]:
+    """Bike-access transit itineraries, or [] when the bike query is not available (offline
+    with no cache entry, or OTP unreachable)."""
+    raw, _ = fetch_itineraries(origin, destination, depart_at, live=ctx.live, access="bike")
+    if raw is None:
+        return []
+    return transit_routes(raw, ctx.graphs, ctx.factors, first_id=first_id)
 
 
 def gather_candidates(
@@ -162,12 +175,23 @@ def gather_candidates(
     )
     at = alert_clock or depart_at
     raw, reason = fetch_itineraries(origin, destination, depart_at, live=ctx.live)
+    transit: list[RouteOption] = []
     if raw is None:
         omitted["transit"] = reason
     else:
         transit = transit_routes(raw, ctx.graphs, ctx.factors)
-        candidates += transit + _alternatives(
-            ctx, origin, destination, depart_at, transit, alerts, at
+    bike_transit = _bike_transit(ctx, origin, destination, depart_at, first_id=len(transit) + 1)
+    candidates += transit + bike_transit
+    if raw is not None:
+        candidates += _alternatives(
+            ctx,
+            origin,
+            destination,
+            depart_at,
+            transit + bike_transit,
+            alerts,
+            at,
+            first_id=len(transit) + len(bike_transit) + 1,
         )
         if not any(route.kind == "transit" for route in candidates):
             omitted["transit"] = "no transit itinerary"

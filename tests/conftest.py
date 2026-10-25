@@ -130,8 +130,12 @@ def otp_cache(fixture_paths: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Serve the fixture OTP response for every offline transit lookup."""
     raw = json.loads((fixture_paths / "otp_fields_corner.json").read_text())
 
-    def cached(origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=()):
-        return (None, "transit not cached for this trip") if exclude_routes else (raw, None)
+    def cached(
+        origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=(), access="walk"
+    ):
+        if exclude_routes or access == "bike":
+            return (None, "transit not cached for this trip")
+        return (raw, None)
 
     monkeypatch.setattr(planner, "fetch_itineraries", cached)
 

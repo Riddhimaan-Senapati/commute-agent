@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -61,6 +62,40 @@ def test_explicit_departure_is_used_as_given() -> None:
     assert resolve_departure(chosen, live=False) == chosen
 
 
+def test_gather_candidates_adds_bike_access_transit(planner_ctx, monkeypatch) -> None:
+    fixtures = Path(__file__).resolve().parent / "fixtures"
+    walk_raw = json.loads((fixtures / "otp_fields_corner.json").read_text())
+    bike_raw = json.loads((fixtures / "otp_bike_access.json").read_text())
+
+    def fake_fetch(
+        origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=(), access="walk"
+    ):
+        if exclude_routes:
+            return None, "transit not cached for this trip"
+        return (bike_raw if access == "bike" else walk_raw), None
+
+    monkeypatch.setattr(planner, "fetch_itineraries", fake_fetch)
+    when = datetime.fromisoformat("2026-10-27T08:15:00-04:00")
+
+    candidates, omitted, _ = planner.gather_candidates(
+        planner_ctx, ORIGIN, DESTINATION, when, [], None
+    )
+
+    bike_first = [c for c in candidates if c.kind == "transit" and c.legs[0].mode == "bike"]
+    assert bike_first
+    assert "transit" not in omitted
+    ids = [c.id for c in candidates]
+    assert len(ids) == len(set(ids))
+
+
+def test_gather_candidates_without_bike_cache_has_no_bike_routes(planner_ctx, otp_cache) -> None:
+    when = datetime.fromisoformat("2026-10-27T08:15:00-04:00")
+
+    candidates, _, _ = planner.gather_candidates(planner_ctx, ORIGIN, DESTINATION, when, [], None)
+
+    assert not [c for c in candidates if c.kind == "transit" and c.legs[0].mode == "bike"]
+
+
 def test_suspended_route_adds_alternatives_that_avoid_it(planner_ctx, fixture_paths, monkeypatch):
     from commute_agent.models import Alert
     from commute_agent.transit.alerts import parse_mbta_alerts
@@ -68,7 +103,11 @@ def test_suspended_route_adds_alternatives_that_avoid_it(planner_ctx, fixture_pa
     raw = json.loads((fixture_paths / "otp_fields_corner.json").read_text())
     calls = []
 
-    def fetch(origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=()):
+    def fetch(
+        origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=(), access="walk"
+    ):
+        if access == "bike":
+            return None, "transit not cached for this trip"
         calls.append(exclude_routes)
         return raw, None
 
