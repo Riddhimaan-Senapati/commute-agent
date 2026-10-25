@@ -694,7 +694,9 @@ Search for walk, bike, and the bike part of bluebikes.
 
 Drive uses `ox.routing.shortest_path(G_drive, s, t, weight="travel_time")` and one route.
 
-Bluebikes picks the station nearest the origin and the station nearest the destination by straight-line distance. When both are the same station, bluebikes is omitted with reason `same station at both ends`. Its walk legs use the fastest walk path. Its bike leg runs the same λ sweep on the bike graph with mode `bluebikes`. The summary names both stations. `PlanResult.notes` carries "Bluebikes dock availability is not checked."
+Bluebikes picks the station nearest the origin and the station nearest the destination by straight-line distance. When both are the same station, bluebikes is omitted with reason `same station at both ends`. Its walk legs use the fastest walk path. Its bike leg runs the same λ sweep on the bike graph with mode `bluebikes`. The summary names both stations.
+
+Live availability (`commute_agent/bluebikes_live.py`) applies only when `COMMUTE_BLUEBIKES_LIVE=1`. `fetch_availability` discovers the GBFS `station_status` feed from `https://gbfs.bluebikes.com/gbfs/gbfs.json` (English feed list; the feed itself is served from `gbfs.lyft.com`), with a 5 s timeout per request and a 60 s module cache that also caches failures. It returns counts keyed by both the GBFS `station_id` and `legacy_id`, because the trip data keys stations by legacy id. When counts are known, the start station must have `num_bikes_available > 0` and `is_renting`, the end station must have `num_docks_available > 0` and `is_returning`, and a station missing from the feed is not used. Selection stays nearest-first among eligible stations, and the counts appear in the `time_min` source. When no station is eligible, bluebikes is omitted with reason `no station with bikes available` or `no station with docks available`. When availability is unknown (flag off, offline, or failure), selection is unchanged. `PlanResult.notes` carries `BLUEBIKES_UNCHECKED_NOTE` only when availability was not checked for that plan.
 
 Route ids are `walk-1`, `walk-2`, and so on, in the order the sweep produced them. Summaries are `Walk, fastest`, `Walk, safer variant 1`, `Bike, fastest`, `Drive`, and `Bluebikes from <station> to <station>`.
 
@@ -860,9 +862,10 @@ DEFAULT_OFFLINE_DEPARTURE = ("tuesday", "08:15")
 FIXED_NOTES = [
     "Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.",
     "Drive time is free-flow and ignores traffic.",
-    "Bluebikes dock availability is not checked.",
     "Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.",
 ]
+# Appended to notes only when live Bluebikes counts were not checked for the plan.
+BLUEBIKES_UNCHECKED_NOTE = "Bluebikes dock availability is not checked."
 
 @dataclass(frozen=True)
 class PlannerContext:

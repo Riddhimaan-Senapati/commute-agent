@@ -4,6 +4,7 @@ The MCP server passes the active alerts in. The planner never reads session stat
 """
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -15,10 +16,12 @@ from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 from shapely.ops import unary_union
 
+from commute_agent import bluebikes_live
 from commute_agent.emissions import load_emission_factors
 from commute_agent.models import (
     Alert,
     AlertRef,
+    DockCounts,
     EmissionFactor,
     LegMode,
     PlanResult,
@@ -41,9 +44,9 @@ FIXED_NOTES = [
     "Crash risk covers walking and biking segments only. "
     "Driving and transit vehicle crash risk is not modeled.",
     "Drive time is free-flow and ignores traffic.",
-    "Bluebikes dock availability is not checked.",
     "Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.",
 ]
+BLUEBIKES_UNCHECKED_NOTE = "Bluebikes dock availability is not checked."
 
 
 @dataclass(frozen=True)
@@ -127,13 +130,14 @@ def gather_candidates(
     depart_at: datetime,
     alerts: list[Alert],
     alert_clock: datetime | None,
+    availability: Mapping[str, DockCounts] | None = None,
 ) -> tuple[list[RouteOption], dict[RouteKind, str], list[AlertRef]]:
     """Street plus transit candidates with disruption applied. Raises OutsideServiceArea."""
     outside = _outside(ctx, origin, destination)
     if outside:
         raise OutsideServiceArea(f"Outside the City of Boston: {' and '.join(outside)}")
 
-    candidates, omitted = street_routes(ctx.graphs, ctx.factors, origin, destination)
+    candidates, omitted = street_routes(ctx.graphs, ctx.factors, origin, destination, availability)
     at = alert_clock or depart_at
     raw, reason = fetch_itineraries(origin, destination, depart_at, live=ctx.live)
     if raw is None:
@@ -159,6 +163,13 @@ def _alert_refs(alerts: list[Alert]) -> dict[str, AlertRef]:
     }
 
 
+def _notes(availability: Mapping[str, DockCounts] | None) -> list[str]:
+    notes = list(FIXED_NOTES)
+    if availability is None:
+        notes.append(BLUEBIKES_UNCHECKED_NOTE)
+    return notes
+
+
 def plan_trip(
     ctx: PlannerContext,
     origin: Point,
@@ -169,8 +180,9 @@ def plan_trip(
     alert_clock: datetime | None,
 ) -> PlanResult:
     depart = resolve_departure(depart_at, ctx.live)
+    availability = bluebikes_live.fetch_availability()
     candidates, omitted, unscored = gather_candidates(
-        ctx, origin, destination, depart, alerts, alert_clock
+        ctx, origin, destination, depart, alerts, alert_clock, availability
     )
     front = pareto_front(candidates)
     labeled = assign_labels(front)
@@ -195,6 +207,6 @@ def plan_trip(
         candidate_count=len(candidates),
         unscored_alerts=unscored,
         preference=weights,
-        notes=list(FIXED_NOTES),
+        notes=_notes(availability),
         filtered=filtered_out(candidates, front),
     )

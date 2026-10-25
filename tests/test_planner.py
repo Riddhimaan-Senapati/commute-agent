@@ -34,7 +34,7 @@ def test_plan_returns_front_with_fastest_label(
     fastest = [route for route in plan.routes if "fastest" in route.labels]
     assert len(fastest) == 1
     assert plan.run_mode == "offline"
-    assert plan.notes == FIXED_NOTES
+    assert plan.notes == [*FIXED_NOTES, planner.BLUEBIKES_UNCHECKED_NOTE]
     assert plan.candidate_count >= len(plan.routes)
     assert len(plan.tradeoffs_vs_fastest) == len(plan.routes)
 
