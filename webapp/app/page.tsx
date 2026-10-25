@@ -6,6 +6,7 @@ import ChatPanel from "@/components/ChatPanel";
 import PlaceInput from "@/components/PlaceInput";
 import FilteredRoutes from "@/components/FilteredRoutes";
 import RouteCard from "@/components/RouteCard";
+import TradeoffChart from "@/components/TradeoffChart";
 import {
   type AlertSources,
   AlertSourcesSchema,
@@ -237,6 +238,14 @@ export default function Home() {
           <h2 className="list-head">
             On the Pareto frontier: {plan.routes.length} of {plan.candidate_count} routes
           </h2>
+        )}
+        {plan && objective === "all" && (
+          <TradeoffChart
+            routes={plan.routes}
+            filtered={plan.filtered}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
         )}
         <ol className="cards" aria-label="Routes">
           {shown.map((route) => (
