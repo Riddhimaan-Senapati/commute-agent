@@ -64,6 +64,7 @@ class PlanBody(BaseModel):
     origin: Point
     destination: Point
     depart_at: str | None = None
+    step_free: bool = False
 
 
 class AlertSourceBody(BaseModel):
@@ -239,6 +240,7 @@ def create_app(
             depart_at=body.depart_at,
             alert_source=alert_source(session),
             session_id=session,
+            step_free=body.step_free,
         )
         return call_tool(app, "get_plan", query_id=created["query_id"])
 

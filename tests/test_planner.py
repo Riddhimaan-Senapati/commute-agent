@@ -69,7 +69,15 @@ def test_gather_candidates_adds_bike_access_transit(planner_ctx, monkeypatch) ->
     bike_raw = json.loads((fixtures / "otp_bike_access.json").read_text())
 
     def fake_fetch(
-        origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=(), access="walk"
+        origin,
+        destination,
+        depart_at,
+        *,
+        live,
+        cache_dir=None,
+        exclude_routes=(),
+        access="walk",
+        step_free=False,
     ):
         if exclude_routes:
             return None, "transit not cached for this trip"
@@ -105,7 +113,15 @@ def test_suspended_route_adds_alternatives_that_avoid_it(planner_ctx, fixture_pa
     calls = []
 
     def fetch(
-        origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=(), access="walk"
+        origin,
+        destination,
+        depart_at,
+        *,
+        live,
+        cache_dir=None,
+        exclude_routes=(),
+        access="walk",
+        step_free=False,
     ):
         if access == "bike":
             return None, "transit not cached for this trip"

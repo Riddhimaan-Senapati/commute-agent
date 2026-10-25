@@ -131,7 +131,15 @@ def otp_cache(fixture_paths: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     raw = json.loads((fixture_paths / "otp_fields_corner.json").read_text())
 
     def cached(
-        origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=(), access="walk"
+        origin,
+        destination,
+        depart_at,
+        *,
+        live,
+        cache_dir=None,
+        exclude_routes=(),
+        access="walk",
+        step_free=False,
     ):
         if exclude_routes or access == "bike":
             return (None, "transit not cached for this trip")

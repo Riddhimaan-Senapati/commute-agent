@@ -325,3 +325,53 @@ def test_bike_access_rejects_route_exclusions(tmp_path: Path) -> None:
             exclude_routes=("Red",),
             access="bike",
         )
+
+
+def test_step_free_cache_key_differs_and_default_key_is_unchanged() -> None:
+    origin = Point(lat=42.3003, lon=-71.0614)
+    dest = Point(lat=42.3555, lon=-71.0603)
+    when = datetime.fromisoformat("2026-10-27T08:15:00-04:00")
+    default = otp._cache_key_for_datetime(origin, dest, when)
+    # The default key is the pre-feature key: the same hash of the same raw string.
+    assert default == otp.otp_cache_key(origin, dest, "tuesday", "08:15")
+    step_free = otp._cache_key_for_datetime(origin, dest, when, step_free=True)
+    assert step_free != default
+    assert step_free == otp.otp_cache_key(origin, dest, "tuesday", "08:15;step-free")
+
+
+def test_plan_query_default_is_plan_query_and_step_free_adds_wheelchair() -> None:
+    assert otp.plan_query() == otp.PLAN_QUERY
+    step_free = otp.plan_query(step_free=True)
+    assert "preferences: {accessibility: {wheelchair: {enabled: true}}}" in step_free
+    both = otp.plan_query(excluding=True, step_free=True)
+    # One preferences input carries both the exclusion and the wheelchair preference.
+    assert both.count("preferences:") == 1
+    assert "$exclude" in both and "wheelchair" in both
+
+
+def test_fetch_step_free_queries_otp_and_caches_under_its_own_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    origin = Point(lat=42.3003, lon=-71.0614)
+    dest = Point(lat=42.3555, lon=-71.0603)
+    depart = datetime(2026, 10, 27, 8, 15, tzinfo=otp.TIMEZONE)
+    payload = {"data": {"planConnection": {"edges": []}}}
+    sent: list[str] = []
+
+    def fake_post(url: str, **kwargs):
+        sent.append(kwargs["json"]["query"])
+        return httpx.Response(200, json=payload, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(otp.httpx, "post", fake_post)
+    raw, reason = otp.fetch_itineraries(
+        origin, dest, depart, live=True, cache_dir=tmp_path, step_free=True
+    )
+    assert (raw, reason) == (payload, None)
+    assert "wheelchair" in sent[0]
+    key = otp._cache_key_for_datetime(origin, dest, depart, step_free=True)
+    assert (tmp_path / f"{key}.json").exists()
+    # The default key holds nothing, so default offline lookups still miss.
+    assert otp.fetch_itineraries(origin, dest, depart, live=False, cache_dir=tmp_path) == (
+        None,
+        "transit not cached for this trip",
+    )

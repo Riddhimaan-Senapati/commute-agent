@@ -26,6 +26,7 @@ from commute_agent.transit.alerts import (
     list_alert_sources,
     load_alerts,
     parse_mbta_alerts,
+    suspended_routes,
 )
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -279,3 +280,68 @@ def test_synthetic_suspension_names_the_red_line_only_while_active() -> None:
     assert suspended_routes(alerts, clock, {"15"}) == ()
     before = datetime.fromisoformat("2026-10-27T04:00:00-04:00")
     assert suspended_routes(alerts, before, {"Red"}) == ()
+
+
+# --- Step-free elevator closures -------------------------------------------
+
+ELEVATOR_AT = datetime.fromisoformat("2026-10-27T08:15:00-04:00")
+DOWNTOWN_CROSSING_ALERT = "1031518"
+
+
+def elevator_alerts() -> list[Alert]:
+    """Recorded ELEVATOR_CLOSURE alerts from the MBTA V3 API, trimmed to a few entities."""
+    return parse_mbta_alerts(json.loads((FIXTURES / "mbta_elevator_alerts.json").read_text()))
+
+
+def downtown_crossing_route() -> RouteOption:
+    """A one-leg Red Line route that boards at Downtown Crossing (stop 70078)."""
+    transit = TransitRef(
+        route_id="Red",
+        route_name="Red Line",
+        route_type=1,
+        direction_id=1,
+        stop_ids=["70078", "place-dwnxg"],
+    )
+    leg = Leg(mode="subway", distance_m=1000, duration_min=5, co2_g=10, transit=transit)
+    return assemble_route("r-dwn", "transit", "Red Line", [leg], "t", "c", "k")
+
+
+def test_elevator_fixture_is_real_elevator_closures() -> None:
+    alerts = elevator_alerts()
+    assert {alert.effect for alert in alerts} == {"ELEVATOR_CLOSURE"}
+    assert len(alerts) == 3
+
+
+def test_elevator_closure_scores_only_in_step_free_mode() -> None:
+    alert = next(a for a in elevator_alerts() if a.id == DOWNTOWN_CROSSING_ALERT)
+    assert effect_score(alert) == 0.2  # today's table score, unchanged when step-free is off
+    assert effect_score(alert, step_free=True) == 1.0
+
+
+def test_elevator_closure_flags_matching_leg_only_when_step_free() -> None:
+    route = downtown_crossing_route()
+    alerts = elevator_alerts()
+
+    off, _ = apply_disruptions([route], alerts, ELEVATOR_AT)
+    assert off[0].legs[0].disruption_risk == 0.2
+    assert DOWNTOWN_CROSSING_ALERT in off[0].alert_ids
+
+    on, unscored = apply_disruptions([route], alerts, ELEVATOR_AT, step_free=True)
+    assert on[0].legs[0].disruption_risk == 1.0
+    assert on[0].objectives.disruption_risk == 1.0
+    assert DOWNTOWN_CROSSING_ALERT in on[0].alert_ids
+    assert unscored == []
+
+
+def test_elevator_closure_elsewhere_does_not_flag_step_free_leg() -> None:
+    # The leg boards at Downtown Crossing; the Haymarket closure names other stops.
+    route = downtown_crossing_route()
+    haymarket = next(a for a in elevator_alerts() if a.id == "1040976")
+    on, _ = apply_disruptions([route], [haymarket], ELEVATOR_AT, step_free=True)
+    assert on[0].legs[0].disruption_risk == 0.0
+    assert on[0].alert_ids == []
+
+
+def test_elevator_closure_never_reroutes_like_a_suspension() -> None:
+    alerts = elevator_alerts()
+    assert suspended_routes(alerts, ELEVATOR_AT, {"Red", "Green-D", "110"}) == ()

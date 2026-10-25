@@ -183,6 +183,10 @@ def plan_trip(
             description="Session whose choices order the routes, or null for the shared session."
         ),
     ] = None,
+    step_free: Annotated[
+        bool,
+        Field(description="True to plan wheelchair-accessible transit and flag elevator closures."),
+    ] = False,
 ) -> PlanResult:
     """Plan a trip inside Boston and return the Pareto set of routes with trade-offs."""
     state = _state()
@@ -206,7 +210,15 @@ def plan_trip(
     source = _source(alert_source)
     alerts, clock, alert_note = _load_alerts_for_source(source)
     plan = planner.plan_trip(
-        state.ctx, origin, destination, depart, source, alerts, clock, session_id or ""
+        state.ctx,
+        origin,
+        destination,
+        depart,
+        source,
+        alerts,
+        clock,
+        session_id or "",
+        step_free=step_free,
     )
     if showcase_note:
         plan = plan.model_copy(update={"notes": [showcase_note, *plan.notes]})
@@ -215,7 +227,10 @@ def plan_trip(
     state.plans[plan.query_id] = plan
     state.plan_alerts[plan.query_id] = {
         alert.id: AlertRef(
-            id=alert.id, header=alert.header, effect=alert.effect, score=effect_score(alert)
+            id=alert.id,
+            header=alert.header,
+            effect=alert.effect,
+            score=effect_score(alert, step_free=step_free),
         )
         for alert in alerts
     }
