@@ -43,7 +43,7 @@ It prints `offline ready`, or lists each missing file by path and exits non-zero
 `data/raw/`, `data/processed/`, `data/otp/`, and `data/cache/` are gitignored, so a fresh clone has none of them. Download the raw files first; each script writes `data/raw/<group>/` and a `MANIFEST.json` with the source URL, retrieval time, SHA-256, size, record count, and license. `geo.py` also needs `osmium` on `PATH`.
 
 ```sh
-for group in geo crashes counts transit; do uv run --no-project --python 3.12 python scripts/fetch/$group.py; done
+for group in geo crashes counts transit ridership; do uv run --no-project --python 3.12 python scripts/fetch/$group.py; done
 ```
 
 1. Ingest every dataset into `data/processed/`. The `graphs` step downloads the walk, bike, and drive graphs from the Overpass API once.
@@ -52,7 +52,7 @@ for group in geo crashes counts transit; do uv run --no-project --python 3.12 py
    uv run python -m commute_agent.ingest all
    ```
 
-   To run one step, name it: `boundary`, `graphs`, `basemap`, `crashes`, `counts`, `bluebikes`, `stations`, or `otp-inputs`.
+   To run one step, name it: `boundary`, `graphs`, `basemap`, `crashes`, `counts`, `bluebikes`, `ridership`, `stations`, or `otp-inputs`.
 
 2. Add crash risk and exposure to the street graphs. This writes `risk_meta.json` and `exposure_calibration.json`.
 
@@ -204,7 +204,7 @@ Results from 2026-10-24 at commit `2dde2f9`, agent model `deepseek/deepseek-v4.1
 
 How to read these numbers:
 
-- Crash risk is a relative index, not a probability. Across walk and bike routes, about 42% of route length uses measured or Bluebikes-estimated exposure and 58% uses road-type assumptions, but the split is uneven. Bike routes use Bluebikes-estimated exposure for about 73% of their length. Walk routes use road-type assumptions for all of it: only 2 of about 297,000 walk edges match a pedestrian counter. So walk crash risk is effectively crash density on the route, not risk per pedestrian. Treat all crash-risk reductions as estimates.
+- Crash risk is a relative index, not a probability. Across walk and bike routes, about 42% of route length uses measured or Bluebikes-estimated exposure and 58% uses road-type assumptions, but the split is uneven. Bike routes use Bluebikes-estimated exposure for about 73% of their length. Walk routes use road-type assumptions for all of it. Only 27 walk edges match a pedestrian counter (the walk calibration below), and only 2 of them keep the `ped_counter` label because the rest lie outside crash coverage and are labelled `outside_crash_coverage`. So walk crash risk is effectively crash density on the route, not risk per pedestrian. Treat all crash-risk reductions as estimates.
 - The Pareto soundness and completeness checks use the same dominance rule as the planner, so they confirm the filter is applied consistently, not that the rule is the right one.
 - Identity was 9/10 in an earlier run, before `run_turn` existed to enforce it: on one ambiguous-place prompt the model asked its clarifying question without the required opening sentence. `run_turn` now prepends `IDENTITY_SENTENCE` to the first reply of a conversation when the model leaves it out, and the eval reads that final reply. The identity column therefore passes by construction on first replies. It no longer measures the model. The 9/10 figure is the model's own rate from before the prepend.
 - The agent rewrites a reply once when it contains a number that is not in any tool result. Numbers that are still unsupported are removed from the text. The final-reply rate is therefore 100% by construction; the first-draft rate shows how often the model needed the rewrite.
@@ -213,7 +213,9 @@ How to read these numbers:
 
 ## Data notes
 
-- Exposure calibration: R² is 0.09 (0.0906). It matched 35 counters: 17 Cambridge citywide, 15 Somerville, and 3 Numina. 18 more counters were over 30 m from any edge and were not matched. Source: `data/processed/exposure_calibration.json`.
+- Exposure calibration: bike R² is 0.09 (0.0906). It matched 35 counters: 17 Cambridge citywide, 15 Somerville, and 3 Numina. 18 more counters were over 30 m from any edge and were not matched. Source: `data/processed/exposure_calibration.json`.
+- Walk station-entries term (not adopted, flag `USE_STATION_ENTRIES` is False). Walk calibration matches 27 walk edges to pedestrian counters (per-edge mean). R² of the road-class prior alone is -0.2300; R² with the prior plus distance-decayed MBTA station entries (2025, half-mile linear taper) is -0.2098. The raw R² rises only because the two-term fit nests the prior-only fit. Adjusted R² falls from -0.2300 to -0.2582, so the term is not adopted. Both coefficients are kept in `exposure_calibration.json` under `walk`. Source: `data/processed/exposure_calibration.json`.
+- The half-mile catchment is a planning convention (FTA Circular 4702.1B, cited in the `station_entry_term` comment), not a fitted value.
 - Cambridge crash coverage is about half the records. Only 8,878 of 17,230 Cambridge police crash rows have coordinates. 1,815 have an empty location and 6,537 have an address only. The risk build drops these rows. Of the rows with coordinates, 615 involve a cyclist and 364 a pedestrian; these enter the risk build.
 - The risk build snapped 4,564 bike and 7,267 pedestrian crashes to street edges. It discarded 123 bike and 96 pedestrian crashes more than 30 m from any edge. Source: `data/processed/risk_meta.json`.
 - Boston Vision Zero and Cambridge police records use different crash definitions. Neither is the MassDOT state crash file.
@@ -247,6 +249,7 @@ This table is copied from `data/raw/*/MANIFEST.json`.
 | geo | `geo/massachusetts-latest.osm.pbf` |  | <https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf> | ODbL 1.0, © OpenStreetMap contributors |
 | geo | `geo/boston.osm.pbf` |  | <https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf> | ODbL 1.0, © OpenStreetMap contributors |
 | transit | `transit/MBTA_GTFS.zip` |  | <https://cdn.mbta.com/MBTA_GTFS.zip> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |
+| ridership | `ridership/GSE_by_year.zip` |  | <https://www.arcgis.com/sharing/rest/content/items/7859894afb5641ce91a2bb03599fdf5b/data> | CC0 1.0 (ArcGIS item licenseInfo), https://mbta-massdot.opendata.arcgis.com/datasets/7859894afb5641ce91a2bb03599fdf5b |
 | transit | `transit/mbta_routes.json` | 8 | <https://api-v3.mbta.com/routes?filter[type]=0,1> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |
 | transit | `transit/mbta_alerts_20261024T164830Z.json` | 61 | <https://api-v3.mbta.com/alerts?filter[route_type]=0,1,3&page[limit]=500> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |
 | transit | `transit/massgis_rapid_transit_stations.json` | 170 | <https://arcgisserver.digital.mass.gov/arcgisserver/rest/services/AGOL/MBTA_Rapid_Transit/MapServer/0/query?where=1%3D1&outFields=STATION,LINE,ROUTE&returnGeometry=true&outSR=4326&f=json> | MassGIS open data (Commonwealth of Massachusetts) |
