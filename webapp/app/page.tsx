@@ -282,7 +282,10 @@ export default function Home() {
       </button>
       <section id="agent-drawer" className={`drawer${chatOpen ? " open" : ""}`} inert={!chatOpen}>
         {status && (
-          <ChatPanel available={status.agent_available} model={status.agent_model} missingKeys={status.missing_model_keys} />
+          // A new trip starts a new conversation, so the agent never carries an old trip over.
+          <ChatPanel
+            key={`${from?.name ?? ""}|${to?.name ?? ""}`}
+            available={status.agent_available} model={status.agent_model} missingKeys={status.missing_model_keys} />
         )}
       </section>
     </div>
