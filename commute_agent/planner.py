@@ -105,6 +105,7 @@ def _alternatives(
     transit: list[RouteOption],
     alerts: list[Alert],
     at: datetime,
+    step_free: bool,
 ) -> list[RouteOption]:
     """Transit itineraries that avoid every route an active alert suspends, or [] when
     nothing is suspended or the excluding request is not available (not cached offline)."""
@@ -113,7 +114,12 @@ def _alternatives(
     if not suspended:
         return []
     raw, _ = fetch_itineraries(
-        origin, destination, depart_at, live=ctx.live, exclude_routes=suspended
+        origin,
+        destination,
+        depart_at,
+        live=ctx.live,
+        exclude_routes=suspended,
+        step_free=step_free,
     )
     if raw is None:
         return []
@@ -127,33 +133,42 @@ def gather_candidates(
     depart_at: datetime,
     alerts: list[Alert],
     alert_clock: datetime | None,
+    *,
+    step_free: bool = False,
 ) -> tuple[list[RouteOption], dict[RouteKind, str], list[AlertRef]]:
-    """Street plus transit candidates with disruption applied. Raises OutsideServiceArea."""
+    """Street plus transit candidates with disruption applied. Raises OutsideServiceArea.
+
+    ``step_free`` asks OTP for wheelchair-accessible transit and scores elevator closures."""
     outside = _outside(ctx, origin, destination)
     if outside:
         raise OutsideServiceArea(f"Outside the City of Boston: {' and '.join(outside)}")
 
     candidates, omitted = street_routes(ctx.graphs, ctx.factors, origin, destination)
     at = alert_clock or depart_at
-    raw, reason = fetch_itineraries(origin, destination, depart_at, live=ctx.live)
+    raw, reason = fetch_itineraries(
+        origin, destination, depart_at, live=ctx.live, step_free=step_free
+    )
     if raw is None:
         omitted["transit"] = reason
     else:
         transit = transit_routes(raw, ctx.graphs, ctx.factors)
         candidates += transit + _alternatives(
-            ctx, origin, destination, depart_at, transit, alerts, at
+            ctx, origin, destination, depart_at, transit, alerts, at, step_free
         )
         if not any(route.kind == "transit" for route in candidates):
             omitted["transit"] = "no transit itinerary"
 
-    scored, unscored = apply_disruptions(candidates, alerts, at)
+    scored, unscored = apply_disruptions(candidates, alerts, at, step_free=step_free)
     return scored, omitted, unscored
 
 
-def _alert_refs(alerts: list[Alert]) -> dict[str, AlertRef]:
+def _alert_refs(alerts: list[Alert], step_free: bool) -> dict[str, AlertRef]:
     return {
         alert.id: AlertRef(
-            id=alert.id, header=alert.header, effect=alert.effect, score=effect_score(alert)
+            id=alert.id,
+            header=alert.header,
+            effect=alert.effect,
+            score=effect_score(alert, step_free=step_free),
         )
         for alert in alerts
     }
@@ -167,10 +182,12 @@ def plan_trip(
     alert_source: str,
     alerts: list[Alert],
     alert_clock: datetime | None,
+    *,
+    step_free: bool = False,
 ) -> PlanResult:
     depart = resolve_departure(depart_at, ctx.live)
     candidates, omitted, unscored = gather_candidates(
-        ctx, origin, destination, depart, alerts, alert_clock
+        ctx, origin, destination, depart, alerts, alert_clock, step_free=step_free
     )
     front = pareto_front(candidates)
     labeled = assign_labels(front)
@@ -178,7 +195,7 @@ def plan_trip(
     ordered = order_routes(labeled, weights)
 
     fastest = next((route for route in labeled if "fastest" in route.labels), None)
-    refs = _alert_refs(alerts)
+    refs = _alert_refs(alerts, step_free)
     trades: list[Tradeoff] = (
         [tradeoff(route, fastest, refs) for route in ordered] if fastest is not None else []
     )

@@ -76,6 +76,25 @@ def test_plan_returns_full_plan(client: TestClient) -> None:
     assert any(leg["coords"] for route in body["routes"] for leg in route["legs"])
 
 
+def test_plan_forwards_step_free_and_defaults_to_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[dict] = []
+
+    def plan_trip(**arguments):
+        seen.append(arguments)
+        return {"query_id": "q1"}
+
+    def get_plan(**arguments):
+        return {"query_id": "q1"}
+
+    tools = {"plan_trip": plan_trip, "get_plan": get_plan}
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with TestClient(create_app(live=False, tool_source=lambda: tools)) as test_client:
+        body = {k: v for k, v in PLAN_BODY.items()}
+        test_client.post("/api/plan", json=body)
+        test_client.post("/api/plan", json={**body, "step_free": True})
+    assert [call["step_free"] for call in seen] == [False, True]
+
+
 def test_plan_outside_boston_is_422(client: TestClient) -> None:
     body = {**PLAN_BODY, "origin": {"lat": 42.5, "lon": -71.0}}
     response = client.post("/api/plan", json=body)

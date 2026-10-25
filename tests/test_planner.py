@@ -67,7 +67,9 @@ def test_suspended_route_adds_alternatives_that_avoid_it(planner_ctx, fixture_pa
     raw = json.loads((fixture_paths / "otp_fields_corner.json").read_text())
     calls = []
 
-    def fetch(origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=()):
+    def fetch(
+        origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=(), step_free=False
+    ):
         calls.append(exclude_routes)
         return raw, None
 

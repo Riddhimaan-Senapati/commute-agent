@@ -163,6 +163,10 @@ def plan_trip(
         str | None,
         Field(description="Alert source to use, or null for the one set with set_alert_source."),
     ] = None,
+    step_free: Annotated[
+        bool,
+        Field(description="True to plan wheelchair-accessible transit and flag elevator closures."),
+    ] = False,
 ) -> PlanResult:
     """Plan a trip inside Boston and return the Pareto set of routes with trade-offs."""
     state = _state()
@@ -181,13 +185,18 @@ def plan_trip(
         )
     source = _source(alert_source)
     alerts, clock = _load_alerts_for_source(source)
-    plan = planner.plan_trip(state.ctx, origin, destination, depart, source, alerts, clock)
+    plan = planner.plan_trip(
+        state.ctx, origin, destination, depart, source, alerts, clock, step_free=step_free
+    )
     if showcase_note:
         plan = plan.model_copy(update={"notes": [showcase_note, *plan.notes]})
     state.plans[plan.query_id] = plan
     state.plan_alerts[plan.query_id] = {
         alert.id: AlertRef(
-            id=alert.id, header=alert.header, effect=alert.effect, score=effect_score(alert)
+            id=alert.id,
+            header=alert.header,
+            effect=alert.effect,
+            score=effect_score(alert, step_free=step_free),
         )
         for alert in alerts
     }

@@ -52,19 +52,20 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [stepFree, setStepFree] = useState(false);
 
   const synthetic = sources?.sources.find((s) => s.startsWith("Synthetic")) ?? null;
   const suspended = synthetic !== null && sources?.active === synthetic;
   const shown = useMemo(() => (plan ? visibleRoutes(plan, objective) : []), [plan, objective]);
   const trades = useMemo(() => new Map(plan?.tradeoffs_vs_fastest.map((t) => [t.route_id, t])), [plan]);
 
-  const planRoute = useCallback(async (origin: Place, destination: Place) => {
+  const planRoute = useCallback(async (origin: Place, destination: Place, stepFreeOn: boolean) => {
     setBusy(true);
     setError(null);
     try {
       const result = await api("/api/plan", PlanSchema, {
         method: "POST",
-        body: { origin: origin.point, destination: destination.point, depart_at: null },
+        body: { origin: origin.point, destination: destination.point, depart_at: null, step_free: stepFreeOn },
       });
       const view = await api("/api/alerts", AlertsViewSchema);
       setAlertHeaders(new Map(view.alerts.map((a) => [a.id, a.header])));
@@ -93,7 +94,7 @@ export default function Home() {
         if (first) {
           setFrom(placeOf(first, "origin"));
           setTo(placeOf(first, "destination"));
-          await planRoute(placeOf(first, "origin"), placeOf(first, "destination"));
+          await planRoute(placeOf(first, "origin"), placeOf(first, "destination"), false);
         }
       })
       .catch(() => setError("Cannot reach the API. Start it with: uv run python -m commute_agent.api"));
@@ -107,7 +108,7 @@ export default function Home() {
   async function go(origin: Place | null, destination: Place | null) {
     if (!origin || !destination) return;
     setNews(null);
-    await planRoute(origin, destination);
+    await planRoute(origin, destination, stepFree);
   }
 
   function pickTrip(trip: Trip) {
@@ -126,7 +127,7 @@ export default function Home() {
     setSources(updated);
     if (!from || !to) return;
     const before = plan;
-    const after = await planRoute(from, to);
+    const after = await planRoute(from, to, stepFree);
     if (!after || !before) return;
     if (name === NO_ALERTS) {
       setNews("Red Line service restored.");
@@ -139,6 +140,18 @@ export default function Home() {
         : "Red Line suspended (synthetic). Affected routes are flagged.",
     );
     setObjective("all");
+  }
+
+  async function toggleStepFree(next: boolean) {
+    setStepFree(next);
+    if (!from || !to) return;
+    const after = await planRoute(from, to, next);
+    if (!after) return;
+    setNews(
+      next
+        ? "Step-free on. Transit is wheelchair-accessible; elevator closures at matching stations are flagged."
+        : "Step-free off.",
+    );
   }
 
   async function choose(routeId: string) {
@@ -209,6 +222,12 @@ export default function Home() {
             <small>synthetic demo alert</small>
           </label>
         )}
+
+        <label className="switch">
+          <input type="checkbox" checked={stepFree} onChange={(e) => void toggleStepFree(e.target.checked)} disabled={busy} />
+          <span>Step-free</span>
+          <small>wheelchair-accessible transit</small>
+        </label>
 
         {news && (
           <p className="news" role="status">

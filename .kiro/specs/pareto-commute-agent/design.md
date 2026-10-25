@@ -726,7 +726,7 @@ def transit_routes(raw: dict, graphs: StreetGraphs, factors: dict[LegMode, Emiss
     Walk legs get crash risk from score_walk_coords. Summary joins route names, e.g. 'Red Line, then Silver Line SL4'."""
 ```
 
-`PLAN_QUERY` (variables `from`, `to`, `when`):
+`PLAN_QUERY` (variables `from`, `to`, `when`). `plan_query(excluding, step_free)` adds one `preferences` input when needed: `transit.filters` exclude for `excluding`, and `accessibility: {wheelchair: {enabled: true}}` for `step_free` (OTP 2.10 `PlanPreferencesInput.accessibility`, checked against a local 2.10.0 server). Step-free requests carry a `;step-free` suffix in the cache time part; default keys are unchanged.
 
 ```graphql
 query Plan($from: PlanCoordinateInput!, $to: PlanCoordinateInput!, $when: OffsetDateTime!) {
@@ -780,8 +780,9 @@ EFFECT_SCORES: dict[str, float] = {
 }
 # DELAY scores severity / 10, capped at 1.0. It is handled in effect_score, not the table.
 
-def effect_score(alert: Alert) -> float | None:
-    """EFFECT_SCORES[effect], severity / 10 for DELAY, None when unmapped."""
+def effect_score(alert: Alert, *, step_free: bool = False) -> float | None:
+    """EFFECT_SCORES[effect], severity / 10 for DELAY, None when unmapped. With step_free,
+    an ELEVATOR_CLOSURE (STEP_FREE_EFFECTS) scores STEP_FREE_SCORE (1.0); off, it keeps its table score 0.2."""
 
 def parse_mbta_alerts(payload: dict) -> list[Alert]:
     """Parse the V3 JSON:API document. Boundary validation lives here."""
@@ -799,10 +800,10 @@ def entity_matches(entity: AlertEntity, transit: TransitRef) -> bool:
 
 def is_active(alert: Alert, at: datetime) -> bool: ...
 
-def apply_disruptions(routes: list[RouteOption], alerts: list[Alert], at: datetime) -> tuple[list[RouteOption], list[AlertRef]]:
+def apply_disruptions(routes: list[RouteOption], alerts: list[Alert], at: datetime, *, step_free: bool = False) -> tuple[list[RouteOption], list[AlertRef]]:
     """For each transit leg, collect active alerts with any matching entity. Leg disruption_risk is the
     max effect_score among scored alerts (0.0 when none). Unscored matching alerts go to the second
-    return value once each. Routes are rebuilt with routes.with_disruption."""
+    return value once each. Routes are rebuilt with routes.with_disruption. step_free is passed to effect_score."""
 
 def record_snapshot(label: str, snapshot_dir: Path = ALERT_SNAPSHOTS) -> Path:
     """CLI: python -m commute_agent.transit.alerts record <label>. Writes <slug(label)>.json with synthetic false."""

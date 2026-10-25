@@ -78,13 +78,28 @@ query Plan($from: PlanCoordinateInput!, $to: PlanCoordinateInput!, $when: Offset
   }
 }"""
 
-# OTP rejects an empty exclude list, so the excluding variant is a separate query.
-PLAN_QUERY_EXCLUDING = PLAN_QUERY.replace(
-    "$when: OffsetDateTime!)", "$when: OffsetDateTime!, $exclude: [String!]!)"
-).replace(
-    "    first: 5\n",
-    "    first: 5\n    preferences: {transit: {filters: [{exclude: [{routes: $exclude}]}]}}\n",
-)
+# OTP 2.10 reads wheelchair accessibility from PlanPreferencesInput.accessibility.
+STEP_FREE_PREFERENCE = "accessibility: {wheelchair: {enabled: true}}"
+# OTP rejects an empty exclude list, so the excluding variant has its own variable.
+EXCLUDE_PREFERENCE = "transit: {filters: [{exclude: [{routes: $exclude}]}]}"
+
+
+def plan_query(*, excluding: bool = False, step_free: bool = False) -> str:
+    """``PLAN_QUERY`` with the preferences a request needs in one ``preferences`` input."""
+    query = PLAN_QUERY
+    preferences = []
+    if excluding:
+        query = query.replace(
+            "$when: OffsetDateTime!)", "$when: OffsetDateTime!, $exclude: [String!]!)"
+        )
+        preferences.append(EXCLUDE_PREFERENCE)
+    if step_free:
+        preferences.append(STEP_FREE_PREFERENCE)
+    if not preferences:
+        return query
+    return query.replace(
+        "    first: 5\n", "    first: 5\n    preferences: {" + ", ".join(preferences) + "}\n"
+    )
 
 
 def otp_cache_key(origin: Point, destination: Point, weekday: Weekday, depart_local: str) -> str:
@@ -98,7 +113,11 @@ def otp_cache_key(origin: Point, destination: Point, weekday: Weekday, depart_lo
 
 
 def _cache_key_for_datetime(
-    origin: Point, destination: Point, depart_at: datetime, exclude_routes: tuple[str, ...] = ()
+    origin: Point,
+    destination: Point,
+    depart_at: datetime,
+    exclude_routes: tuple[str, ...] = (),
+    step_free: bool = False,
 ) -> str:
     local = depart_at.astimezone(TIMEZONE)
     weekday: Weekday = (
@@ -113,6 +132,8 @@ def _cache_key_for_datetime(
     clock = local.strftime("%H:%M")
     if exclude_routes:
         clock += ";exclude=" + ",".join(sorted(exclude_routes))
+    if step_free:
+        clock += ";step-free"
     return otp_cache_key(origin, destination, weekday, clock)
 
 
@@ -124,17 +145,19 @@ def fetch_itineraries(
     live: bool,
     cache_dir: Path = OTP_CACHE,
     exclude_routes: tuple[str, ...] = (),
+    step_free: bool = False,
 ) -> tuple[dict | None, str | None]:
     """Return ``(raw_response, None)`` or ``(None, omit_reason)``.
 
     Offline reads ``cache_dir/<key>.json``. On a miss it returns ``NOT_CACHED``, unless
     ``COMMUTE_OTP_URL`` is set, in which case it queries OTP as live mode does. Live posts
-    ``PLAN_QUERY`` to OTP (20 s timeout), writes the cache, and returns
+    the plan query to OTP (20 s timeout), writes the cache, and returns
     ``OTP_UNREACHABLE`` on any ``httpx.HTTPError``.
     ``exclude_routes`` holds MBTA route ids (no feed prefix) that OTP must not use; the
-    excluding request has its own cache entry.
+    excluding request has its own cache entry. ``step_free`` asks OTP for wheelchair-
+    accessible trips; it has its own cache entry, and the default entries are unchanged.
     """
-    key = _cache_key_for_datetime(origin, destination, depart_at, exclude_routes)
+    key = _cache_key_for_datetime(origin, destination, depart_at, exclude_routes, step_free)
     cache_path = cache_dir / f"{key}.json"
 
     url = os.environ.get(OTP_URL_ENV)
@@ -150,10 +173,9 @@ def fetch_itineraries(
         "to": {"latitude": destination.lat, "longitude": destination.lon},
         "when": local.isoformat(),
     }
-    query = PLAN_QUERY
     if exclude_routes:
         variables["exclude"] = [FEED_PREFIX + route for route in sorted(exclude_routes)]
-        query = PLAN_QUERY_EXCLUDING
+    query = plan_query(excluding=bool(exclude_routes), step_free=step_free)
     try:
         response = httpx.post(
             url or OTP_URL,
