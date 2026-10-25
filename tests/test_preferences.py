@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -170,3 +171,64 @@ def test_record_and_clear_roundtrip(tmp_path: Path) -> None:
     assert loaded[0].chosen.co2_g == 100
     clear_choices(db)
     assert load_choices(db) == []
+
+
+def _choice(i: int, chosen: Objectives, rejected: Objectives) -> ChoiceEvent:
+    return ChoiceEvent(
+        query_id=f"q{i}",
+        chosen_at=datetime(2026, 1, 1, 8, 0, 0) + timedelta(minutes=i),
+        chosen=chosen,
+        rejected=[rejected],
+    )
+
+
+def test_sessions_keep_separate_choices(tmp_path: Path) -> None:
+    """Session a always picks low CO2, session b always picks low time. Each session's
+    weights follow its own choices, and clearing one leaves the other intact."""
+    db = tmp_path / "preferences.db"
+    low_co2 = Objectives(time_min=30.0, co2_g=50.0, crash_risk=1.0, disruption_risk=0.1)
+    low_time = Objectives(time_min=15.0, co2_g=800.0, crash_risk=1.0, disruption_risk=0.1)
+    for i in range(5):
+        record_choice(_choice(i, low_co2, low_time), db=db, session_id="a")
+        record_choice(_choice(i, low_time, low_co2), db=db, session_id="b")
+
+    weights_a = current_weights(db, "a")
+    weights_b = current_weights(db, "b")
+    assert weights_a.weights["co2_g"] > weights_a.weights["time_min"]
+    assert weights_b.weights["time_min"] > weights_b.weights["co2_g"]
+    assert current_weights(db).insufficient_data is True
+    assert current_weights(db).n_choices == 0
+
+    clear_choices(db, "a")
+    assert current_weights(db, "a").insufficient_data is True
+    assert current_weights(db, "b").n_choices == 5
+
+
+def test_rows_from_before_sessions_still_load(tmp_path: Path) -> None:
+    """A database with the original schema keeps its rows, which belong to the shared ""
+    session, and new sessions can be written to it."""
+    db = tmp_path / "preferences.db"
+    old = _choice(
+        0,
+        Objectives(time_min=30.0, co2_g=50.0, crash_risk=1.0, disruption_risk=0.1),
+        Objectives(time_min=15.0, co2_g=800.0, crash_risk=1.0, disruption_risk=0.1),
+    )
+    conn = sqlite3.connect(db)
+    conn.execute(
+        "CREATE TABLE choices (id INTEGER PRIMARY KEY, query_id TEXT, chosen_at TEXT, payload TEXT)"
+    )
+    conn.execute(
+        "INSERT INTO choices (query_id, chosen_at, payload) VALUES (?, ?, ?)",
+        (old.query_id, old.chosen_at.isoformat(), old.model_dump_json()),
+    )
+    conn.commit()
+    conn.close()
+
+    assert load_choices(db) == [old]
+    assert load_choices(db, "a") == []
+    record_choice(_choice(1, old.chosen, old.rejected[0]), db=db, session_id="a")
+    assert len(load_choices(db)) == 1
+    assert len(load_choices(db, "a")) == 1
+    clear_choices(db)
+    assert load_choices(db) == []
+    assert len(load_choices(db, "a")) == 1

@@ -28,6 +28,8 @@ AGENT_TOOLS = (
     "get_preferences",
 )
 ALERT_SOURCE_ARG = "alert_source"
+SESSION_ID_ARG = "session_id"
+CONVERSATION_ARGS = (ALERT_SOURCE_ARG, SESSION_ID_ARG)
 TOOL_ERROR_PREFIX = "Error executing tool"
 UNVERIFIED = "[number removed: not in tool results]"
 GROUNDING_RETRY = (
@@ -89,40 +91,55 @@ def missing_model_keys(config: ModelConfig) -> list[str]:
     return [config.api_key_env]
 
 
-class AlertSourceTool(Tool):
-    """Wraps a tool that takes alert_source. The model never sees the argument; each call
-    passes ``alert_source()``, so the agent plans with its browser session's source."""
+class ConversationTool(Tool):
+    """Wraps a tool that takes alert_source or session_id. The model never sees those
+    arguments; each call fills them from the conversation's browser session, so the agent
+    plans with that session's alert source and reads and writes its route choices."""
 
     skip_forward_signature_validation = True
 
-    def __init__(self, tool: Any, alert_source: Callable[[], str | None]) -> None:
+    def __init__(
+        self,
+        tool: Any,
+        alert_source: Callable[[], str | None],
+        session_id: Callable[[], str | None],
+    ) -> None:
         self.tool = tool
         self.alert_source = alert_source
+        self.session_id = session_id
         self.name = tool.name
         self.description = tool.description
-        self.inputs = {k: v for k, v in tool.inputs.items() if k != ALERT_SOURCE_ARG}
+        self.inputs = {k: v for k, v in tool.inputs.items() if k not in CONVERSATION_ARGS}
         self.output_type = tool.output_type
         self.output_schema = getattr(tool, "output_schema", None)
         self.is_initialized = True
 
     def forward(self, **kwargs: Any) -> Any:
-        return self.tool(**kwargs, alert_source=self.alert_source())
+        if ALERT_SOURCE_ARG in self.tool.inputs:
+            kwargs[ALERT_SOURCE_ARG] = self.alert_source()
+        if SESSION_ID_ARG in self.tool.inputs:
+            kwargs[SESSION_ID_ARG] = self.session_id()
+        return self.tool(**kwargs)
 
 
 def build_agent(
     tools: list[Any],
     config: ModelConfig,
     alert_source: Callable[[], str | None] = lambda: None,
+    session_id: Callable[[], str | None] = lambda: None,
 ) -> ToolCallingAgent:
     """Agent over the AGENT_TOOLS subset of tools, on one OpenAI-compatible model.
 
-    Tools that take alert_source get ``alert_source()`` on every call; None means the
-    MCP server's stored source."""
+    Tools that take alert_source get ``alert_source()`` and tools that take session_id get
+    ``session_id()`` on every call. None means the MCP server's stored source and the
+    shared "" session."""
     api_key = os.environ[config.api_key_env] if config.api_key_env else "not-needed"
     model = OpenAIModel(model_id=config.model_id, api_base=config.api_base, api_key=api_key)
     return ToolCallingAgent(
         tools=[
-            AlertSourceTool(tool, alert_source) if ALERT_SOURCE_ARG in tool.inputs else tool
+            ConversationTool(tool, alert_source, session_id)
+            if any(arg in tool.inputs for arg in CONVERSATION_ARGS)
+            else tool
             for tool in tools
             if tool.name in AGENT_TOOLS
         ],

@@ -5,6 +5,7 @@ import pytest
 from commute_agent import mcp_server
 from commute_agent.mcp_server import SessionState, load_trips
 from commute_agent.models import PlanResult, Point, PreferenceWeights
+from commute_agent.preferences import order_routes
 
 
 def call(name: str, arguments: dict):
@@ -82,6 +83,42 @@ def test_record_choice_then_clear_restores_equal_weights(server: SessionState) -
     assert weights.n_choices == 1
     cleared = PreferenceWeights.model_validate(call("clear_preferences", {}))
     assert cleared.weights == {o: 0.25 for o in cleared.weights}
+
+
+def test_sessions_get_their_own_weights_and_route_order(server: SessionState) -> None:
+    plan = PlanResult.model_validate(call("plan_trip", PLAN_ARGS))
+    low_co2 = min(plan.routes, key=lambda r: r.objectives.co2_g)
+    fastest = min(plan.routes, key=lambda r: r.objectives.time_min)
+    for _ in range(5):
+        call(
+            "record_choice", {"query_id": plan.query_id, "route_id": low_co2.id, "session_id": "a"}
+        )
+        call(
+            "record_choice", {"query_id": plan.query_id, "route_id": fastest.id, "session_id": "b"}
+        )
+
+    weights_a = PreferenceWeights.model_validate(call("get_preferences", {"session_id": "a"}))
+    weights_b = PreferenceWeights.model_validate(call("get_preferences", {"session_id": "b"}))
+    assert weights_a.weights["co2_g"] > weights_a.weights["time_min"]
+    assert weights_b.weights["time_min"] > weights_b.weights["co2_g"]
+    assert call("get_preferences", {})["n_choices"] == 0
+
+    plan_a = PlanResult.model_validate(call("plan_trip", {**PLAN_ARGS, "session_id": "a"}))
+    plan_b = PlanResult.model_validate(call("plan_trip", {**PLAN_ARGS, "session_id": "b"}))
+    shared = PlanResult.model_validate(call("plan_trip", PLAN_ARGS))
+    assert plan_a.preference == weights_a
+    assert plan_b.preference == weights_b
+    assert shared.preference.insufficient_data is True
+    assert [r.id for r in plan_a.routes] == [
+        r.id for r in order_routes(list(reversed(plan_a.routes)), weights_a)
+    ]
+    assert [r.id for r in plan_b.routes] == [
+        r.id for r in order_routes(list(reversed(plan_b.routes)), weights_b)
+    ]
+
+    cleared = call("clear_preferences", {"session_id": "a"})
+    assert cleared["n_choices"] == 0
+    assert call("get_preferences", {"session_id": "b"})["n_choices"] == 5
 
 
 @pytest.mark.parametrize("value", [None, "", "  ", "null", "NULL", "None"])

@@ -88,6 +88,22 @@ def test_preferences_round_trip(client: TestClient) -> None:
     assert client.delete("/api/preferences").json()["n_choices"] == 0
 
 
+def test_choices_are_per_session(client: TestClient) -> None:
+    tab_a = {"X-Session-Id": "tab-a"}
+    tab_b = {"X-Session-Id": "tab-b"}
+    plan = client.post("/api/plan", json=PLAN_BODY, headers=tab_a).json()
+    route_id = plan["routes"][-1]["id"]
+    for _ in range(3):
+        choice = {"query_id": plan["query_id"], "route_id": route_id}
+        assert client.post("/api/choice", json=choice, headers=tab_a).status_code == 200
+
+    assert client.get("/api/preferences", headers=tab_a).json()["n_choices"] == 3
+    assert client.get("/api/preferences", headers=tab_b).json()["n_choices"] == 0
+    assert client.get("/api/preferences").json()["n_choices"] == 0
+    assert client.delete("/api/preferences", headers=tab_b).json()["n_choices"] == 0
+    assert client.get("/api/preferences", headers=tab_a).json()["n_choices"] == 3
+
+
 def test_alerts_maps_ids_to_headers_for_the_active_source(client: TestClient) -> None:
     assert client.get("/api/alerts").json()["alerts"] == []
     synthetic = "Synthetic: Red Line suspended JFK/UMass to Park Street"
