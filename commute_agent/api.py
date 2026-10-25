@@ -2,18 +2,21 @@
 
 import argparse
 import logging
+import math
 import os
 import sys
+import time
 import uuid
-from collections.abc import AsyncIterator, Callable
+from collections import deque
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import ExitStack, asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Any
 
 import anyio
 import uvicorn
-from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Header, HTTPException, Request, Response
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from mcp import StdioServerParameters
 from mcp.client.stdio import get_default_environment
@@ -44,6 +47,12 @@ MCP_ENV_PASSTHROUGH = ("COMMUTE_OTP_URL",)
 # one share the "" session. The oldest sessions are forgotten past MAX_SESSIONS.
 DEFAULT_ALERT_SOURCE = "none"
 MAX_SESSIONS = 10_000
+# Chat is the only endpoint that spends model credits. Each limit is (requests, window in seconds).
+CHAT_LIMIT_PER_SESSION = (5, 60)
+CHAT_LIMIT_GLOBAL = (60, 60)
+# Comma-separated Host names the API accepts, for example "localhost,commute-agent.example".
+# Unset or empty allows every Host. Behind the Next.js proxy, list the host the API sees.
+ALLOWED_HOSTS_ENV = "COMMUTE_ALLOWED_HOSTS"
 
 SessionId = Annotated[str, Header(alias="X-Session-Id", max_length=64)]
 
@@ -73,6 +82,59 @@ class ChatBody(BaseModel):
 ToolSource = Callable[[], dict[str, Any]]
 
 
+class SlidingWindow:
+    """Recent request times per key. A request is allowed when fewer than ``limit`` of the
+    key's requests fall in the last ``window`` seconds. ``clock`` is injectable for tests."""
+
+    def __init__(self, clock: Callable[[], float]) -> None:
+        self.clock = clock
+        self.hits: dict[str, deque[float]] = {}
+
+    def wait_seconds(self, key: str, limit: int, window: float) -> float:
+        """0.0 when a request under ``key`` is allowed now, else seconds until one is."""
+        now = self.clock()
+        times = self.hits.get(key)
+        if times is None:
+            return 0.0
+        while times and now - times[0] >= window:
+            times.popleft()
+        if not times:
+            del self.hits[key]
+            return 0.0
+        if len(times) < limit:
+            return 0.0
+        # The (limit)th most recent hit must age out before one more request fits.
+        return times[-limit] + window - now
+
+    def record(self, key: str) -> None:
+        """Note one allowed request under ``key``. Past MAX_SESSIONS keys, the oldest is dropped."""
+        self.hits.setdefault(key, deque()).append(self.clock())
+        if len(self.hits) > MAX_SESSIONS:
+            del self.hits[next(iter(self.hits))]
+
+
+def allowed_hosts() -> frozenset[str]:
+    """COMMUTE_ALLOWED_HOSTS as lowercase names. An empty set means every Host is allowed."""
+    names = os.environ.get(ALLOWED_HOSTS_ENV, "").split(",")
+    return frozenset(name.strip().lower() for name in names if name.strip())
+
+
+def host_name(header: str) -> str:
+    """The host part of a Host header without its port. IPv6 literals keep their brackets."""
+    if header.startswith("["):
+        return header[: header.find("]") + 1].lower()
+    return header.split(":")[0].lower()
+
+
+def chat_limited(scope: str, wait: float) -> HTTPException:
+    seconds = math.ceil(wait)
+    return HTTPException(
+        status_code=429,
+        detail=f"Too many chat messages from {scope}. Try again in {seconds} s.",
+        headers={"Retry-After": str(seconds)},
+    )
+
+
 def call_tool(app: FastAPI, tool: str, /, **arguments: Any) -> dict:
     """Call one MCP tool. A tool error string becomes HTTP 422 with the server's message.
 
@@ -84,8 +146,13 @@ def call_tool(app: FastAPI, tool: str, /, **arguments: Any) -> dict:
     return result
 
 
-def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
-    """Build the app. ``tool_source`` replaces the MCP subprocess in tests."""
+def create_app(
+    live: bool,
+    tool_source: ToolSource | None = None,
+    clock: Callable[[], float] = time.monotonic,
+) -> FastAPI:
+    """Build the app. ``tool_source`` replaces the MCP subprocess in tests, and ``clock``
+    drives the chat rate limits."""
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -115,6 +182,19 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
             yield
 
     app = FastAPI(title="Pareto Commute", lifespan=lifespan)
+    session_limits = SlidingWindow(clock)
+    global_limits = SlidingWindow(clock)
+    hosts = allowed_hosts()
+
+    if hosts:
+
+        @app.middleware("http")
+        async def host_guard(
+            request: Request, call_next: Callable[[Request], Awaitable[Response]]
+        ) -> Response:
+            if host_name(request.headers.get("host", "")) not in hosts:
+                return JSONResponse({"detail": "Host not allowed."}, status_code=400)
+            return await call_next(request)
 
     def alert_source(session: str) -> str:
         return app.state.alert_sources.get(session, DEFAULT_ALERT_SOURCE)
@@ -193,6 +273,14 @@ def create_app(live: bool, tool_source: ToolSource | None = None) -> FastAPI:
 
     @app.post("/api/chat", response_model=AgentReply)
     async def chat(body: ChatBody, session: SessionId = "") -> AgentReply:
+        session_wait = session_limits.wait_seconds(session, *CHAT_LIMIT_PER_SESSION)
+        if session_wait:
+            raise chat_limited("this session", session_wait)
+        global_wait = global_limits.wait_seconds("", *CHAT_LIMIT_GLOBAL)
+        if global_wait:
+            raise chat_limited("the service", global_wait)
+        session_limits.record(session)
+        global_limits.record("")
         config = app.state.model_config
         missing = app.state.missing_keys
         if missing:

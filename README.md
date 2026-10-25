@@ -123,6 +123,10 @@ The agent talks to any OpenAI-compatible endpoint. To use another one, set `COMM
 
 The server has no authentication. It binds to 127.0.0.1 only. Use it for local demos only.
 
+Chat has two in-memory rate limits in `commute_agent/api.py`: `CHAT_LIMIT_PER_SESSION = (5, 60)` (5 messages per `X-Session-Id` per 60 s) and `CHAT_LIMIT_GLOBAL = (60, 60)` (60 messages per 60 s for the whole server). Over a limit, `/api/chat` returns 429 with a `Retry-After` header. The counts reset when the server restarts.
+
+`COMMUTE_ALLOWED_HOSTS` is a comma-separated list of host names, for example `localhost,commute-agent.example`. When it is set, a request whose `Host` header (without port) is not listed gets 400. Unset allows every host, as before. The hosted deploy proxies `/api` through Next.js, so list the host name the API process actually sees in the `Host` header, which may be the upstream name and not the public domain. Check it on the deployed service before relying on the guard.
+
 ## Deploy (Render)
 
 `Dockerfile` builds one container: FastAPI and the MCP server on the container's loopback, and the Next.js page on `$PORT`. Only Next.js is public. The processed graphs, basemap, and OTP cache (about 35 MB compressed) come from the `data-v1` GitHub release, because they are not in git. `render.yaml` defines the service on the `2c-4g` plan: the app peaks at about 3.2 GB of memory, so smaller plans run out of memory. The first start takes about 80 s while the street graphs load.
@@ -195,7 +199,7 @@ How to read these numbers:
 
 - Crash risk is a relative index, not a probability. Across walk and bike routes, about 42% of route length uses measured or Bluebikes-estimated exposure and 58% uses road-type assumptions, but the split is uneven. Bike routes use Bluebikes-estimated exposure for about 73% of their length. Walk routes use road-type assumptions for all of it: only 2 of about 297,000 walk edges match a pedestrian counter. So walk crash risk is effectively crash density on the route, not risk per pedestrian. Treat all crash-risk reductions as estimates.
 - The Pareto soundness and completeness checks use the same dominance rule as the planner, so they confirm the filter is applied consistently, not that the rule is the right one.
-- Identity was 9/10: on one ambiguous-place prompt the model asked its clarifying question without the required opening sentence. The system prompt requires it; nothing enforces it in code.
+- Identity was 9/10 in an earlier run, before `run_turn` existed to enforce it: on one ambiguous-place prompt the model asked its clarifying question without the required opening sentence. `run_turn` now prepends `IDENTITY_SENTENCE` to the first reply of a conversation when the model leaves it out, and the eval reads that final reply. The identity column therefore passes by construction on first replies. It no longer measures the model. The 9/10 figure is the model's own rate from before the prepend.
 - The agent rewrites a reply once when it contains a number that is not in any tool result. Numbers that are still unsupported are removed from the text. The final-reply rate is therefore 100% by construction; the first-draft rate shows how often the model needed the rewrite.
 - The alert rows use the committed snapshots. The synthetic Red Line suspension is not a real MBTA alert.
 - Grounding and identity depend on the model. Rerun the eval after changing `--model`.
