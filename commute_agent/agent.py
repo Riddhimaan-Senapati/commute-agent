@@ -189,11 +189,13 @@ def run_turn(conv: Conversation, text: str) -> AgentReply:
     """Run one user turn. Numbers are checked against every tool output and user text so far.
 
     A reply with unsupported numbers is never shown: the agent rewrites it once, and numbers
-    that are still unsupported are replaced with UNVERIFIED.
+    that are still unsupported are replaced with UNVERIFIED. The first reply of a conversation
+    always starts with IDENTITY_SENTENCE; it is prepended when the model left it out.
     """
     since = len(conv.agent.memory.steps)
+    first_turn = conv.turns == 0
     conv.user_texts.append(text)
-    answer = str(conv.agent.run(text, reset=conv.turns == 0))
+    answer = str(conv.agent.run(text, reset=first_turn))
     conv.turns += 1
     first_draft = unsupported_numbers(answer, _observations(conv.agent, 0) + conv.user_texts)
     first_draft_numbers = len(set(numbers_in(answer)))
@@ -203,6 +205,8 @@ def run_turn(conv: Conversation, text: str) -> AgentReply:
         answer = str(conv.agent.run(retry, reset=False))
         unsupported = unsupported_numbers(answer, _observations(conv.agent, 0) + conv.user_texts)
         answer = _redact(answer, unsupported)
+    if first_turn and not answer.lstrip().startswith(IDENTITY_SENTENCE):
+        answer = f"{IDENTITY_SENTENCE} {answer.lstrip()}"
     return AgentReply(
         conversation_id=conv.id,
         text=answer,

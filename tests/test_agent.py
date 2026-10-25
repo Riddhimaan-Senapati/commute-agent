@@ -3,6 +3,7 @@ from smolagents.models import ChatMessage, ChatMessageToolCall, ChatMessageToolC
 
 from commute_agent import agent as agent_module
 from commute_agent.agent import (
+    IDENTITY_SENTENCE,
     MAX_STEPS,
     SYSTEM_PROMPT,
     UNVERIFIED,
@@ -70,7 +71,7 @@ def test_scripted_tool_call_is_logged_and_final_answer_is_returned() -> None:
         ]
     )
     reply = run_turn(conv, "How do I get from Fields Corner?")
-    assert reply.text == "The fastest route takes 42 minutes."
+    assert reply.text == f"{IDENTITY_SENTENCE} The fastest route takes 42 minutes."
     assert [c.name for c in reply.tool_calls] == ["plan_trip"]
     assert reply.tool_calls[0].input == {"origin": "Fields Corner"}
     assert reply.tool_calls[0].is_error is False
@@ -89,7 +90,7 @@ def test_unsupported_number_triggers_one_rewrite_and_never_reaches_the_user() ->
     reply = run_turn(conv, "Trip time?")
     assert reply.first_draft_unsupported == ["25"]
     assert reply.unsupported_numbers == []
-    assert reply.text == "About 42 minutes."
+    assert reply.text == f"{IDENTITY_SENTENCE} About 42 minutes."
 
 
 def test_number_still_unsupported_after_rewrite_is_redacted() -> None:
@@ -102,7 +103,7 @@ def test_number_still_unsupported_after_rewrite_is_redacted() -> None:
     )
     reply = run_turn(conv, "Risk?")
     assert reply.unsupported_numbers == ["2850"]
-    assert reply.text == f"Crash risk {UNVERIFIED}, time 42 minutes."
+    assert reply.text == f"{IDENTITY_SENTENCE} Crash risk {UNVERIFIED}, time 42 minutes."
 
 
 @tool
@@ -224,3 +225,27 @@ def test_redaction_catches_numbers_written_with_thousands_separators() -> None:
         _redact("Bike risk 1,315.4 and 12,849.", ["1315.4"])
         == f"Bike risk {UNVERIFIED} and 12,849."
     )
+
+
+def test_first_reply_gets_the_identity_sentence_when_the_model_omits_it() -> None:
+    conv = make_conversation([call("final_answer", {"answer": "Hello there."}, "f1")])
+    reply = run_turn(conv, "Hi")
+    assert reply.text == f"{IDENTITY_SENTENCE} Hello there."
+    assert reply.unsupported_numbers == []
+
+
+def test_identity_sentence_is_not_doubled_when_present() -> None:
+    answer = f"{IDENTITY_SENTENCE} Hello there."
+    conv = make_conversation([call("final_answer", {"answer": answer}, "f1")])
+    assert run_turn(conv, "Hi").text == answer
+
+
+def test_identity_is_only_enforced_on_the_first_reply() -> None:
+    conv = make_conversation(
+        [
+            call("final_answer", {"answer": f"{IDENTITY_SENTENCE} Hello."}, "f1"),
+            call("final_answer", {"answer": "Still here."}, "f2"),
+        ]
+    )
+    run_turn(conv, "Hi")
+    assert run_turn(conv, "Again?").text == "Still here."

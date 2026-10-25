@@ -1083,7 +1083,7 @@ The agent passes each step's observations text plus each user message as evidenc
 ```python
 IDENTITY_NOTICE = "Independent prototype. Not a City of Boston or MBTA service."
 
-def create_app(live: bool) -> FastAPI: ...
+def create_app(live: bool, tool_source=None, clock=time.monotonic) -> FastAPI: ...
 def main() -> None:
     """argparse --live, --model (sets COMMUTE_AGENT_MODEL), and --port (default 8000). Log 'No authentication. Local demo use only.'
     uvicorn.run(create_app(args.live), host='127.0.0.1', port=args.port)."""
@@ -1111,11 +1111,13 @@ def call_tool(app: FastAPI, name: str, **arguments) -> dict:
 | `POST /api/choice` | `{"query_id": str, "route_id": str}` | `PreferenceWeights` |
 | `GET /api/preferences` | | `PreferenceWeights` |
 | `DELETE /api/preferences` | | `PreferenceWeights` |
-| `POST /api/chat` | `{"conversation_id": str or null, "message": str}` | `AgentReply`, or 503 `{"detail": "The agent model <id> needs <missing keys>."}` |
+| `POST /api/chat` | `{"conversation_id": str or null, "message": str}` | `AgentReply`, or 503 `{"detail": "The agent model <id> needs <missing keys>."}`, or 429 `{"detail": "Too many chat messages from this session. Try again in N s."}` (or "the service") with `Retry-After` |
 | `GET /basemap.geojson` | | file from `data/processed/` |
 | `GET /` and static | | `StaticFiles(directory=WEB, html=True)` mounted last |
 
 Request bodies are Pydantic models defined in `api.py`. They are HTTP boundary types, not shared contracts.
+
+Two guards apply to every request. `COMMUTE_ALLOWED_HOSTS` (comma-separated) is a middleware that returns 400 for a `Host` header whose name, without port, is not listed; unset allows all. Chat rate limits are sliding windows in memory, `CHAT_LIMIT_PER_SESSION = (5, 60)` and `CHAT_LIMIT_GLOBAL = (60, 60)`, checked before the model key. A `clock` argument to `create_app` lets tests move time.
 
 ### WS9. Web UI (`web/`)
 
@@ -1189,7 +1191,7 @@ Files: `eval/sample_pairs.py`, `eval/od_pairs.yaml`, `eval/alert_expectations.ya
 | Safety versus speed | For walk and bike separately, per trip: `100 * (fastest.crash_risk - safest.crash_risk) / fastest.crash_risk` and `safest.time_min - fastest.time_min`, over front members of that kind. Report median and IQR and n. Trips where the kind has one member count as 0 reduction. |
 | Alert response | For each expectation row, every transit route whose legs ride an affected line has the alert id and disruption above 0, every other route has disruption 0, and the front changed when `pareto_must_change`. |
 | Number grounding | Run each prompt through `run_turn` against a fresh MCP subprocess. Supported numbers over total numbers, reported for first drafts (before the one rewrite) and final replies. `eval.run --model a,b` repeats the agent metrics per model id and adds one column per model, so model swaps are compared on the same prompts. |
-| Identity | First reply of each conversation contains "independent prototype", from the fixed `IDENTITY_SENTENCE` the system prompt requires. |
+| Identity | First reply of each conversation contains "independent prototype". `run_turn` prepends the fixed `IDENTITY_SENTENCE` when the model omits it, so this passes on first replies by construction. |
 | Clarification | For ambiguous prompts, the final reply contains a question and no `plan_trip` call was made. |
 | Unknown exposure | Mean `unknown_exposure_share` over walk and bike front members. |
 
