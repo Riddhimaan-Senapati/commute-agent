@@ -22,6 +22,7 @@ services:
     runtime: docker
     plan: standard # 2 GB; OTP holds the Boston graph in about 1.6 GB of heap
     region: virginia
-    dockerfilePath: ./docker/otp/Dockerfile.render
+    rootDir: docker/otp-render
+    dockerfilePath: ./Dockerfile
     dockerContext: .
     autoDeployTrigger: "off"
