@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 RouteKind = Literal["walk", "bike", "bluebikes", "drive", "transit"]
 LegMode = Literal[
@@ -225,3 +225,14 @@ class AgentReply(BaseModel):
     unsupported_numbers: list[str]  # still unsupported after one rewrite; redacted in text
     first_draft_unsupported: list[str] = []  # flagged in the first draft, before the rewrite
     first_draft_numbers: int = 0  # distinct numbers in the first draft
+
+
+class DockCounts(BaseModel):
+    """Live counts for one Bluebikes station from the GBFS ``station_status`` feed."""
+
+    model_config = ConfigDict(frozen=True)
+
+    bikes: int
+    docks: int
+    renting: bool
+    returning: bool

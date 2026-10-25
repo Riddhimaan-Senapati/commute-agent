@@ -13,6 +13,7 @@ tree. Node ids survive projection.
 import json
 import math
 import weakref
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +30,7 @@ from shapely.geometry import Point as ShapelyPoint
 from commute_agent import routes
 from commute_agent.emissions import co2_source, leg_co2_g
 from commute_agent.models import (
+    DockCounts,
     EmissionFactor,
     Leg,
     LegMode,
@@ -99,11 +101,14 @@ def street_routes(
     destination: Point,
     depart_at: datetime | None = None,
     traffic: TrafficFactors | None = None,
+    availability: Mapping[str, DockCounts] | None = None,
 ) -> tuple[list[RouteOption], dict[RouteKind, str]]:
     """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons.
 
     Only drive uses ``depart_at``: its free-flow time is multiplied by the traffic factor for
-    that departure. Without ``depart_at`` the drive time stays free-flow."""
+    that departure. Without ``depart_at`` the drive time stays free-flow. ``availability`` is
+    live Bluebikes counts by station id. None means unknown, and the Bluebikes candidate then
+    uses the nearest stations regardless of their counts."""
     options: list[RouteOption] = []
     omitted: dict[RouteKind, str] = {}
 
@@ -156,7 +161,9 @@ def street_routes(
     else:
         omitted["drive"] = drive_reason
 
-    bluebikes_option, bb_reason = _bluebikes_route(graphs, origin, destination, factors)
+    bluebikes_option, bb_reason = _bluebikes_route(
+        graphs, origin, destination, factors, availability
+    )
     if bluebikes_option is not None:
         options.append(bluebikes_option)
     else:
@@ -491,12 +498,38 @@ def _drive_edges(G: nx.MultiDiGraph, node_path: list[int]) -> list[tuple[int, in
     return edges
 
 
-def _nearest_station(stations: pd.DataFrame, point: Point) -> int:
-    """Index of the station nearest to ``point`` by straight-line distance."""
+def _nearest_station(
+    stations: pd.DataFrame, point: Point, allowed: np.ndarray | None
+) -> int | None:
+    """Index of the station nearest to ``point`` by straight-line distance, limited to
+    ``allowed`` rows when given. None when no row is allowed."""
     dlat = stations["lat"].to_numpy(dtype=float) - point.lat
     dlon = stations["lon"].to_numpy(dtype=float) - point.lon
     d2 = dlat**2 + dlon**2
+    if allowed is not None:
+        if not allowed.any():
+            return None
+        d2 = np.where(allowed, d2, np.inf)
     return int(np.argmin(d2))
+
+
+def _allowed_stations(
+    stations: pd.DataFrame, availability: Mapping[str, DockCounts] | None, start: bool
+) -> np.ndarray | None:
+    """Rows usable as a start (bikes out, renting) or end (docks free, returning).
+    None when availability is unknown. A station missing from the feed is not usable."""
+    if availability is None:
+        return None
+    allowed = []
+    for station_id in stations["station_id"].astype(str):
+        counts = availability.get(station_id)
+        if counts is None:
+            allowed.append(False)
+        elif start:
+            allowed.append(counts.bikes > 0 and counts.renting)
+        else:
+            allowed.append(counts.docks > 0 and counts.returning)
+    return np.array(allowed, dtype=bool)
 
 
 def _bluebikes_route(
@@ -504,13 +537,22 @@ def _bluebikes_route(
     origin: Point,
     destination: Point,
     factors: dict[LegMode, EmissionFactor],
+    availability: Mapping[str, DockCounts] | None = None,
 ) -> tuple[RouteOption | None, str]:
     stations = graphs.stations
     if stations is None or len(stations) == 0:
         return None, "no path"
 
-    start_idx = _nearest_station(stations, origin)
-    end_idx = _nearest_station(stations, destination)
+    start_idx = _nearest_station(
+        stations, origin, _allowed_stations(stations, availability, start=True)
+    )
+    if start_idx is None:
+        return None, "no station with bikes available"
+    end_idx = _nearest_station(
+        stations, destination, _allowed_stations(stations, availability, start=False)
+    )
+    if end_idx is None:
+        return None, "no station with docks available"
     start = stations.iloc[start_idx]
     end = stations.iloc[end_idx]
     if start_idx == end_idx:
@@ -536,12 +578,19 @@ def _bluebikes_route(
         _build_leg(graphs.walk, "walk", walk_out_edges, factors),
     ]
     summary = f"Bluebikes from {start['name']} to {end['name']}"
+    time_source = SPEED_SOURCE["bluebikes"]
+    if availability is not None:
+        start_counts = availability[str(start["station_id"])]
+        end_counts = availability[str(end["station_id"])]
+        time_source += (
+            f"; live GBFS at start {start_counts.bikes} bikes, at end {end_counts.docks} docks"
+        )
     option = routes.assemble_route(
         route_id="bluebikes-1",
         kind="bluebikes",
         summary=summary,
         legs=legs,
-        time_source=SPEED_SOURCE["bluebikes"],
+        time_source=time_source,
         co2_source=co2_source(factors, ["walk", "bluebikes"]),
         crash_source=graphs.crash_source,
     )

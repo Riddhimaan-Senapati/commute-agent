@@ -7,6 +7,7 @@ import pytest
 from commute_agent import planner
 from commute_agent.models import PlanResult, Point
 from commute_agent.planner import (
+    BLUEBIKES_UNCHECKED_NOTE,
     FIXED_NOTES,
     FREE_FLOW_NOTE,
     OutsideServiceArea,
@@ -36,7 +37,7 @@ def test_plan_returns_front_with_fastest_label(
     fastest = [route for route in plan.routes if "fastest" in route.labels]
     assert len(fastest) == 1
     assert plan.run_mode == "offline"
-    assert plan.notes == FIXED_NOTES
+    assert plan.notes == [*FIXED_NOTES, planner.BLUEBIKES_UNCHECKED_NOTE]
     assert plan.candidate_count >= len(plan.routes)
     assert len(plan.tradeoffs_vs_fastest) == len(plan.routes)
 
@@ -165,7 +166,7 @@ def test_drive_note_names_factor_when_departure_has_one(
         FIXED_NOTES[0],
         drive_note,
         FIXED_NOTES[2],
-        FIXED_NOTES[3],
+        BLUEBIKES_UNCHECKED_NOTE,
     ]
     drive = next(route for route in plan.routes if route.kind == "drive")
     assert "1.25 for weekday 16-19" in drive.sources["time_min"]

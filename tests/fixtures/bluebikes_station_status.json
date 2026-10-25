@@ -1,0 +1,49 @@
+{
+  "last_updated": 1792948316,
+  "ttl": 60,
+  "version": "1.1",
+  "data": {
+    "stations": [
+      {
+        "station_id": "2093488029445054742",
+        "num_bikes_available": 10,
+        "num_docks_available": 17,
+        "is_renting": 1,
+        "is_returning": 1,
+        "legacy_id": "2093488029445054742"
+      },
+      {
+        "station_id": "1676a6f7-c417-48d2-92e8-5ce21995efc3",
+        "num_bikes_available": 8,
+        "num_docks_available": 10,
+        "is_renting": 1,
+        "is_returning": 1,
+        "legacy_id": "374"
+      },
+      {
+        "station_id": "f83487f0-0de8-11e7-991c-3863bb43a7d0",
+        "num_bikes_available": 14,
+        "num_docks_available": 1,
+        "is_renting": 1,
+        "is_returning": 1,
+        "legacy_id": "54"
+      },
+      {
+        "station_id": "a3b94ed8-8301-4ec6-baf2-64ac493b5106",
+        "num_bikes_available": 0,
+        "num_docks_available": 14,
+        "is_renting": 1,
+        "is_returning": 1,
+        "legacy_id": "529"
+      },
+      {
+        "station_id": "1991922092203192944",
+        "num_bikes_available": 17,
+        "num_docks_available": 0,
+        "is_renting": 1,
+        "is_returning": 1,
+        "legacy_id": "1991922092203192944"
+      }
+    ]
+  }
+}
