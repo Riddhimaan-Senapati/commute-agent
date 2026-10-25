@@ -14,6 +14,7 @@ import json
 import math
 import weakref
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import geopandas as gpd
@@ -37,6 +38,7 @@ from commute_agent.models import (
     RouteOption,
 )
 from commute_agent.paths import PROCESSED
+from commute_agent.traffic import TrafficBucket, TrafficFactors, free_flow_factors
 
 WALK_KPH = 4.8
 BIKE_KPH = 15.0
@@ -46,7 +48,7 @@ SPEED_SOURCE = {
     "walk": "Assumed walking speed 4.8 km/h",
     "bike": "Assumed cycling speed 15 km/h",
     "bluebikes": "Assumed Bluebikes speed 13 km/h plus walking 4.8 km/h to and from stations",
-    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic",
+    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class",
 }
 DRIVE_TIME_SOURCE = SPEED_SOURCE["drive"]
 
@@ -94,8 +96,13 @@ def street_routes(
     factors: dict[LegMode, EmissionFactor],
     origin: Point,
     destination: Point,
+    depart_at: datetime | None = None,
+    traffic: TrafficFactors | None = None,
 ) -> tuple[list[RouteOption], dict[RouteKind, str]]:
-    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons."""
+    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons.
+
+    Only drive uses ``depart_at``: its free-flow time is multiplied by the traffic factor for
+    that departure. Without ``depart_at`` the drive time stays free-flow."""
     options: list[RouteOption] = []
     omitted: dict[RouteKind, str] = {}
 
@@ -137,8 +144,11 @@ def street_routes(
                 )
             )
 
+    bucket = None
+    if depart_at is not None:
+        bucket = (traffic or free_flow_factors()).factor_for(depart_at)
     drive_option, drive_reason = _drive_route(
-        graphs.drive, origin, destination, factors, graphs.crash_source
+        graphs.drive, origin, destination, factors, graphs.crash_source, bucket
     )
     if drive_option is not None:
         options.append(drive_option)
@@ -411,12 +421,23 @@ def _build_option(
     )
 
 
+def _drive_time_source(bucket: TrafficBucket | None) -> str:
+    """Drive time source: free-flow, or the bucket, factor, and source of the multiplier."""
+    if bucket is None:
+        return f"{SPEED_SOURCE['drive']}; no departure time, so no traffic factor applied"
+    return (
+        f"{SPEED_SOURCE['drive']}; times multiplied by traffic factor {bucket.factor.value:g} "
+        f"for {bucket.day_type} {bucket.label} ({bucket.factor.source})"
+    )
+
+
 def _drive_route(
     G: nx.MultiDiGraph,
     origin: Point,
     destination: Point,
     factors: dict[LegMode, EmissionFactor],
     crash_source: str,
+    bucket: TrafficBucket | None = None,
 ) -> tuple[RouteOption | None, str]:
     s, t = _snap_nodes(G, origin, destination)
     node_path = ox.routing.shortest_path(G, s, t, weight="travel_time")
@@ -424,7 +445,8 @@ def _drive_route(
         return None, "no path"
     edges = _drive_edges(G, node_path)
     distance_m = sum(_edge_len(G.edges[e]) for e in edges)
-    duration_min = sum(float(G.edges[e]["travel_time"]) for e in edges) / 60
+    multiplier = bucket.factor.value if bucket is not None else 1.0
+    duration_min = sum(float(G.edges[e]["travel_time"]) for e in edges) / 60 * multiplier
     leg = Leg(
         mode="drive",
         coords=_edge_coords(G, edges),
@@ -439,7 +461,7 @@ def _drive_route(
         kind="drive",
         summary="Drive",
         legs=[leg],
-        time_source=SPEED_SOURCE["drive"],
+        time_source=_drive_time_source(bucket),
         co2_source=co2_source(factors, ["drive"]),
         crash_source=crash_source,
     )

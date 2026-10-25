@@ -22,6 +22,8 @@ Two inputs need your attention before the first run.
 
 1. `data/emission_factors.yaml` is committed with sourced factors (EPA GHG Emission Factors Hub 2025, Table 10, and UK DESNZ 2026 for ferry; each entry names its source). To use other factors, keep the shape of `data/emission_factors.example.yaml`: every mode needs a numeric `value`, a `unit` of `g_per_passenger_km` or `g_per_passenger_mile`, and a non-empty `source`. Every entry point exits with code 2 if the file is missing or invalid.
 
+   `data/traffic_factors.yaml` holds drive-time multipliers (each at least 1.0) for weekday and weekend hour buckets. Each bucket names its `source`. Every bucket is 1.0 with source `needs a source` until a published Boston congestion figure is confirmed for it. A missing file means 1.0 everywhere, and an invalid one exits with code 2. `data/traffic_factors.example.yaml` shows the shape.
+
 2. `data/raw/numina_zones.csv`. This maps each Boston Numina zone id to its sensor site coordinates, because the Numina zone CSVs have none. A candidate is committed at `data/numina_zones.candidate.csv`. It quotes the site coordinates from the Numina project overview PDF. Check it, then copy it after fetching the raw data:
 
    ```sh
@@ -137,7 +139,7 @@ The hosted demo has no login. Anyone with the link can use the chat, which spend
 
 Each candidate route gets four numbers, and lower is better for all of them:
 
-- `time_min`: the sum of leg durations. Drive time is free flow.
+- `time_min`: the sum of leg durations. Drive time is OSMnx free-flow time multiplied by a time-of-day traffic factor from `data/traffic_factors.yaml` for the departure's hour bucket (America/New_York local time, weekday or weekend). Routing itself still uses free-flow edge times. Until a factor has a confirmed source, it is 1.0 and the notes say drive time is free-flow.
 - `co2_g`: the sum over legs of distance times the mode's factor in `data/emission_factors.yaml`.
 - `crash_risk`: the sum of edge risk along walk and bike legs, where edge risk is `(crashes + p * length_km) / exposure * 1000` and `p` is the network mean crashes per km. Drive legs and transit vehicle legs count as 0 because they are not modeled.
 - `disruption_risk`: the highest alert score on any transit leg (suspension 1.0, shuttle 0.8, detour 0.5, and so on, in `EFFECT_SCORES` in `commute_agent/transit/alerts.py`).
