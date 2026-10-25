@@ -11,6 +11,10 @@ import pandas as pd
 
 PRIOR_MIN_EDGES = 20
 MIN_MATCHED_COUNTERS = 10
+# Half a mile, the usual U.S. walk catchment for a rail station (FTA Circular 4702.1B
+# convention, cited in README "Data notes"). A planning convention, not fitted to counts.
+STATION_CATCHMENT_M = 804.7
+_STATION_CHUNK = 20_000
 
 
 class TooFewCounters(Exception):
@@ -64,6 +68,54 @@ def fit_calibration(proxy: np.ndarray, observed: np.ndarray) -> tuple[float, flo
     ss_tot = float(((observed - observed.mean()) ** 2).sum())
     r_squared = 1.0 - ss_res / ss_tot
     return scale, r_squared
+
+
+def fit_linear(X: np.ndarray, observed: np.ndarray) -> tuple[np.ndarray, float]:
+    """Least squares through the origin with one or more predictor columns.
+
+    With one column this is ``fit_calibration``. r_squared = 1 - SS_res / SS_tot
+    about the observed mean, as in ``fit_calibration``.
+    """
+    X = np.asarray(X, dtype=float)
+    observed = np.asarray(observed, dtype=float)
+    coef, *_ = np.linalg.lstsq(X, observed, rcond=None)
+    ss_res = float(((observed - X @ coef) ** 2).sum())
+    ss_tot = float(((observed - observed.mean()) ** 2).sum())
+    return coef, 1.0 - ss_res / ss_tot
+
+
+def adjusted_r_squared(r_squared: float, n: int, n_coefficients: int) -> float:
+    """R² penalised for the number of fitted coefficients: 1 - (1 - R²)(n - 1) / (n - p)."""
+    return 1.0 - (1.0 - r_squared) * (n - 1) / (n - n_coefficients)
+
+
+def station_entry_term(
+    xs: np.ndarray,
+    ys: np.ndarray,
+    station_xy: np.ndarray,
+    entries_per_day: np.ndarray,
+    radius_m: float = STATION_CATCHMENT_M,
+) -> np.ndarray:
+    """Distance-decayed station entries near each point.
+
+    For each point, sum over stations within ``radius_m`` of
+    ``entries_per_day * (1 - distance / radius_m)``. Inputs are in projected metres:
+    ``xs``, ``ys`` for points, ``station_xy`` as an (n, 2) array for stations.
+    """
+    xs = np.asarray(xs, dtype=float)
+    ys = np.asarray(ys, dtype=float)
+    station_xy = np.asarray(station_xy, dtype=float).reshape(-1, 2)
+    entries = np.asarray(entries_per_day, dtype=float)
+    term = np.zeros(len(xs))
+    if len(station_xy) == 0:
+        return term
+    for start in range(0, len(xs), _STATION_CHUNK):
+        stop = start + _STATION_CHUNK
+        dx = xs[start:stop, None] - station_xy[None, :, 0]
+        dy = ys[start:stop, None] - station_xy[None, :, 1]
+        weight = np.clip(1.0 - np.hypot(dx, dy) / radius_m, 0.0, None)
+        term[start:stop] = weight @ entries
+    return term
 
 
 def road_class_prior(

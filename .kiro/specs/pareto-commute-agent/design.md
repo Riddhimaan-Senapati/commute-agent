@@ -638,14 +638,17 @@ class TooFewCounters(Exception): ...
 
 Bike exposure. Edges with a non-zero proxy get `scale * proxy` and basis `bluebikes_proxy`. All other covered edges get `road_class_prior` with basis `road_class_prior`. Calibration uses only bike counters whose matched edge has a non-zero proxy. `build_risk` raises `TooFewCounters` when fewer than `MIN_MATCHED_COUNTERS` match.
 
-Walk exposure. Edges matched to a `ped` counter get its `peak_hour_volume` and basis `ped_counter`. All others get the prior. The walk prior has few measured edges, so most walk edges fall back to the global median. The Unknown_Exposure_Share shows this to the user.
+Walk exposure. Edges matched to a `ped` counter get its `peak_hour_volume` (per-edge mean) and basis `ped_counter`. All others get the prior. The walk prior has few measured edges, so most walk edges fall back to the global median. The Unknown_Exposure_Share shows this to the user.
+
+Walk station term (`commute_agent/streets/exposure.py`, feature 10). `station_entry_term` gives each edge midpoint the sum over MBTA stations within `STATION_CATCHMENT_M` (804.7 m, a half mile) of `entries_per_day * (1 - distance / STATION_CATCHMENT_M)`. Entries per day are 2025 gated entries from `commute_agent/ingest/ridership.py` (`station_entries.parquet`). `fit_linear(X, observed)` is least squares through the origin with one or more columns. `_walk_calibration` fits the matched ped counters twice: the leave-one-out road-class prior alone (`r_squared_before`), and the prior plus the station term (`r_squared_after`). The decision uses adjusted R² and requires both coefficients to be non-negative. `build_risk` uses the two-term fit for unmeasured walk edges only when `USE_STATION_ENTRIES` is True. It is False unless the decision adopts the term.
 
 Edges outside the Crash_Coverage_Area get basis `outside_crash_coverage` regardless of exposure source.
 
-`exposure_calibration.json`:
+`exposure_calibration.json` (bike keys at the top level, walk under `walk`):
 
 ```json
-{"scale": 0.0, "r_squared": 0.0, "matched": {"cambridge_citywide": 0, "somerville": 0, "numina": 0}, "unmatched_over_30m": 0}
+{"scale": 0.0, "r_squared": 0.0, "matched": {"cambridge_citywide": 0, "somerville": 0, "numina": 0}, "unmatched_over_30m": 0,
+ "walk": {"matched_edges": 0, "station_catchment_m": 804.7, "station_entries_available": true, "r_squared_before": 0.0, "r_squared_after": 0.0, "adjusted_r_squared_before": 0.0, "adjusted_r_squared_after": 0.0, "coefficients": {"road_class_prior": 0.0, "station_entries_per_day": 0.0}, "adopted": false, "decision": "", "station_entries_used": false}}
 ```
 
 Expected runtime of `bluebikes_proxy` is 516 single-source Dijkstra calls on the bike graph. Budget 30 minutes. If it runs longer, the owner reports the measured time to the coordinator before adding parallelism.

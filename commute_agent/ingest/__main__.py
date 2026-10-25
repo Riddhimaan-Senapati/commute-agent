@@ -5,6 +5,7 @@ from commute_agent.ingest import counts as counts_mod
 from commute_agent.ingest import crashes as crashes_mod
 from commute_agent.ingest import geo as geo_mod
 from commute_agent.ingest import mbta as mbta_mod
+from commute_agent.ingest import ridership as ridership_mod
 from commute_agent.ingest.meta import SchemaMismatch
 
 # Order matters for `all`: boundary before graphs/basemap, graphs before basemap.
@@ -15,6 +16,7 @@ DATASETS = {
     "crashes": crashes_mod.crashes,
     "counts": counts_mod.counts,
     "bluebikes": bluebikes_mod.bluebikes,
+    "ridership": ridership_mod.station_entries,
     "stations": mbta_mod.stations,
     "otp-inputs": mbta_mod.otp_inputs,
 }
