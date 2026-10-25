@@ -323,7 +323,7 @@ input {
   font-size: 13px;
 }
 
-.picker-row > span {
+.picker-row > label {
   color: var(--muted);
 }
 

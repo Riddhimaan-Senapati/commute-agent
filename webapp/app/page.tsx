@@ -249,9 +249,10 @@ export default function Home() {
         </div>
 
         <div className="picker" aria-label="Departure and alerts">
-          <label className="picker-row">
-            <span>Departure</span>
+          <div className="picker-row">
+            <label htmlFor="depart-mode">Departure</label>
             <select
+              id="depart-mode"
               value={departMode}
               onChange={(e) => changeDeparture(e.target.value as DepartureMode, departWall)}
               disabled={busy}
@@ -260,22 +261,23 @@ export default function Home() {
               <option value="now">Leave now</option>
               <option value="at">Depart at</option>
             </select>
-          </label>
+          </div>
           {departMode === "at" && (
-            <label className="picker-row">
-              <span>Time</span>
+            <div className="picker-row">
+              <label htmlFor="depart-time">Time</label>
               <input
+                id="depart-time"
                 type="datetime-local"
                 value={departWall}
                 onChange={(e) => changeDeparture("at", e.target.value)}
                 disabled={busy}
               />
-            </label>
+            </div>
           )}
           {sources && (
-            <label className="picker-row">
-              <span>Alerts</span>
-              <select value={sources.active} onChange={(e) => void chooseAlertSource(e.target.value)} disabled={busy}>
+            <div className="picker-row">
+              <label htmlFor="alert-source">Alerts</label>
+              <select id="alert-source" value={sources.active} onChange={(e) => void chooseAlertSource(e.target.value)} disabled={busy}>
                 {sources.sources
                   .filter((s) => s !== LIVE_ALERTS || sources.live_enabled)
                   .map((s) => (
@@ -284,7 +286,7 @@ export default function Home() {
                     </option>
                   ))}
               </select>
-            </label>
+            </div>
           )}
         </div>
 
