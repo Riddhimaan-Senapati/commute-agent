@@ -153,6 +153,31 @@ def test_build_agent_fills_alert_source_and_hides_it(monkeypatch) -> None:
     assert wrapped() == "source=synthetic"
 
 
+@tool
+def record_choice(query_id: str, route_id: str, session_id: str | None = None) -> str:
+    """Record the route the user chose.
+
+    Args:
+        query_id: The plan the route belongs to.
+        route_id: The route the user chose.
+        session_id: The session the choice belongs to.
+    """
+    return f"session={session_id}"
+
+
+def test_build_agent_fills_session_id_and_hides_it(monkeypatch) -> None:
+    monkeypatch.setattr(agent_module, "OpenAIModel", lambda **kwargs: ScriptedModel([]))
+    built = build_agent(
+        [record_choice],
+        ModelConfig(model_id="m", api_base="http://localhost:11434/v1", api_key_env=None),
+        lambda: "synthetic",
+        lambda: "tab-a",
+    )
+    wrapped = built.tools["record_choice"]
+    assert "session_id" not in wrapped.inputs
+    assert wrapped(query_id="q1", route_id="r1") == "session=tab-a"
+
+
 def test_build_agent_passes_endpoint_and_key(monkeypatch) -> None:
     seen = {}
 

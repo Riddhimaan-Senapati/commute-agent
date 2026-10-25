@@ -135,7 +135,7 @@ Chat has two in-memory rate limits in `commute_agent/api.py`: `CHAT_LIMIT_PER_SE
 
 Transit for trips outside the cache needs OpenTripPlanner. Set `COMMUTE_OTP_URL` (for example `http://localhost:8080/otp/gtfs/v1`) and offline mode asks that server whenever the cache has no entry, then caches the answer. The demo trips still come from the cache. On Render, `render.yaml` adds a private service, `commute-otp`, built from `docker/otp-render/Dockerfile`. It downloads the saved graph from the `otp-graph.obj` asset on the `data-v1` release and runs on the `standard` plan (2 GB; OTP uses about 1.4 GB). The web service gets its address as `COMMUTE_OTP_HOSTPORT`. Without that variable, the app behaves as before.
 
-The hosted demo has no login. Anyone with the link can use the chat, which spends the OpenRouter key; keep a credit limit on it. Each browser tab sends an `X-Session-Id` header and gets its own alert source, so one visitor's "Simulate Red Line suspension" does not change anyone else's plans. Route choices ("I'll take this route") are still shared: they all go into one preference store, which orders routes for every visitor.
+The hosted demo has no login. Anyone with the link can use the chat, which spends the OpenRouter key; keep a credit limit on it. Each browser tab sends an `X-Session-Id` header and gets its own alert source, so one visitor's "Simulate Red Line suspension" does not change anyone else's plans. Route choices ("I'll take this route") are kept per session: each tab's choices go into the preference store under its `X-Session-Id` and order only that tab's routes. Requests without the header share one session.
 
 ## How the Pareto set is computed
 

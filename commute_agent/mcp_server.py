@@ -1,7 +1,9 @@
 """MCP tool server. Owns all planner state for one session: alert source, plans, and choices.
 
 plan_trip and get_active_alerts also take an alert_source argument, which the API uses to
-give each browser session its own source without changing the stored one."""
+give each browser session its own source without changing the stored one. plan_trip,
+record_choice, get_preferences and clear_preferences take a session_id that keys the
+stored choices; null means the shared "" session."""
 
 import sys
 import time
@@ -163,6 +165,12 @@ def plan_trip(
         str | None,
         Field(description="Alert source to use, or null for the one set with set_alert_source."),
     ] = None,
+    session_id: Annotated[
+        str | None,
+        Field(
+            description="Session whose choices order the routes, or null for the shared session."
+        ),
+    ] = None,
 ) -> PlanResult:
     """Plan a trip inside Boston and return the Pareto set of routes with trade-offs."""
     state = _state()
@@ -181,7 +189,9 @@ def plan_trip(
         )
     source = _source(alert_source)
     alerts, clock = _load_alerts_for_source(source)
-    plan = planner.plan_trip(state.ctx, origin, destination, depart, source, alerts, clock)
+    plan = planner.plan_trip(
+        state.ctx, origin, destination, depart, source, alerts, clock, session_id or ""
+    )
     if showcase_note:
         plan = plan.model_copy(update={"notes": [showcase_note, *plan.notes]})
     state.plans[plan.query_id] = plan
@@ -239,6 +249,10 @@ def get_active_alerts(
 def record_choice(
     query_id: Annotated[str, Field(description="The query_id of the plan the user chose from.")],
     route_id: Annotated[str, Field(description="The route the user chose.")],
+    session_id: Annotated[
+        str | None,
+        Field(description="Session that made the choice, or null for the shared session."),
+    ] = None,
 ) -> PreferenceWeights:
     """Store the user's choice of one route from a plan and return the refit preference weights."""
     state = _state()
@@ -251,14 +265,20 @@ def record_choice(
         chosen=chosen.objectives,
         rejected=rejected,
     )
-    preferences.record_choice(event, state.ctx.preferences_db)
-    return preferences.current_weights(state.ctx.preferences_db)
+    session = session_id or ""
+    preferences.record_choice(event, state.ctx.preferences_db, session)
+    return preferences.current_weights(state.ctx.preferences_db, session)
 
 
 @mcp.tool()
-def get_preferences() -> PreferenceWeights:
+def get_preferences(
+    session_id: Annotated[
+        str | None,
+        Field(description="Session whose choices to summarize, or null for the shared session."),
+    ] = None,
+) -> PreferenceWeights:
     """Return the current preference weights and how many choices they came from."""
-    return preferences.current_weights(_state().ctx.preferences_db)
+    return preferences.current_weights(_state().ctx.preferences_db, session_id or "")
 
 
 @mcp.tool()
@@ -278,10 +298,17 @@ def set_alert_source(
 
 
 @mcp.tool()
-def clear_preferences() -> PreferenceWeights:
-    """Delete every stored choice and return equal preference weights."""
-    preferences.clear_choices(_state().ctx.preferences_db)
-    return preferences.current_weights(_state().ctx.preferences_db)
+def clear_preferences(
+    session_id: Annotated[
+        str | None,
+        Field(description="Session whose choices to delete, or null for the shared session."),
+    ] = None,
+) -> PreferenceWeights:
+    """Delete every choice stored for one session and return equal preference weights."""
+    session = session_id or ""
+    db = _state().ctx.preferences_db
+    preferences.clear_choices(db, session)
+    return preferences.current_weights(db, session)
 
 
 @mcp.tool()

@@ -43,8 +43,8 @@ HOST = "127.0.0.1"
 MCP_CONNECT_TIMEOUT_S = 300
 # The MCP stdio client starts the server with a minimal environment; these pass through.
 MCP_ENV_PASSTHROUGH = ("COMMUTE_OTP_URL",)
-# Each browser tab sends an X-Session-Id and gets its own alert source. Requests without
-# one share the "" session. The oldest sessions are forgotten past MAX_SESSIONS.
+# Each browser tab sends an X-Session-Id and gets its own alert source and route choices.
+# Requests without one share the "" session. The oldest sessions are forgotten past MAX_SESSIONS.
 DEFAULT_ALERT_SOURCE = "none"
 MAX_SESSIONS = 10_000
 # Chat is the only endpoint that spends model credits. Each limit is (requests, window in seconds).
@@ -237,6 +237,7 @@ def create_app(
             destination_lon=body.destination.lon,
             depart_at=body.depart_at,
             alert_source=alert_source(session),
+            session_id=session,
         )
         return call_tool(app, "get_plan", query_id=created["query_id"])
 
@@ -260,16 +261,22 @@ def create_app(
         return call_tool(app, "geocode_place", query=q)
 
     @app.post("/api/choice")
-    def choice(body: ChoiceBody) -> dict:
-        return call_tool(app, "record_choice", query_id=body.query_id, route_id=body.route_id)
+    def choice(body: ChoiceBody, session: SessionId = "") -> dict:
+        return call_tool(
+            app,
+            "record_choice",
+            query_id=body.query_id,
+            route_id=body.route_id,
+            session_id=session,
+        )
 
     @app.get("/api/preferences")
-    def preferences() -> dict:
-        return call_tool(app, "get_preferences")
+    def preferences(session: SessionId = "") -> dict:
+        return call_tool(app, "get_preferences", session_id=session)
 
     @app.delete("/api/preferences")
-    def clear_preferences() -> dict:
-        return call_tool(app, "clear_preferences")
+    def clear_preferences(session: SessionId = "") -> dict:
+        return call_tool(app, "clear_preferences", session_id=session)
 
     @app.post("/api/chat", response_model=AgentReply)
     async def chat(body: ChatBody, session: SessionId = "") -> AgentReply:
@@ -290,7 +297,10 @@ def create_app(
         conv = conversations.get(body.conversation_id or "")
         if conv is None:
             agent = build_agent(
-                list(app.state.tools.values()), config, lambda: alert_source(session)
+                list(app.state.tools.values()),
+                config,
+                lambda: alert_source(session),
+                lambda: session,
             )
             conv = Conversation(id=uuid.uuid4().hex[:8], agent=agent)
             conversations[conv.id] = conv

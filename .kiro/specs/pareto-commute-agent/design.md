@@ -901,12 +901,15 @@ MIN_CHOICES = 3
 L2_PENALTY = 0.1
 EQUAL_WEIGHTS: dict[Objective, float] = {o: 0.25 for o in OBJECTIVES}
 
-def record_choice(event: ChoiceEvent, db: Path = PREFERENCES_DB) -> None:
-    """SQLite table choices(id INTEGER PRIMARY KEY, query_id TEXT, chosen_at TEXT, payload TEXT).
-    payload is event.model_dump_json(). CREATE TABLE IF NOT EXISTS on every connect."""
+def record_choice(event: ChoiceEvent, db: Path = PREFERENCES_DB, session_id: str = "") -> None:
+    """SQLite table choices(id INTEGER PRIMARY KEY, session_id TEXT NOT NULL DEFAULT '',
+    query_id TEXT, chosen_at TEXT, payload TEXT). payload is event.model_dump_json().
+    CREATE TABLE IF NOT EXISTS on every connect. If session_id is missing (a database from
+    before sessions), ALTER TABLE adds it, so old rows belong to the shared "" session."""
 
-def load_choices(db: Path = PREFERENCES_DB) -> list[ChoiceEvent]: ...
-def clear_choices(db: Path = PREFERENCES_DB) -> None: ...
+def load_choices(db: Path = PREFERENCES_DB, session_id: str = "") -> list[ChoiceEvent]: ...
+def clear_choices(db: Path = PREFERENCES_DB, session_id: str = "") -> None:
+    """Deletes only that session's rows."""
 
 def normalize(vectors: list[Objectives]) -> np.ndarray:
     """Shape (n, 4). Divide each column by its max over the n vectors; a column whose max is 0 stays 0."""
@@ -921,8 +924,8 @@ def fit_weights(events: list[ChoiceEvent]) -> PreferenceWeights:
 def order_routes(routes: list[RouteOption], weights: PreferenceWeights) -> list[RouteOption]:
     """Sort by weighted sum of normalize([r.objectives ...]) rows, ties by (time_min, id). Same members."""
 
-def current_weights(db: Path = PREFERENCES_DB) -> PreferenceWeights:
-    """fit_weights(load_choices(db))."""
+def current_weights(db: Path = PREFERENCES_DB, session_id: str = "") -> PreferenceWeights:
+    """fit_weights(load_choices(db, session_id))."""
 ```
 
 ### WS7. MCP server (`commute_agent/mcp_server.py`)

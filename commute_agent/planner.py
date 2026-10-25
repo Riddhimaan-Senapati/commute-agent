@@ -167,6 +167,7 @@ def plan_trip(
     alert_source: str,
     alerts: list[Alert],
     alert_clock: datetime | None,
+    session_id: str = "",
 ) -> PlanResult:
     depart = resolve_departure(depart_at, ctx.live)
     candidates, omitted, unscored = gather_candidates(
@@ -174,7 +175,7 @@ def plan_trip(
     )
     front = pareto_front(candidates)
     labeled = assign_labels(front)
-    weights = current_weights(ctx.preferences_db)
+    weights = current_weights(ctx.preferences_db, session_id)
     ordered = order_routes(labeled, weights)
 
     fastest = next((route for route in labeled if "fastest" in route.labels), None)

@@ -1,8 +1,9 @@
 """WS6. Preferences: learn which trade-offs the user picks and order routes by them.
 
-Choices are stored in a SQLite database. A non-negative logistic model is fit on
-per-query normalized objective differences between each rejected and the chosen
-route. Fewer than MIN_CHOICES events falls back to equal weights.
+Choices are stored in a SQLite database, keyed by the browser session that made them. The
+shared session is "". A non-negative logistic model is fit on per-query normalized
+objective differences between each rejected and the chosen route. Fewer than MIN_CHOICES
+events falls back to equal weights.
 """
 
 import sqlite3
@@ -32,29 +33,35 @@ def _connect(db: Path) -> sqlite3.Connection:
         "CREATE TABLE IF NOT EXISTS choices "
         "(id INTEGER PRIMARY KEY, query_id TEXT, chosen_at TEXT, payload TEXT)"
     )
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(choices)")}
+    if "session_id" not in columns:
+        # Rows stored before sessions existed get the shared "" session.
+        conn.execute("ALTER TABLE choices ADD COLUMN session_id TEXT NOT NULL DEFAULT ''")
     return conn
 
 
-def record_choice(event: ChoiceEvent, db: Path = PREFERENCES_DB) -> None:
-    """Store a Choice_Event. payload is event.model_dump_json()."""
+def record_choice(event: ChoiceEvent, db: Path = PREFERENCES_DB, session_id: str = "") -> None:
+    """Store a Choice_Event for one session. payload is event.model_dump_json()."""
     with _connect(db) as conn:
         conn.execute(
-            "INSERT INTO choices (query_id, chosen_at, payload) VALUES (?, ?, ?)",
-            (event.query_id, event.chosen_at.isoformat(), event.model_dump_json()),
+            "INSERT INTO choices (session_id, query_id, chosen_at, payload) VALUES (?, ?, ?, ?)",
+            (session_id, event.query_id, event.chosen_at.isoformat(), event.model_dump_json()),
         )
 
 
-def load_choices(db: Path = PREFERENCES_DB) -> list[ChoiceEvent]:
-    """Return every stored Choice_Event in insertion order."""
+def load_choices(db: Path = PREFERENCES_DB, session_id: str = "") -> list[ChoiceEvent]:
+    """Return the Choice_Events stored for one session, in insertion order."""
     with _connect(db) as conn:
-        rows = conn.execute("SELECT payload FROM choices ORDER BY id").fetchall()
+        rows = conn.execute(
+            "SELECT payload FROM choices WHERE session_id = ? ORDER BY id", (session_id,)
+        ).fetchall()
     return [ChoiceEvent.model_validate_json(payload) for (payload,) in rows]
 
 
-def clear_choices(db: Path = PREFERENCES_DB) -> None:
-    """Delete all Choice_Events."""
+def clear_choices(db: Path = PREFERENCES_DB, session_id: str = "") -> None:
+    """Delete the Choice_Events stored for one session. Other sessions keep theirs."""
     with _connect(db) as conn:
-        conn.execute("DELETE FROM choices")
+        conn.execute("DELETE FROM choices WHERE session_id = ?", (session_id,))
 
 
 def _vector(obj: Objectives) -> list[float]:
@@ -130,6 +137,6 @@ def order_routes(routes: list[RouteOption], weights: PreferenceWeights) -> list[
     return [route for _, route in indexed]
 
 
-def current_weights(db: Path = PREFERENCES_DB) -> PreferenceWeights:
-    """fit_weights(load_choices(db))."""
-    return fit_weights(load_choices(db))
+def current_weights(db: Path = PREFERENCES_DB, session_id: str = "") -> PreferenceWeights:
+    """fit_weights(load_choices(db, session_id))."""
+    return fit_weights(load_choices(db, session_id))
