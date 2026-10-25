@@ -12,6 +12,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -29,7 +30,7 @@ from commute_agent.models import (
 )
 from commute_agent.paths import OTP_CACHE
 from commute_agent.routes import assemble_route
-from commute_agent.streets import StreetGraphs, score_walk_coords
+from commute_agent.streets import StreetGraphs, score_bike_coords, score_walk_coords
 
 OTP_URL = "http://localhost:8080/otp/gtfs/v1"
 # When set, offline mode asks this OTP server for trips the cache lacks (and caches them),
@@ -39,8 +40,13 @@ FEED_PREFIX = "mbta:"
 TIMEZONE = ZoneInfo("America/New_York")
 OTP_TIMEOUT_S = 20.0
 
+# How the trip reaches the first transit stop. "bike" is a second query whose cache entries
+# are kept apart from the walk ones by an access suffix on the key.
+TransitAccess = Literal["walk", "bike"]
+
 OTP_MODE_TO_LEG_MODE: dict[str, LegMode] = {
     "WALK": "walk",
+    "BICYCLE": "bike",
     "SUBWAY": "subway",
     "TRAM": "light_rail",
     "BUS": "bus",
@@ -50,6 +56,11 @@ OTP_MODE_TO_LEG_MODE: dict[str, LegMode] = {
 
 # Source label for the time objective of a scheduled transit itinerary.
 TRANSIT_TIME_SOURCE = "OTP scheduled itinerary from the published MBTA GTFS feed"
+# Bike legs take OTP's cycling estimate, not BIKE_KPH from the street router.
+BIKE_TRANSIT_TIME_SOURCE = (
+    "OTP scheduled itinerary from the published MBTA GTFS feed; "
+    "bike legs use OTP's cycling time estimate"
+)
 
 NOT_CACHED = "transit not cached for this trip"
 OTP_UNREACHABLE = "OTP unreachable"
@@ -86,6 +97,15 @@ PLAN_QUERY_EXCLUDING = PLAN_QUERY.replace(
     "    first: 5\n    preferences: {transit: {filters: [{exclude: [{routes: $exclude}]}]}}\n",
 )
 
+# OTP 2.10 rejects BICYCLE for access unless it is also used for egress and transfer, so a
+# bike-access trip is bike on every street leg. BICYCLE_PARKING returns no transit on this
+# graph (no bike park-and-ride stations are built), so it is not queried.
+# trip.bikesAllowed is added so the GTFS bike flag of each transit leg can be read.
+PLAN_QUERY_BIKE = PLAN_QUERY.replace(
+    "modes: {transitOnly: true}",
+    "modes: {transit: {access: [BICYCLE], egress: [BICYCLE], transfer: [BICYCLE]}}",
+).replace("trip { directionId }", "trip { directionId bikesAllowed }")
+
 
 def otp_cache_key(origin: Point, destination: Point, weekday: Weekday, depart_local: str) -> str:
     """Stable 16-hex-char key for one origin/destination/weekday/time request."""
@@ -98,7 +118,11 @@ def otp_cache_key(origin: Point, destination: Point, weekday: Weekday, depart_lo
 
 
 def _cache_key_for_datetime(
-    origin: Point, destination: Point, depart_at: datetime, exclude_routes: tuple[str, ...] = ()
+    origin: Point,
+    destination: Point,
+    depart_at: datetime,
+    exclude_routes: tuple[str, ...] = (),
+    access: TransitAccess = "walk",
 ) -> str:
     local = depart_at.astimezone(TIMEZONE)
     weekday: Weekday = (
@@ -113,6 +137,9 @@ def _cache_key_for_datetime(
     clock = local.strftime("%H:%M")
     if exclude_routes:
         clock += ";exclude=" + ",".join(sorted(exclude_routes))
+    if access == "bike":
+        # Walk-access keys carry no suffix, so their existing cache entries still resolve.
+        clock += ";access=bike"
     return otp_cache_key(origin, destination, weekday, clock)
 
 
@@ -124,6 +151,7 @@ def fetch_itineraries(
     live: bool,
     cache_dir: Path = OTP_CACHE,
     exclude_routes: tuple[str, ...] = (),
+    access: TransitAccess = "walk",
 ) -> tuple[dict | None, str | None]:
     """Return ``(raw_response, None)`` or ``(None, omit_reason)``.
 
@@ -133,8 +161,12 @@ def fetch_itineraries(
     ``OTP_UNREACHABLE`` on any ``httpx.HTTPError``.
     ``exclude_routes`` holds MBTA route ids (no feed prefix) that OTP must not use; the
     excluding request has its own cache entry.
+    ``access="bike"`` posts ``PLAN_QUERY_BIKE`` instead, with its own cache entry. It takes
+    no exclusions, so it cannot be combined with ``exclude_routes``.
     """
-    key = _cache_key_for_datetime(origin, destination, depart_at, exclude_routes)
+    if access == "bike" and exclude_routes:
+        raise ValueError("bike access does not support route exclusions")
+    key = _cache_key_for_datetime(origin, destination, depart_at, exclude_routes, access)
     cache_path = cache_dir / f"{key}.json"
 
     url = os.environ.get(OTP_URL_ENV)
@@ -151,6 +183,8 @@ def fetch_itineraries(
         "when": local.isoformat(),
     }
     query = PLAN_QUERY
+    if access == "bike":
+        query = PLAN_QUERY_BIKE
     if exclude_routes:
         variables["exclude"] = [FEED_PREFIX + route for route in sorted(exclude_routes)]
         query = PLAN_QUERY_EXCLUDING
@@ -239,6 +273,9 @@ def _build_leg(
     if mode == "walk":
         crash_risk, risk_basis_m = score_walk_coords(graphs.walk, coords)
         transit = None
+    elif mode == "bike":
+        crash_risk, risk_basis_m = score_bike_coords(graphs.bike, coords)
+        transit = None
     else:
         crash_risk, risk_basis_m = 0.0, {}
         transit = _transit_ref(otp_leg)
@@ -256,12 +293,18 @@ def _build_leg(
 
 
 def _summary(legs: list[Leg]) -> str:
-    names = [leg.transit.route_name for leg in legs if leg.transit and leg.transit.route_name]
-    if not names:
+    """Transit route names, with "Bike" for each bike leg, e.g. "Bike, then Red Line"."""
+    labels: list[str] = []
+    for leg in legs:
+        if leg.mode == "bike":
+            labels.append("Bike")
+        elif leg.transit and leg.transit.route_name:
+            labels.append(leg.transit.route_name)
+    if not labels:
         return "Transit"
-    if len(names) == 1:
-        return names[0]
-    return names[0] + ", then " + ", then ".join(names[1:])
+    if len(labels) == 1:
+        return labels[0]
+    return labels[0] + ", then " + ", then ".join(labels[1:])
 
 
 def transit_routes(
@@ -273,7 +316,8 @@ def transit_routes(
     """One RouteOption per itinerary, ids ``transit-<first_id>`` onward.
 
     Itineraries with no transit leg are dropped. Walk legs get crash risk from
-    ``score_walk_coords``; vehicle legs get crash risk 0 and a fixed source label.
+    ``score_walk_coords`` and bike legs from ``score_bike_coords``; vehicle legs get crash
+    risk 0 and a fixed source label.
     """
     edges = (((raw or {}).get("data") or {}).get("planConnection") or {}).get("edges") or []
 
@@ -286,13 +330,14 @@ def transit_routes(
             continue
 
         n += 1
+        has_bike = any(leg.mode == "bike" for leg in legs)
         routes.append(
             assemble_route(
                 route_id=f"transit-{n}",
                 kind="transit",
                 summary=_summary(legs),
                 legs=legs,
-                time_source=TRANSIT_TIME_SOURCE,
+                time_source=BIKE_TRANSIT_TIME_SOURCE if has_bike else TRANSIT_TIME_SOURCE,
                 co2_source=co2_source(factors, [leg.mode for leg in legs]),
                 crash_source=graphs.crash_source,
             )

@@ -76,7 +76,7 @@ Plans and choices live in the MCP subprocess. The REST handlers call MCP tools f
 
 1. `planner.plan_trip` checks both points against the Boston boundary.
 2. `streets.router.street_routes` returns walk, bike, bluebikes, and drive candidates.
-3. `transit.otp.fetch_itineraries` returns a raw OTP response from cache (offline) or OTP (live). `transit.otp.transit_routes` converts it to candidates and scores each walk leg for crash risk.
+3. `transit.otp.fetch_itineraries` returns a raw OTP response from cache (offline) or OTP (live). `transit.otp.transit_routes` converts it to candidates and scores each walk leg for crash risk. A second request, `fetch_itineraries(..., access="bike")`, asks for bike-access itineraries (`PLAN_QUERY_BIKE`, `BICYCLE` for access, egress and transfer). Its cache key carries `;access=bike`, so walk-access keys are unchanged. `transit_routes` scores its bike legs with `score_bike_coords` on the bike graph and labels them "Bike" in the route summary, e.g. "Bike, then Red Line". Offline, a missing bike entry omits these routes without an omit reason.
 4. `transit.alerts.apply_disruptions` sets disruption risk on transit legs from the active alert source.
 5. `pareto.pareto_front` filters. `pareto.assign_labels` labels. `pareto.tradeoff` compares each member with the fastest.
 6. `preferences.order_routes` orders members by the current weights.
@@ -698,7 +698,7 @@ Bluebikes picks the station nearest the origin and the station nearest the desti
 
 Route ids are `walk-1`, `walk-2`, and so on, in the order the sweep produced them. Summaries are `Walk, fastest`, `Walk, safer variant 1`, `Bike, fastest`, `Drive`, and `Bluebikes from <station> to <station>`.
 
-`streets/__init__.py` re-exports `StreetGraphs`, `load_street_graphs`, `street_routes`, and `score_walk_coords`.
+`streets/__init__.py` re-exports `StreetGraphs`, `load_street_graphs`, `street_routes`, `score_walk_coords`, and `score_bike_coords`. The last scores an OTP bike leg polyline on the bike graph.
 
 ### WS4. OTP client and cache (`commute_agent/transit/otp.py`)
 
@@ -723,7 +723,7 @@ def fetch_itineraries(origin: Point, destination: Point, depart_at: datetime, *,
 
 def transit_routes(raw: dict, graphs: StreetGraphs, factors: dict[LegMode, EmissionFactor]) -> list[RouteOption]:
     """One RouteOption per itinerary edge, ids transit-1..n. Drops itineraries with no transit leg.
-    Walk legs get crash risk from score_walk_coords. Summary joins route names, e.g. 'Red Line, then Silver Line SL4'."""
+    Walk legs get crash risk from score_walk_coords and bike legs from score_bike_coords. Summary joins route names, e.g. 'Red Line, then Silver Line SL4', with 'Bike' for a bike leg, e.g. 'Bike, then Red Line'."""
 ```
 
 `PLAN_QUERY` (variables `from`, `to`, `when`):

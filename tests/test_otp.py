@@ -1,5 +1,6 @@
 """Unit tests for commute_agent.transit.otp."""
 
+import copy
 import json
 from datetime import datetime
 from pathlib import Path
@@ -198,3 +199,129 @@ def test_excluding_request_has_its_own_cache_entry(tmp_path) -> None:
     from commute_agent.transit.otp import _cache_key_for_datetime
 
     assert _cache_key_for_datetime(o, d, when) != _cache_key_for_datetime(o, d, when, ("Red",))
+
+
+BIKE_RAW = FIXTURES / "otp_bike_access.json"
+FIELDS_CORNER = Point(lat=42.3003, lon=-71.0614)
+DOWNTOWN_CROSSING = Point(lat=42.3555, lon=-71.0603)
+TUESDAY_0815 = datetime.fromisoformat("2026-10-27T08:15:00-04:00")
+# Walk-access key for this trip, computed before the bike access suffix existed.
+WALK_KEY_FIELDS_CORNER_TUESDAY_0815 = "ffc582e57e619f4e"
+
+
+def test_bike_access_transit_routes_have_bike_first_leg(graphs: StreetGraphs) -> None:
+    # Real OTP 2.10.0 response for the bike-access query, Fields Corner to Downtown Crossing.
+    raw = json.loads(BIKE_RAW.read_text())
+
+    routes = otp.transit_routes(raw, graphs, _FACTORS)
+
+    assert [route.id for route in routes] == [f"transit-{n}" for n in range(1, 6)]
+    assert any(route.legs[0].mode == "bike" for route in routes)
+    for route in routes:
+        assert route.kind == "transit"
+        assert route.summary.startswith("Bike, then ")
+        bike_leg = route.legs[0]
+        assert bike_leg.mode == "bike"
+        assert bike_leg.transit is None
+        assert bike_leg.coords and bike_leg.distance_m > 0
+        assert bike_leg.risk_basis_m
+        assert any(leg.transit is not None for leg in route.legs)
+
+
+def test_bike_legs_are_scored_on_the_bike_graph(fixture_graph) -> None:
+    bike = copy.deepcopy(fixture_graph)
+    for _u, _v, data in bike.edges(data=True):
+        data["risk"] = 1.0
+    walk = copy.deepcopy(fixture_graph)
+    for _u, _v, data in walk.edges(data=True):
+        data["risk"] = 0.0
+    graphs = StreetGraphs(
+        walk=walk,
+        bike=bike,
+        drive=fixture_graph,
+        stations=pd.DataFrame(columns=["station_id", "name", "lat", "lon"]),
+        crash_source="test crash source label",
+    )
+    raw = json.loads(BIKE_RAW.read_text())
+
+    routes = otp.transit_routes(raw, graphs, _FACTORS)
+
+    bike_legs = [leg for route in routes for leg in route.legs if leg.mode == "bike"]
+    assert bike_legs
+    assert all(leg.crash_risk > 0 for leg in bike_legs)
+    assert all(leg.co2_g == 0.0 for leg in bike_legs)
+
+
+def test_walk_access_cache_key_is_unchanged() -> None:
+    key = otp._cache_key_for_datetime(FIELDS_CORNER, DOWNTOWN_CROSSING, TUESDAY_0815)
+
+    assert key == WALK_KEY_FIELDS_CORNER_TUESDAY_0815
+    bike_key = otp._cache_key_for_datetime(
+        FIELDS_CORNER, DOWNTOWN_CROSSING, TUESDAY_0815, access="bike"
+    )
+    assert bike_key != key
+
+
+def test_existing_walk_cache_entry_still_resolves(tmp_path: Path) -> None:
+    payload = {"data": {"planConnection": {"edges": []}}}
+    (tmp_path / f"{WALK_KEY_FIELDS_CORNER_TUESDAY_0815}.json").write_text(json.dumps(payload))
+
+    raw, reason = otp.fetch_itineraries(
+        FIELDS_CORNER, DOWNTOWN_CROSSING, TUESDAY_0815, live=False, cache_dir=tmp_path
+    )
+
+    assert (raw, reason) == (payload, None)
+
+
+def test_bike_access_cache_entry_is_separate(tmp_path: Path) -> None:
+    payload = json.loads(BIKE_RAW.read_text())
+    bike_key = otp._cache_key_for_datetime(
+        FIELDS_CORNER, DOWNTOWN_CROSSING, TUESDAY_0815, access="bike"
+    )
+    (tmp_path / f"{bike_key}.json").write_text(json.dumps(payload))
+
+    bike = otp.fetch_itineraries(
+        FIELDS_CORNER,
+        DOWNTOWN_CROSSING,
+        TUESDAY_0815,
+        live=False,
+        cache_dir=tmp_path,
+        access="bike",
+    )
+    walk = otp.fetch_itineraries(
+        FIELDS_CORNER, DOWNTOWN_CROSSING, TUESDAY_0815, live=False, cache_dir=tmp_path
+    )
+
+    assert bike == (payload, None)
+    assert walk == (None, "transit not cached for this trip")
+
+
+def test_bike_access_offline_miss_is_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("COMMUTE_OTP_URL", raising=False)
+
+    raw, reason = otp.fetch_itineraries(
+        FIELDS_CORNER,
+        DOWNTOWN_CROSSING,
+        TUESDAY_0815,
+        live=False,
+        cache_dir=tmp_path,
+        access="bike",
+    )
+
+    assert (raw, reason) == (None, "transit not cached for this trip")
+    assert not list(tmp_path.iterdir())
+
+
+def test_bike_access_rejects_route_exclusions(tmp_path: Path) -> None:
+    with pytest.raises(ValueError):
+        otp.fetch_itineraries(
+            FIELDS_CORNER,
+            DOWNTOWN_CROSSING,
+            TUESDAY_0815,
+            live=False,
+            cache_dir=tmp_path,
+            exclude_routes=("Red",),
+            access="bike",
+        )

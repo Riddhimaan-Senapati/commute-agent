@@ -126,6 +126,15 @@ def main(argv: list[str] | None = None) -> int:
 
         routes = transit_routes(raw, graphs, factors)
         print(f"{trip.name}: {len(routes)} itineraries")
+        # Bike-access entries are cached alongside the walk ones; they do not change the exit code.
+        bike_raw, bike_reason = fetch_itineraries(
+            trip.origin, trip.destination, depart_at, live=True, cache_dir=OTP_CACHE, access="bike"
+        )
+        if bike_raw is None:
+            print(f"{trip.name} bike access: 0 itineraries ({bike_reason})")
+        else:
+            bike_routes = transit_routes(bike_raw, graphs, factors)
+            print(f"{trip.name} bike access: {len(bike_routes)} itineraries")
         if trip in showcase:
             exit_code |= cache_alternatives(trip, depart_at, routes, graphs, factors)
 

@@ -84,6 +84,7 @@ def load_street_graphs(processed: Path = PROCESSED) -> StreetGraphs:
     for G in (walk, bike, drive):
         _projected(G)  # pay the projection cost at load, not on the first plan
     _edge_index(walk)  # score_walk_coords queries it on every transit plan
+    _edge_index(bike)  # score_bike_coords queries it on every bike-access transit plan
     return StreetGraphs(
         walk=walk, bike=bike, drive=drive, stations=stations, crash_source=crash_source
     )
@@ -157,11 +158,25 @@ def street_routes(
 def score_walk_coords(
     G_walk: nx.MultiDiGraph, coords: list[tuple[float, float]]
 ) -> tuple[float, dict[RiskBasis, float]]:
-    """Crash risk and metres per basis for an arbitrary walk polyline, used for OTP walk legs.
+    """Crash risk and metres per basis for an arbitrary walk polyline, used for OTP walk legs."""
+    return _score_coords(G_walk, coords)
 
-    For each consecutive coordinate pair, take the midpoint, find the nearest walk edge in one
-    vectorized nearest_edges call, and add edge risk * min(1, segment_m / edge_length).
+
+def score_bike_coords(
+    G_bike: nx.MultiDiGraph, coords: list[tuple[float, float]]
+) -> tuple[float, dict[RiskBasis, float]]:
+    """Crash risk and metres per basis for an arbitrary bike polyline, used for OTP bike legs.
+
+    Scored on the bike graph the same way as walk legs are scored on the walk graph.
     """
+    return _score_coords(G_bike, coords)
+
+
+def _score_coords(
+    G: nx.MultiDiGraph, coords: list[tuple[float, float]]
+) -> tuple[float, dict[RiskBasis, float]]:
+    """For each consecutive coordinate pair, take the midpoint, find the nearest edge in one
+    vectorized nearest_edges call, and add edge risk * min(1, segment_m / edge_length)."""
     risk_basis_m: dict[RiskBasis, float] = {}
     if len(coords) < 2:
         return 0.0, risk_basis_m
@@ -175,12 +190,12 @@ def score_walk_coords(
         seg_m.append(float(ox.distance.great_circle(lat1, lon1, lat2, lon2)))
 
     xs, ys = _project_points(seg_lon_mid, seg_lat_mid)
-    edges = _nearest_edges(G_walk, xs, ys)
+    edges = _nearest_edges(G, xs, ys)
 
     total_risk = 0.0
     for edge, segment_m in zip(edges, seg_m, strict=True):
         key = tuple(int(c) for c in edge)
-        data = G_walk.edges[key]
+        data = G.edges[key]
         edge_length = float(data["length"])
         frac = min(1.0, segment_m / edge_length) if edge_length > 0 else 0.0
         total_risk += float(data["risk"]) * frac
@@ -521,4 +536,5 @@ __all__ = [
     "load_street_graphs",
     "street_routes",
     "score_walk_coords",
+    "score_bike_coords",
 ]
