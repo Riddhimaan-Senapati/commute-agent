@@ -41,6 +41,7 @@ from commute_agent.models import (
 from commute_agent.pareto import tradeoff
 from commute_agent.paths import ALERT_SNAPSHOTS, PROCESSED, SHOWCASE_TRIPS
 from commute_agent.planner import PlannerContext
+from commute_agent.traffic import TrafficFactorsError
 from commute_agent.transit.alerts import MBTA_LIVE_SOURCE, effect_score, load_alerts
 from commute_agent.transit.alerts import list_alert_sources as alert_source_names
 
@@ -395,6 +396,9 @@ def main(argv: list[str] | None = None) -> int:
         configure(build_state(live))
     except EmissionFactorsError as error:
         print(f"emission factors: {error}", file=sys.stderr)
+        return 2
+    except TrafficFactorsError as error:
+        print(f"traffic factors: {error}", file=sys.stderr)
         return 2
     mcp.run()
     return 0

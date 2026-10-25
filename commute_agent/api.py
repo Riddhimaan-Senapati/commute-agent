@@ -35,6 +35,7 @@ from commute_agent.agent import (
 from commute_agent.emissions import EmissionFactorsError, load_emission_factors
 from commute_agent.models import AgentReply, Point
 from commute_agent.paths import PROCESSED, WEB
+from commute_agent.traffic import TrafficFactorsError, load_traffic_factors
 
 IDENTITY_NOTICE = "Independent prototype. Not a City of Boston or MBTA service."
 NO_AUTH_NOTICE = "No authentication. Local demo use only."
@@ -336,8 +337,12 @@ def main(argv: list[str] | None = None) -> int:
         os.environ["COMMUTE_AGENT_MODEL"] = args.model
     try:
         load_emission_factors()
+        load_traffic_factors()
     except EmissionFactorsError as error:
         print(f"emission factors: {error}", file=sys.stderr)
+        return 2
+    except TrafficFactorsError as error:
+        print(f"traffic factors: {error}", file=sys.stderr)
         return 2
     logging.basicConfig(level=logging.INFO)
     logger.warning(NO_AUTH_NOTICE)

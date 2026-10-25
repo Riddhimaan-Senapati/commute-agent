@@ -7,6 +7,7 @@ from commute_agent import planner
 from commute_agent.models import PlanResult, Point
 from commute_agent.planner import (
     FIXED_NOTES,
+    FREE_FLOW_NOTE,
     OutsideServiceArea,
     PlannerContext,
     plan_trip,
@@ -84,3 +85,48 @@ def test_suspended_route_adds_alternatives_that_avoid_it(planner_ctx, fixture_pa
     transit_ids = [r.id for r in candidates if r.kind == "transit"]
     assert calls == [(), ("Red",)]
     assert transit_ids == [f"transit-{n}" for n in range(1, 11)]
+
+
+def test_drive_note_names_factor_when_departure_has_one(
+    planner_ctx: PlannerContext, otp_cache: None
+) -> None:
+    from dataclasses import replace
+
+    from commute_agent.models import TrafficFactor
+    from commute_agent.traffic import TrafficBucket, TrafficFactors
+
+    buckets = tuple(
+        TrafficBucket(
+            day,
+            label,
+            start,
+            end,
+            TrafficFactor(value=1.25 if label == "16-19" else 1.0, source="Test figure"),
+        )
+        for day in ("weekday", "weekend")
+        for label, start, end in (("0-16", 0, 16), ("16-19", 16, 19), ("19-24", 19, 24))
+    )
+    ctx = replace(planner_ctx, traffic=TrafficFactors(buckets=buckets))
+    plan = plan_trip(
+        ctx,
+        ORIGIN,
+        DESTINATION,
+        datetime.fromisoformat("2026-10-27T17:00:00-04:00"),
+        alert_source="none",
+        alerts=[],
+        alert_clock=None,
+    )
+    drive_note = (
+        "Drive time uses a time-of-day traffic factor (1.25 for weekday 16-19, "
+        "source: Test figure)."
+    )
+    assert drive_note in plan.notes
+    assert FREE_FLOW_NOTE not in plan.notes
+    assert plan.notes == [
+        FIXED_NOTES[0],
+        drive_note,
+        FIXED_NOTES[2],
+        FIXED_NOTES[3],
+    ]
+    drive = next(route for route in plan.routes if route.kind == "drive")
+    assert "1.25 for weekday 16-19" in drive.sources["time_min"]

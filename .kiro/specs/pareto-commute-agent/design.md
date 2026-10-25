@@ -492,6 +492,25 @@ commuter_rail: {value: null, unit: g_per_passenger_km, source: ""}
 ferry:         {value: null, unit: g_per_passenger_km, source: ""}
 ```
 
+### WS6. Traffic factors (`commute_agent/traffic.py`)
+
+`data/traffic_factors.yaml` multiplies free-flow drive time by a factor per day type and hour bucket (America/New_York local time). Buckets per day type: `0-6`, `6-7`, `7-9`, `9-15`, `15-16`, `16-19`, `19-24`. Each bucket has a `value` (a number at least 1.0) and a `source`. A bucket with `source: "needs a source"` must have `value: 1.0`, so no unsourced number is ever applied.
+
+```python
+class TrafficFactorsError(Exception): ...
+
+@dataclass(frozen=True)
+class TrafficFactors:
+    buckets: tuple[TrafficBucket, ...]
+    note: str | None = None
+    def factor_for(self, depart_at: datetime) -> TrafficBucket: ...  # weekend = Sat/Sun
+
+def load_traffic_factors(path: Path = TRAFFIC_FACTORS) -> TrafficFactors: ...  # missing file: 1.0 everywhere with a note
+def free_flow_factors(note: str | None = None) -> TrafficFactors: ...
+```
+
+`load_traffic_factors` raises `TrafficFactorsError` naming the path and each bad day type, bucket and field, including gaps or overlaps in the 0-24 coverage. `street_routes` takes `depart_at` and `traffic` and applies the factor to drive time only. Its time source names the day type, bucket, factor and source. The planner's drive note changes to "Drive time uses a time-of-day traffic factor (...)" only when the departure's factor is not 1.0. `data/traffic_factors.example.yaml` gives the shape with null values.
+
 ### WS1. Showcase trips (`data/showcase_trips.yaml`)
 
 Coordinates are starting values. The WS1 test asserts each point is inside `boston_boundary.geojson` once that file exists (skipped on fixtures only).
@@ -662,7 +681,7 @@ SPEED_SOURCE = {
     "walk": "Assumed walking speed 4.8 km/h",
     "bike": "Assumed cycling speed 15 km/h",
     "bluebikes": "Assumed Bluebikes speed 13 km/h plus walking 4.8 km/h to and from stations",
-    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic",
+    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class",
 }
 
 @dataclass(frozen=True)
@@ -676,8 +695,11 @@ class StreetGraphs:
 def load_street_graphs(processed: Path = PROCESSED) -> StreetGraphs: ...
 
 def street_routes(graphs: StreetGraphs, factors: dict[LegMode, EmissionFactor],
-                  origin: Point, destination: Point) -> tuple[list[RouteOption], dict[RouteKind, str]]:
-    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons."""
+                  origin: Point, destination: Point, depart_at: datetime | None = None,
+                  traffic: TrafficFactors | None = None) -> tuple[list[RouteOption], dict[RouteKind, str]]:
+    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons.
+    Only drive uses depart_at: its free-flow time is multiplied by the traffic factor for that
+    departure (see WS6). Without depart_at, drive time stays free-flow."""
 
 def score_walk_coords(G_walk: nx.MultiDiGraph, coords: list[tuple[float, float]]) -> tuple[float, dict[RiskBasis, float]]:
     """Crash risk and metres per basis for an arbitrary walk polyline, used for OTP walk legs.
@@ -860,7 +882,7 @@ Dominance with tolerance is not transitive. Step 2 compares each candidate again
 DEFAULT_OFFLINE_DEPARTURE = ("tuesday", "08:15")
 FIXED_NOTES = [
     "Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.",
-    "Drive time is free-flow and ignores traffic.",
+    "Drive time is free-flow and ignores traffic.",  # replaced by a traffic-factor note when the departure's factor is not 1.0
     "Bluebikes dock availability is not checked.",
     "Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.",
 ]

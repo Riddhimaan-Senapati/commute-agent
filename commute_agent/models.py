@@ -178,6 +178,13 @@ class EmissionFactor(BaseModel):
     source: str
 
 
+class TrafficFactor(BaseModel):
+    """Multiplier (>= 1.0) on free-flow drive time for one weekday or weekend hour bucket."""
+
+    value: float
+    source: str
+
+
 class ShowcaseTrip(BaseModel):
     name: str
     origin_name: str

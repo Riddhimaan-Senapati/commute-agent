@@ -4,7 +4,7 @@ The MCP server passes the active alerts in. The planner never reads session stat
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -31,16 +31,23 @@ from commute_agent.pareto import assign_labels, filtered_out, pareto_front, trad
 from commute_agent.paths import PREFERENCES_DB, PROCESSED
 from commute_agent.preferences import current_weights, order_routes
 from commute_agent.streets import StreetGraphs, load_street_graphs, street_routes
+from commute_agent.traffic import (
+    TrafficBucket,
+    TrafficFactors,
+    free_flow_factors,
+    load_traffic_factors,
+)
 from commute_agent.transit.alerts import apply_disruptions, effect_score, suspended_routes
 from commute_agent.transit.otp import fetch_itineraries, transit_routes
 
 TIMEZONE = ZoneInfo("America/New_York")
 DEFAULT_OFFLINE_DEPARTURE = ("tuesday", "08:15")
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+FREE_FLOW_NOTE = "Drive time is free-flow and ignores traffic."
 FIXED_NOTES = [
     "Crash risk covers walking and biking segments only. "
     "Driving and transit vehicle crash risk is not modeled.",
-    "Drive time is free-flow and ignores traffic.",
+    FREE_FLOW_NOTE,
     "Bluebikes dock availability is not checked.",
     "Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.",
 ]
@@ -53,6 +60,22 @@ class PlannerContext:
     boundary: BaseGeometry
     live: bool
     preferences_db: Path = PREFERENCES_DB
+    traffic: TrafficFactors = field(default_factory=free_flow_factors)
+
+
+def _drive_note(bucket: TrafficBucket) -> str:
+    """Free-flow when the departure's factor is 1.0; otherwise names the bucket and source."""
+    if bucket.factor.value == 1.0:
+        return FREE_FLOW_NOTE
+    return (
+        f"Drive time uses a time-of-day traffic factor ({bucket.factor.value:g} for "
+        f"{bucket.day_type} {bucket.label}, source: {bucket.factor.source})."
+    )
+
+
+def _notes(bucket: TrafficBucket) -> list[str]:
+    drive = _drive_note(bucket)
+    return [drive if note == FREE_FLOW_NOTE else note for note in FIXED_NOTES]
 
 
 class OutsideServiceArea(Exception):
@@ -67,6 +90,7 @@ def load_context(live: bool, processed: Path = PROCESSED) -> PlannerContext:
         factors=load_emission_factors(),
         boundary=boundary,
         live=live,
+        traffic=load_traffic_factors(),
     )
 
 
@@ -133,7 +157,9 @@ def gather_candidates(
     if outside:
         raise OutsideServiceArea(f"Outside the City of Boston: {' and '.join(outside)}")
 
-    candidates, omitted = street_routes(ctx.graphs, ctx.factors, origin, destination)
+    candidates, omitted = street_routes(
+        ctx.graphs, ctx.factors, origin, destination, depart_at, ctx.traffic
+    )
     at = alert_clock or depart_at
     raw, reason = fetch_itineraries(origin, destination, depart_at, live=ctx.live)
     if raw is None:
@@ -196,6 +222,6 @@ def plan_trip(
         candidate_count=len(candidates),
         unscored_alerts=unscored,
         preference=weights,
-        notes=list(FIXED_NOTES),
+        notes=_notes(ctx.traffic.factor_for(depart)),
         filtered=filtered_out(candidates, front),
     )
