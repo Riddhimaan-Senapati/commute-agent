@@ -716,6 +716,76 @@ mark {
   font-weight: 700;
 }
 
+/* Trade-off chart */
+.tradeoff-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tradeoff {
+  margin: 6px 0 0;
+}
+
+.tradeoff svg {
+  display: block;
+  overflow: visible;
+}
+
+.tradeoff figcaption {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tradeoff-grid {
+  stroke: var(--line);
+}
+
+.tradeoff-axis {
+  stroke: var(--muted);
+}
+
+.tradeoff-tick {
+  fill: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tradeoff-label {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tradeoff-filtered {
+  fill: #fff;
+  stroke: #9aa0a6;
+  stroke-width: 1.5;
+}
+
+.tradeoff-dot {
+  cursor: pointer;
+  outline: none;
+}
+
+.tradeoff-dot circle:not(.tradeoff-ring) {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.tradeoff-dot:hover circle:not(.tradeoff-ring),
+.tradeoff-dot:focus-visible circle:not(.tradeoff-ring) {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+
+.tradeoff-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
 .filtered {
   display: flex;
   flex-direction: column;

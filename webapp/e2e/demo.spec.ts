@@ -33,6 +33,7 @@ test("map-first demo: route on the map, pick an objective, suspend the Red Line,
   await expect(cards.first()).toContainText("Lowest CO₂");
   await page.getByRole("radio", { name: "All trade-offs" }).click();
   await expect(cards).toHaveCount(allCount);
+  await expect(page.getByRole("figure", { name: "Trade-off chart: time against CO2" })).toBeVisible();
 
   // Routes outside the Pareto set are listed under it, each naming the route that beats it.
   await expect(page.getByRole("heading", { name: /On the Pareto frontier/ })).toBeVisible();
