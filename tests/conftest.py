@@ -94,6 +94,23 @@ ferry: {value: 50.0, unit: g_per_passenger_km, source: fixture}
 """
 
 
+# Rough rectangles for the four service cities, WGS84 (lon_min, lat_min, lon_max, lat_max).
+# They stand in for the real boundaries in tests. Newton lies west of the Brookline box.
+FIXTURE_CITY_BOXES = {
+    "Boston": (-71.07, 42.35, -71.05, 42.37),
+    "Cambridge": (-71.13, 42.36, -71.09, 42.39),
+    "Somerville": (-71.13, 42.39, -71.09, 42.42),
+    "Brookline": (-71.18, 42.31, -71.13, 42.34),
+}
+
+
+def fixture_service_area():
+    from shapely.ops import unary_union
+
+    boxes = [Polygon.from_bounds(*FIXTURE_CITY_BOXES[city]) for city in FIXTURE_CITY_BOXES]
+    return unary_union(boxes)
+
+
 @pytest.fixture
 def planner_ctx(fixture_paths: Path, tmp_path: Path) -> PlannerContext:
     """Offline planner context on the fixture graph; processed files are built in tmp_path."""
@@ -113,13 +130,12 @@ def planner_ctx(fixture_paths: Path, tmp_path: Path) -> PlannerContext:
     (processed / "risk_meta.json").write_text(
         json.dumps({"crash_source_label": "fixture crash index"})
     )
-    box = Polygon([(-71.07, 42.35), (-71.05, 42.35), (-71.05, 42.37), (-71.07, 42.37)])
     factors_path = tmp_path / "emission_factors.yaml"
     factors_path.write_text(FIXTURE_FACTORS)
     return PlannerContext(
         graphs=load_street_graphs(processed),
         factors=load_emission_factors(factors_path),
-        boundary=box,
+        boundary=fixture_service_area(),
         live=False,
         preferences_db=tmp_path / "preferences.db",
     )

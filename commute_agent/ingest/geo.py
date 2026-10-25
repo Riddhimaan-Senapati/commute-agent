@@ -1,59 +1,125 @@
 from pathlib import Path
 
 import geopandas as gpd
+from shapely.geometry.base import BaseGeometry
+from shapely.ops import unary_union
 
-from commute_agent.ingest.meta import atomic_write, manifest_entry, write_meta
+from commute_agent.ingest.meta import (
+    SchemaMismatch,
+    atomic_write,
+    manifest_entry,
+    require_columns,
+    write_meta,
+)
 from commute_agent.paths import PROCESSED, RAW
+from commute_agent.service_area import CRASH_CITIES, SERVICE_AREA_FILE, SERVICE_CITIES
 
 BOSTON_BOUNDARY = "geo/boston_boundary.geojson"
 CAMBRIDGE_BOUNDARY = "geo/cambridge_boundary.geojson"
+# MassGIS municipalities: one multipart polygon per city and town. Somerville and Brookline
+# come from here. The fetch step records the license and the download page in the manifest.
+MUNICIPALITIES = "geo/massgis_municipalities.zip"
+MUNICIPALITY_NAME_FIELD = "TOWN"
+
+SERVICE_BUFFER_FILE = "service_area_buffered.geojson"
+COVERAGE_FILE = "crash_coverage.geojson"
 
 BUFFER_M = 2000
 BASEMAP_CLASSES = {"primary", "secondary", "tertiary", "trunk"}
 SIMPLIFY_M = 5.0
+_METRIC_CRS = 26986
+
+
+def _city_geometries(raw_dir: Path) -> dict[str, BaseGeometry]:
+    """One WGS84 polygon per service city. Boston and Cambridge have their own files."""
+    geoms: dict[str, BaseGeometry] = {
+        "Boston": gpd.read_file(raw_dir / BOSTON_BOUNDARY).to_crs(4326).union_all(),
+        "Cambridge": gpd.read_file(raw_dir / CAMBRIDGE_BOUNDARY).to_crs(4326).union_all(),
+    }
+    towns = gpd.read_file(f"zip://{raw_dir / MUNICIPALITIES}").to_crs(4326)
+    require_columns(towns, "geo/massgis_municipalities", {MUNICIPALITY_NAME_FIELD})
+    names = towns[MUNICIPALITY_NAME_FIELD].astype(str).str.strip().str.upper()
+    for city in SERVICE_CITIES:
+        if city in geoms:
+            continue
+        selected = towns[names == city.upper()]
+        if selected.empty:
+            raise SchemaMismatch(f"geo: no {city} polygon in {MUNICIPALITY_NAME_FIELD} field")
+        geoms[city] = selected.union_all()
+    return geoms
+
+
+def service_area(raw_dir: Path = RAW) -> BaseGeometry:
+    """Union of every service city, WGS84."""
+    geoms = _city_geometries(raw_dir)
+    return unary_union([geoms[city] for city in SERVICE_CITIES])
+
+
+def crash_coverage(raw_dir: Path = RAW) -> BaseGeometry:
+    """Union of the cities that have crash records. Brookline is left out on purpose."""
+    geoms = _city_geometries(raw_dir)
+    return unary_union([geoms[city] for city in CRASH_CITIES])
 
 
 def boundary(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
-    """Dissolve the Boston boundary and write it plus the Boston-union-Cambridge coverage."""
-    boston = gpd.read_file(raw_dir / BOSTON_BOUNDARY).to_crs(4326)
-    cambridge = gpd.read_file(raw_dir / CAMBRIDGE_BOUNDARY).to_crs(4326)
+    """Write the service-area union, its 2 km buffer, and the crash-coverage union."""
+    geoms = _city_geometries(raw_dir)
+    area = unary_union([geoms[city] for city in SERVICE_CITIES])
+    coverage = unary_union([geoms[city] for city in CRASH_CITIES])
+    buffered = gpd.GeoSeries([area], crs=4326).to_crs(_METRIC_CRS).buffer(BUFFER_M).to_crs(4326)
 
-    boston_dissolved = gpd.GeoDataFrame(geometry=[boston.union_all()], crs=4326)
-    coverage = gpd.GeoDataFrame(
-        geometry=[boston.union_all().union(cambridge.union_all())], crs=4326
+    area_path = out_dir / SERVICE_AREA_FILE
+    atomic_write(
+        area_path,
+        lambda p: gpd.GeoDataFrame(geometry=[area], crs=4326).to_file(p, driver="GeoJSON"),
+    )
+    buffer_path = out_dir / SERVICE_BUFFER_FILE
+    atomic_write(
+        buffer_path,
+        lambda p: gpd.GeoDataFrame(geometry=[buffered.union_all()], crs=4326).to_file(
+            p, driver="GeoJSON"
+        ),
+    )
+    coverage_path = out_dir / COVERAGE_FILE
+    atomic_write(
+        coverage_path,
+        lambda p: gpd.GeoDataFrame(geometry=[coverage], crs=4326).to_file(p, driver="GeoJSON"),
     )
 
-    boston_path = out_dir / "boston_boundary.geojson"
-    atomic_write(boston_path, lambda p: boston_dissolved.to_file(p, driver="GeoJSON"))
-    coverage_path = out_dir / "crash_coverage.geojson"
-    atomic_write(coverage_path, lambda p: coverage.to_file(p, driver="GeoJSON"))
-
-    write_meta(
-        boston_path,
+    sources = [
         manifest_entry(raw_dir, "geo", BOSTON_BOUNDARY),
+        manifest_entry(raw_dir, "geo", CAMBRIDGE_BOUNDARY),
+        manifest_entry(raw_dir, "geo", MUNICIPALITIES),
+    ]
+    cities = ", ".join(SERVICE_CITIES)
+    write_meta(
+        area_path,
+        sources,
         row_count=1,
-        notes="Boston municipal boundary, dissolved to one polygon.",
+        notes=f"Service area: union of the municipal boundaries of {cities}.",
+    )
+    write_meta(
+        buffer_path,
+        sources,
+        row_count=1,
+        notes=f"Service area buffered by {BUFFER_M} m. Used for the Overpass graph polygon, "
+        "Bluebikes station filter, and the OTP OSM extract.",
     )
     write_meta(
         coverage_path,
-        [
-            manifest_entry(raw_dir, "geo", BOSTON_BOUNDARY),
-            manifest_entry(raw_dir, "geo", CAMBRIDGE_BOUNDARY),
-        ],
+        sources,
         row_count=1,
-        notes="Crash coverage area: union of the Boston and Cambridge boundaries.",
+        notes=(
+            f"Crash coverage: {', '.join(CRASH_CITIES)}. Brookline is not covered: no Brookline "
+            "crash source is built, so its edges use the road-class prior and are marked "
+            "outside_crash_coverage."
+        ),
     )
-    return boston_path
-
-
-def _buffered_boston_polygon(raw_dir: Path):
-    boston = gpd.read_file(raw_dir / BOSTON_BOUNDARY).to_crs(26986)
-    buffered = boston.buffer(BUFFER_M).to_crs(4326).union_all()
-    return buffered
+    return area_path
 
 
 def graphs(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
-    """Download walk, bike, drive graphs for the 2 km-buffered Boston boundary from Overpass.
+    """Download walk, bike, drive graphs for the buffered service area from Overpass.
 
     This is the one ingest step that downloads. The Overpass cache under
     data/raw/geo/overpass_cache makes a rerun work offline.
@@ -63,7 +129,7 @@ def graphs(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
     ox.settings.use_cache = True
     ox.settings.cache_folder = str(raw_dir / "geo" / "overpass_cache")
 
-    polygon = _buffered_boston_polygon(raw_dir)
+    polygon = gpd.read_file(out_dir / SERVICE_BUFFER_FILE).union_all()
 
     written: list[Path] = []
     for network_type in ("walk", "bike", "drive"):
@@ -91,7 +157,7 @@ def basemap(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
     edges = edges.copy()
     edges["hwy"] = edges["highway"].map(_first_class)
     sel = edges[edges["hwy"].isin(BASEMAP_CLASSES)].copy()
-    sel["geometry"] = sel.to_crs(26986).simplify(SIMPLIFY_M).to_crs(4326)
+    sel["geometry"] = sel.to_crs(_METRIC_CRS).simplify(SIMPLIFY_M).to_crs(4326)
     sel = gpd.GeoDataFrame(sel[["hwy", "geometry"]], crs=4326)
 
     path = out_dir / "basemap.geojson"

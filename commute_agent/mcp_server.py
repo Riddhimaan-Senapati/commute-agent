@@ -164,7 +164,8 @@ def plan_trip(
         Field(description="Alert source to use, or null for the one set with set_alert_source."),
     ] = None,
 ) -> PlanResult:
-    """Plan a trip inside Boston and return the Pareto set of routes with trade-offs."""
+    """Plan a trip inside the service area (Boston, Cambridge, Somerville, Brookline) and
+    return the Pareto set of routes with trade-offs."""
     state = _state()
     depart = parse_depart_at(depart_at)
     origin = Point(lat=origin_lat, lon=origin_lon)

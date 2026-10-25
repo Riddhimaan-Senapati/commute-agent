@@ -1,6 +1,6 @@
 # commute-agent
 
-commute-agent plans trips inside Boston and shows the trade-offs instead of picking one answer for you. For a trip, it compares walk, bike, Bluebikes, drive, and MBTA routes on four numbers: travel time, CO₂, crash risk on the walking and biking parts, and MBTA disruption risk. It keeps every route that no other route beats on all four (the Pareto set) and drops the rest. An LLM agent then explains the options through MCP tools, and it may quote only numbers the planner returned.
+commute-agent plans trips inside its service area (Boston, Cambridge, Somerville, and Brookline) and shows the trade-offs instead of picking one answer for you. For a trip, it compares walk, bike, Bluebikes, drive, and MBTA routes on four numbers: travel time, CO₂, crash risk on the walking and biking parts, and MBTA disruption risk. It keeps every route that no other route beats on all four (the Pareto set) and drops the rest. An LLM agent then explains the options through MCP tools, and it may quote only numbers the planner returned.
 
 This is an independent prototype. It is not an MBTA or City of Boston service.
 
@@ -38,19 +38,21 @@ It prints `offline ready`, or lists each missing file by path and exits non-zero
 
 ## Build the data
 
-`data/raw/`, `data/processed/`, `data/otp/`, and `data/cache/` are gitignored, so a fresh clone has none of them. Download the raw files first; each script writes `data/raw/<group>/` and a `MANIFEST.json` with the source URL, retrieval time, SHA-256, size, record count, and license. `geo.py` also needs `osmium` on `PATH`.
+`data/raw/`, `data/processed/`, `data/otp/`, and `data/cache/` are gitignored, so a fresh clone has none of them. Download the raw files first; each script writes `data/raw/<group>/` and a `MANIFEST.json` with the source URL, retrieval time, SHA-256, size, record count, and license.
+
+`geo.py` needs `osmium` on `PATH`, and it needs one file placed by hand. Somerville and Brookline boundaries come from the MassGIS "Massachusetts Municipalities" shapefile zip. Download it from <https://www.mass.gov/info-details/massgis-data-municipalities> and save it as `data/raw/geo/massgis_municipalities.zip`. The script stops with that instruction if the file is missing, because the mass.gov page did not answer a scripted request. The manifest records that no license text was found on the metadata pages checked.
 
 ```sh
 for group in geo crashes counts transit; do uv run --no-project --python 3.12 python scripts/fetch/$group.py; done
 ```
 
-1. Ingest every dataset into `data/processed/`. The `graphs` step downloads the walk, bike, and drive graphs from the Overpass API once.
+1. Ingest every dataset into `data/processed/`. The `graphs` step downloads the walk, bike, and drive graphs for the service area from the Overpass API once.
 
    ```sh
    uv run python -m commute_agent.ingest all
    ```
 
-   To run one step, name it: `boundary`, `graphs`, `basemap`, `crashes`, `counts`, `bluebikes`, `stations`, or `otp-inputs`.
+   To run one step, name it: `boundary`, `graphs`, `basemap`, `crashes`, `counts`, `bluebikes`, `stations`, or `otp-inputs`. `boundary` writes `service_area.geojson` (the union of Boston, Cambridge, Somerville, and Brookline), `service_area_buffered.geojson` (the same, 2 km out), and `crash_coverage.geojson` (Boston, Cambridge, and Somerville only). `otp-inputs` clips the Massachusetts extract to the buffered service area with `osmium extract -p` and writes `data/otp/service_area.osm.pbf`.
 
 2. Add crash risk and exposure to the street graphs. This writes `risk_meta.json` and `exposure_calibration.json`.
 
@@ -66,7 +68,7 @@ for group in geo crashes counts transit; do uv run --no-project --python 3.12 py
 
 ## OpenTripPlanner
 
-OTP reads `data/otp/` (the MBTA GTFS zip and the clipped Boston OSM extract). The script copies `docker/otp/build-config.json` into `data/otp/` before each run. It runs the `opentripplanner/opentripplanner:2.10.0` image with a 6 GB heap. The measured peak during the build was 3.75 GiB.
+OTP reads `data/otp/` (the MBTA GTFS zip and the OSM extract clipped to the service area, `service_area.osm.pbf`). The script copies `docker/otp/build-config.json` into `data/otp/` before each run. It runs the `opentripplanner/opentripplanner:2.10.0` image with a 6 GB heap. The measured peak during the build was 3.75 GiB.
 
 ```sh
 docker/otp/run.sh build    # writes data/otp/graph.obj (about 112 MB, under a minute)
@@ -205,7 +207,9 @@ How to read these numbers:
 - Exposure calibration: R² is 0.09 (0.0906). It matched 35 counters: 17 Cambridge citywide, 15 Somerville, and 3 Numina. 18 more counters were over 30 m from any edge and were not matched. Source: `data/processed/exposure_calibration.json`.
 - Cambridge crash coverage is about half the records. Only 8,878 of 17,230 Cambridge police crash rows have coordinates. 1,815 have an empty location and 6,537 have an address only. The risk build drops these rows. Of the rows with coordinates, 615 involve a cyclist and 364 a pedestrian; these enter the risk build.
 - The risk build snapped 4,564 bike and 7,267 pedestrian crashes to street edges. It discarded 123 bike and 96 pedestrian crashes more than 30 m from any edge. Source: `data/processed/risk_meta.json`.
-- Boston Vision Zero and Cambridge police records use different crash definitions. Neither is the MassDOT state crash file.
+- Somerville police crashes (May 2018 to present, `data.somervillema.gov` dataset `mtik-28va`) enter the risk build with the same one-row-per-mode rule as Cambridge. Records without coordinates are dropped and counted in the notes. The dataset excludes state roads and crashes still under investigation.
+- Brookline has no crash source in this project. Its edges are not in `crash_coverage.geojson`, so they use the road-class prior and are marked `outside_crash_coverage`. Routes there are therefore not crash-measured.
+- Boston Vision Zero, Cambridge police, and Somerville police records use different crash definitions. None is the MassDOT state crash file.
 
 ## Datasets and licenses
 
@@ -231,17 +235,18 @@ This table is copied from `data/raw/*/MANIFEST.json`.
 | counts | `counts/numina/docs/numina-data-dictionary.pdf` |  | <https://data.boston.gov/dataset/3b2ce71d-d7ca-4027-b971-7180c263d730/resource/383263c2-068b-4685-b59d-4302c3169f2c/download/numina-data-dictionary-.pdf> | Open Data Commons Public Domain Dedication and License (PDDL) |
 | crashes | `crashes/boston_vision_zero.csv` | 44,986 | <https://data.boston.gov/dataset/7b29c1b2-7ec2-4023-8292-c24f5d8f0905/resource/e4bfe397-6bfc-49c5-9367-c879fac7401d/download/tmpgxjopxm7.csv> | Open Data Commons Public Domain Dedication and License (PDDL) |
 | crashes | `crashes/cambridge_police_crashes.csv` | 17,230 | <https://data.cambridgema.gov/api/views/gb5w-yva3/rows.csv?accessType=DOWNLOAD> | Open Data Commons Public Domain Dedication and License |
+| crashes | `crashes/somerville_police_crashes.csv` | not yet fetched | <https://data.somervillema.gov/api/views/mtik-28va/rows.csv?accessType=DOWNLOAD> | Open Data Commons Open Database License (ODbL) |
 | geo | `geo/boston_boundary.geojson` | 1 | <https://gisportal.boston.gov/arcgis/rest/services/Planning/OpenData/MapServer/9/query?where=1%3D1&outFields=*&outSR=4326&f=geojson> | Open Data Commons Public Domain Dedication and License (PDDL) |
 | geo | `geo/cambridge_boundary.geojson` | 1 | <https://raw.githubusercontent.com/cambridgegis/cambridgegis_data/main/Boundary/City_Boundary/BOUNDARY_CityBoundary.geojson> | Open Data Commons Public Domain Dedication and License (PDDL) |
 | geo | `geo/massachusetts-latest.osm.pbf` |  | <https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf> | ODbL 1.0, © OpenStreetMap contributors |
-| geo | `geo/boston.osm.pbf` |  | <https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf> | ODbL 1.0, © OpenStreetMap contributors |
+| geo | `geo/massgis_municipalities.zip` |  | <https://www.mass.gov/info-details/massgis-data-municipalities> (placed by hand) | MassGIS (Commonwealth of Massachusetts); no license text found on the pages checked |
 | transit | `transit/MBTA_GTFS.zip` |  | <https://cdn.mbta.com/MBTA_GTFS.zip> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |
 | transit | `transit/mbta_routes.json` | 8 | <https://api-v3.mbta.com/routes?filter[type]=0,1> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |
 | transit | `transit/mbta_alerts_20261024T164830Z.json` | 61 | <https://api-v3.mbta.com/alerts?filter[route_type]=0,1,3&page[limit]=500> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |
 | transit | `transit/massgis_rapid_transit_stations.json` | 170 | <https://arcgisserver.digital.mass.gov/arcgisserver/rest/services/AGOL/MBTA_Rapid_Transit/MapServer/0/query?where=1%3D1&outFields=STATION,LINE,ROUTE&returnGeometry=true&outSR=4326&f=json> | MassGIS open data (Commonwealth of Massachusetts) |
 | transit | `transit/202411-bluebikes-tripdata.zip` |  | <https://s3.amazonaws.com/hubway-data/202411-bluebikes-tripdata.zip> | Bluebikes Data License Agreement, https://www.bluebikes.com/data-license-agreement |
 
-The walk, bike, and drive street graphs come from OpenStreetMap through the Overpass API. `data/otp/` holds copies of the MBTA GTFS zip and the clipped Boston OSM extract listed above.
+The walk, bike, and drive street graphs come from OpenStreetMap through the Overpass API. `data/otp/` holds a copy of the MBTA GTFS zip and `service_area.osm.pbf`, the Massachusetts extract clipped to the buffered service area.
 
 © OpenStreetMap contributors. OpenStreetMap data is available under the Open Database License (ODbL) 1.0, <https://opendatacommons.org/licenses/odbl/1-0/>. See <https://www.openstreetmap.org/copyright>.
 

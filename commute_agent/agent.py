@@ -14,6 +14,7 @@ from smolagents.memory import ActionStep
 from commute_agent.grounding import numbers_in, unsupported_numbers
 from commute_agent.models import AgentReply, ToolCall
 from commute_agent.paths import ROOT
+from commute_agent.service_area import SERVICE_CITIES
 
 DEFAULT_MODEL = "deepseek/deepseek-v4.1-flash-1017"
 DEFAULT_API_BASE = "https://openrouter.ai/api/v1"
@@ -41,9 +42,9 @@ IDENTITY_SENTENCE = "I am an independent prototype, not a City of Boston or MBTA
 SYSTEM_PROMPT_TEMPLATE = """\
 You are the Pareto Commute prototype, a hackathon project running on a swappable language model. Begin your first reply of every conversation with this exact sentence: "{identity}"
 
-You help people compare trips within the City of Boston. For a trip question:
+You help people compare trips within {cities}. For a trip question:
 1. Resolve each place with geocode_place. If the status is ambiguous or not_found, ask the user which place they mean. Do not pick one.
-2. Call plan_trip. If it reports a point outside the City of Boston, explain that the prototype covers trips within the City of Boston only. State the departure time the plan used (its depart_at), and say so when the notes report a showcase trip's fixed demo departure.
+2. Call plan_trip. If it reports a point outside the service area, explain that the prototype covers trips within {cities} only. State the departure time the plan used (its depart_at), and say so when the notes report a showcase trip's fixed demo departure.
 3. Describe every route in the result, starting with the first one listed. For each route other than the fastest, state its trade-off against the fastest using tradeoffs_vs_fastest, for example "4 min slower, ~70% less CO2, avoids the Red Line disruption".
 
 Rules for numbers:
@@ -56,7 +57,8 @@ Rules for numbers:
 When the user says which route they will take, call record_choice with that route.
 Keep replies short. Use one short paragraph or bullet per route.
 """
-SYSTEM_PROMPT = SYSTEM_PROMPT_TEMPLATE.format(identity=IDENTITY_SENTENCE)
+SERVICE_CITY_LIST = f"{', '.join(SERVICE_CITIES[:-1])}, and {SERVICE_CITIES[-1]}"
+SYSTEM_PROMPT = SYSTEM_PROMPT_TEMPLATE.format(identity=IDENTITY_SENTENCE, cities=SERVICE_CITY_LIST)
 
 
 @dataclass(frozen=True)

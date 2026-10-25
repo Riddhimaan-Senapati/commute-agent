@@ -5,14 +5,12 @@ import geopandas as gpd
 import pandas as pd
 from shapely.geometry import Point as ShapelyPoint
 
+from commute_agent.ingest.geo import SERVICE_BUFFER_FILE
 from commute_agent.ingest.meta import atomic_write, manifest_entry, require_columns, write_meta
 from commute_agent.paths import PROCESSED, RAW
 
 BLUEBIKES_ZIP = "transit/202411-bluebikes-tripdata.zip"
 ZIP_MEMBER = "202411-bluebikes-tripdata.csv"
-BOSTON_BOUNDARY = "geo/boston_boundary.geojson"
-
-BUFFER_M = 2000
 
 TRIP_COLUMNS = {
     "start_station_id",
@@ -58,10 +56,8 @@ def station_medians(df: pd.DataFrame) -> pd.DataFrame:
     return stations.reset_index(drop=True)
 
 
-def _within_buffered_boston(stations: pd.DataFrame, boundary_path: Path) -> pd.DataFrame:
-    boundary = gpd.read_file(boundary_path)
-    # buffer in a metric CRS (EPSG:26986 Mass State Plane), then back to WGS84
-    buffered = boundary.to_crs(26986).buffer(BUFFER_M).to_crs(4326).union_all()
+def _within_service_area(stations: pd.DataFrame, buffered_path: Path) -> pd.DataFrame:
+    buffered = gpd.read_file(buffered_path).union_all()
     mask = [
         buffered.contains(ShapelyPoint(lon, lat))
         for lat, lon in zip(stations["lat"], stations["lon"], strict=True)
@@ -75,7 +71,7 @@ def bluebikes(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
 
     trips = aggregate_trips(df)
     stations = station_medians(df)
-    stations = _within_buffered_boston(stations, raw_dir / BOSTON_BOUNDARY)
+    stations = _within_service_area(stations, out_dir / SERVICE_BUFFER_FILE)
 
     keep = set(stations["station_id"])
     trips = trips[trips["start_station_id"].isin(keep) & trips["end_station_id"].isin(keep)]
@@ -101,8 +97,8 @@ def bluebikes(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
         entry,
         row_count=len(stations),
         notes=(
-            "Station median coordinates, clipped to the 2 km-buffered Boston boundary "
-            "(removes Salem and Hingham clusters)."
+            "Station median coordinates, clipped to the 2 km-buffered service area "
+            "(Boston, Cambridge, Somerville, Brookline; removes Salem and Hingham clusters)."
         ),
     )
     return trips_path

@@ -32,11 +32,14 @@ from .risk import RISK_SCALE, SHRINKAGE_K, SNAP_MAX_M, edge_risk, mean_crashes_p
 CRASH_WINDOW = {
     "boston_vision_zero": ["2015-01-01", "2026-09-01"],
     "cambridge_police": ["2015-01-01", "2026-09-30"],
+    "somerville_police": ["2018-05-01", "2026-09-30"],
 }
 CRASH_SOURCE_LABEL = (
     "Estimated crash risk index for walk and bike segments. Crashes from "
-    "Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police "
-    "(2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and "
+    "Boston Vision Zero (2015-01-01 to 2026-09-01), Cambridge police "
+    "(2015-01-01 to 2026-09-30) and Somerville police (2018-05-01 to 2026-09-30) "
+    "per estimated peak-hour volume. Brookline has no crash source, so its segments "
+    "use the road-class prior and are marked outside_crash_coverage. Drive and "
     "transit vehicle segments are not modeled."
 )
 EPSG_MA = "EPSG:26986"

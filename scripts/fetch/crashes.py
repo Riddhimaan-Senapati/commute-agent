@@ -17,6 +17,12 @@ VISION_ZERO_RESOURCE = "e4bfe397-6bfc-49c5-9367-c879fac7401d"
 CAMBRIDGE_ID = "gb5w-yva3"
 CAMBRIDGE_CSV = f"https://data.cambridgema.gov/api/views/{CAMBRIDGE_ID}/rows.csv?accessType=DOWNLOAD"
 CAMBRIDGE_META = f"https://data.cambridgema.gov/api/views/{CAMBRIDGE_ID}.json"
+# Somerville Police Data: Crashes (May 2018 to present), Socrata dataset mtik-28va.
+SOMERVILLE_ID = "mtik-28va"
+SOMERVILLE_CSV = (
+    f"https://data.somervillema.gov/api/views/{SOMERVILLE_ID}/rows.csv?accessType=DOWNLOAD"
+)
+SOMERVILLE_META = f"https://data.somervillema.gov/api/views/{SOMERVILLE_ID}.json"
 
 
 def ensure_system_cas() -> None:
@@ -119,9 +125,21 @@ def fetch_cambridge() -> dict:
     )
 
 
+def fetch_somerville() -> dict:
+    meta = get_json(SOMERVILLE_META)
+    license = (meta.get("license") or {}).get("name") or meta.get("licenseId") or "unknown"
+    dest = CRASHES / "somerville_police_crashes.csv"
+    ensure_download(SOMERVILLE_CSV, dest)
+    return manifest_entry(
+        dest, SOMERVILLE_CSV, license, record_count(dest),
+        "Somerville Police Data: Crashes; Socrata dataset mtik-28va. Excludes state roads "
+        "and crashes under active investigation.",
+    )
+
+
 def main() -> None:
     ensure_system_cas()
-    entries = [fetch_vision_zero(), fetch_cambridge()]
+    entries = [fetch_vision_zero(), fetch_cambridge(), fetch_somerville()]
     path = write_manifest("crashes", entries)
     print(f"wrote {path}")
 
