@@ -72,6 +72,7 @@ export const PlanSchema = z.object({
   candidate_count: z.number(),
   notes: z.array(z.string()),
   filtered: z.array(FilteredSchema).default([]),
+  alert_note: z.string().nullable().default(null),
 });
 
 export const StatusSchema = z.object({
@@ -102,6 +103,7 @@ export const AlertsViewSchema = z.object({
   source: z.string(),
   synthetic: z.boolean(),
   alerts: z.array(z.object({ id: z.string(), header: z.string(), effect: z.string() })),
+  note: z.string().nullable().default(null),
 });
 
 export const PreferenceSchema = z.object({

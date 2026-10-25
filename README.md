@@ -113,7 +113,7 @@ The page loads OpenStreetMap tiles when it can reach them and falls back to the 
 
 | Flag | Effect |
 |---|---|
-| `--live` | Calls OTP at `localhost:8080` (and writes the cache), enables the live MBTA alerts source, and adds OSM map tiles. |
+| `--live` | Calls OTP at `localhost:8080` (and writes the cache), enables the `live` alert source, and adds OSM map tiles. |
 | `--model <id>` | Sets the agent's model id on the configured endpoint. The default is `deepseek/deepseek-v4.1-flash-1017` on OpenRouter. The `COMMUTE_AGENT_MODEL` variable does the same. |
 | `--port <n>` | Port to bind. The default is 8000. |
 
@@ -162,7 +162,7 @@ Route A dominates route B when A is no worse than B on every objective, allowing
 Known limits shown in this demo:
 
 - When an alert suspends a route, the planner re-plans transit without that whole route. The synthetic alert covers only JFK/UMass to Park Street, so a trip that rides only an unaffected part of the Red Line would lose a valid Red Line alternative. The original Red Line itineraries stay as candidates, flagged.
-- Offline, a request within 300 m of a showcase trip uses that trip's points and fixed departure (Tuesday 08:15), not the requested time.
+- Offline, a request within 300 m of a showcase trip uses that trip's points. With no departure chosen it also uses the trip's fixed departure (Tuesday 08:15). With a chosen departure it uses that time, which must be in the cache or reachable through `COMMUTE_OTP_URL`.
 
 The synthetic snapshot is labeled synthetic in the data and in the UI. The MBTA API serves only current alerts, so a real Red Line disruption may not exist on demo day.
 

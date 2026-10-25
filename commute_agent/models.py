@@ -155,6 +155,7 @@ class PlanResult(BaseModel):
     preference: PreferenceWeights
     notes: list[str]  # fixed caveats, e.g. "Drive time is free-flow and ignores traffic."
     filtered: list[FilteredRoute] = []  # candidates outside the Pareto set; not shown to the agent
+    alert_note: str | None = None  # why the alert source gave no alerts, e.g. a failed MBTA fetch
 
 
 class AlertsView(BaseModel):
@@ -162,6 +163,7 @@ class AlertsView(BaseModel):
     synthetic: bool
     alert_clock: datetime | None
     alerts: list[AlertRef]
+    note: str | None = None
 
 
 class AlertSources(BaseModel):

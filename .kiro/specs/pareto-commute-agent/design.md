@@ -88,6 +88,7 @@ Plans and choices live in the MCP subprocess. The REST handlers call MCP tools f
 |---|---|---|
 | Transit | `data/cache/otp/<key>.json` | POST to `http://localhost:8080/otp/gtfs/v1`, then write the cache |
 | Alerts `live` source | Disabled | GET `https://api-v3.mbta.com/alerts?filter[route_type]=0,1,3` |
+| Alerts `MBTA live` source | Selectable; same GET, cached 60 s; a failed fetch gives no alerts and a note (`PlanResult.alert_note`) | Same as offline |
 | Map basemap | `data/processed/basemap.geojson` | OSM tiles plus the same basemap |
 | LLM provider | Used, unless the model is local (for example Ollama) | Used |
 
@@ -1108,7 +1109,7 @@ def call_tool(app: FastAPI, name: str, **arguments) -> dict:
 |---|---|---|
 | `GET /api/status` | | `{"run_mode": "offline", "agent_model": "deepseek/deepseek-v4.1-flash-1017", "agent_available": true, "missing_model_keys": [], "notice": IDENTITY_NOTICE}` |
 | `GET /api/showcase-trips` | | `ShowcaseTrips` |
-| `POST /api/plan` | `{"origin": Point, "destination": Point, "depart_at": "ISO 8601" or null}` | `PlanResult`, planned with the session's alert source |
+| `POST /api/plan` | `{"origin": Point, "destination": Point, "depart_at": "ISO 8601 with offset" or null}` | `PlanResult`, planned with the session's alert source. Null uses the showcase departure when the points match a showcase trip. The page sends "Leave now" as the current Boston time |
 | `GET /api/alert-sources` | | `AlertSources` |
 | `POST /api/alert-source` | `{"name": str}` | `AlertSources`; sets the alert source for this `X-Session-Id` only (requests without the header share one session) |
 | `POST /api/choice` | `{"query_id": str, "route_id": str}` | `PreferenceWeights` |

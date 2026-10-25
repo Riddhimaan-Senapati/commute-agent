@@ -1,8 +1,12 @@
 import asyncio
+from dataclasses import replace
+from datetime import datetime
 
+import httpx
 import pytest
+from shapely.geometry import box
 
-from commute_agent import mcp_server
+from commute_agent import mcp_server, planner
 from commute_agent.mcp_server import SessionState, load_trips
 from commute_agent.models import PlanResult, Point, PreferenceWeights
 from commute_agent.preferences import order_routes
@@ -162,3 +166,92 @@ def test_points_far_from_every_showcase_trip_do_not_match() -> None:
         )
         is None
     )
+
+
+def record_transit_lookups(monkeypatch: pytest.MonkeyPatch) -> list[datetime]:
+    """Record the departure of every transit lookup; every lookup reports 'not cached'."""
+    seen: list[datetime] = []
+
+    def fetch(origin, destination, depart_at, *, live, cache_dir=None, exclude_routes=()):
+        seen.append(depart_at)
+        return None, "transit not cached for this trip"
+
+    monkeypatch.setattr(planner, "fetch_itineraries", fetch)
+    return seen
+
+
+def widen_boundary(server: SessionState, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The fixture boundary is a small box; the showcase trips lie outside it."""
+    wide = replace(server.ctx, boundary=box(-72.0, 42.0, -70.5, 43.0))
+    monkeypatch.setattr(server, "ctx", wide)
+
+
+def showcase_args(trip) -> dict:
+    return {
+        **PLAN_ARGS,
+        "origin_lat": trip.origin.lat,
+        "origin_lon": trip.origin.lon,
+        "destination_lat": trip.destination.lat,
+        "destination_lon": trip.destination.lon,
+    }
+
+
+def test_chosen_departure_reaches_fetch_itineraries(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen = record_transit_lookups(monkeypatch)
+    chosen = datetime.fromisoformat("2026-10-27T17:30:00-04:00")
+    plan = PlanResult.model_validate(
+        call("plan_trip", {**PLAN_ARGS, "depart_at": chosen.isoformat()})
+    )
+    assert seen == [chosen]
+    assert plan.depart_at == chosen
+
+
+def test_chosen_departure_near_a_showcase_trip_keeps_the_chosen_time(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen = record_transit_lookups(monkeypatch)
+    widen_boundary(server, monkeypatch)
+    trip = load_trips()[0]
+    chosen = "2026-10-27T17:30:00-04:00"
+    plan = PlanResult.model_validate(
+        call("plan_trip", {**showcase_args(trip), "depart_at": chosen})
+    )
+    assert seen == [datetime.fromisoformat(chosen)]
+    assert plan.notes[0].startswith("Matched showcase trip")
+    assert "fixed demo departure" not in plan.notes[0]
+
+
+def test_no_departure_near_a_showcase_trip_uses_its_fixed_departure(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen = record_transit_lookups(monkeypatch)
+    widen_boundary(server, monkeypatch)
+    trip = load_trips()[0]
+    plan = PlanResult.model_validate(call("plan_trip", {**showcase_args(trip), "depart_at": None}))
+    assert seen == [mcp_server.showcase_departure(trip)]
+    assert plan.notes[0].startswith("Planned as showcase trip")
+    assert "fixed demo departure" in plan.notes[0]
+
+
+def test_mbta_live_is_selectable_offline(server: SessionState) -> None:
+    sources = call("set_alert_source", {"name": "MBTA live"})
+    assert sources["active"] == "MBTA live"
+    assert "MBTA live" in sources["sources"]
+
+
+def test_mbta_live_with_a_failed_fetch_gives_no_alerts_and_a_note(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(source, *, live, snapshot_dir):
+        raise httpx.ConnectError("MBTA is unreachable")
+
+    monkeypatch.setattr(mcp_server, "load_alerts", fail)
+    plan = PlanResult.model_validate(call("plan_trip", {**PLAN_ARGS, "alert_source": "MBTA live"}))
+    assert plan.alert_source == "MBTA live"
+    assert plan.alert_note == mcp_server.MBTA_UNAVAILABLE_NOTE
+    assert plan.routes
+    view = call("get_active_alerts", {"alert_source": "MBTA live"})
+    assert view["alerts"] == []
+    assert view["note"] == mcp_server.MBTA_UNAVAILABLE_NOTE
