@@ -4,7 +4,6 @@ The boundaries here are small rectangles written into tmp_path, not real city ou
 """
 
 import json
-import zipfile
 from pathlib import Path
 
 import geopandas as gpd
@@ -35,7 +34,7 @@ NEWTON = (-71.1956, 42.3297)
 
 
 def _write_raw(raw: Path) -> None:
-    """Boston and Cambridge GeoJSON, and a MassGIS-style shapefile zip with four towns."""
+    """Boston and Cambridge GeoJSON, and a MassGIS-style towns GeoJSON with three towns."""
     geo_dir = raw / "geo"
     geo_dir.mkdir(parents=True)
     for name, city in (("boston_boundary", "Boston"), ("cambridge_boundary", "Cambridge")):
@@ -44,7 +43,7 @@ def _write_raw(raw: Path) -> None:
         )
 
     towns = gpd.GeoDataFrame(
-        {"TOWN": ["SOMERVILLE", "BROOKLINE", "NEWTON"]},
+        {"TOWN20": ["SOMERVILLE", "BROOKLINE", "NEWTON"]},
         geometry=[
             box(*CITY_BOXES["Somerville"]),
             box(*CITY_BOXES["Brookline"]),
@@ -52,19 +51,14 @@ def _write_raw(raw: Path) -> None:
         ],
         crs=4326,
     )
-    shp_dir = raw / "shp_tmp"
-    shp_dir.mkdir()
-    towns.to_file(shp_dir / "municipalities.shp")
-    with zipfile.ZipFile(geo_dir / "massgis_municipalities.zip", "w") as zf:
-        for part in shp_dir.iterdir():
-            zf.write(part, arcname=part.name)
+    towns.to_file(geo_dir / "massgis_towns.geojson", driver="GeoJSON")
 
     files = ["boston_boundary.geojson", "cambridge_boundary.geojson"]
     manifest = {
         "group": "geo",
         "files": [
             {"file": f"geo/{name}", "source_url": "https://example.test/x", "license": "test"}
-            for name in [*files, "massgis_municipalities.zip"]
+            for name in [*files, "massgis_towns.geojson"]
         ],
     }
     (geo_dir / "MANIFEST.json").write_text(json.dumps(manifest))
@@ -93,14 +87,9 @@ def test_missing_town_is_named_in_the_error(tmp_path: Path) -> None:
     raw = tmp_path / "raw"
     _write_raw(raw)
     towns = gpd.GeoDataFrame(
-        {"TOWN": ["BROOKLINE"]}, geometry=[box(*CITY_BOXES["Brookline"])], crs=4326
+        {"TOWN20": ["BROOKLINE"]}, geometry=[box(*CITY_BOXES["Brookline"])], crs=4326
     )
-    shp_dir = tmp_path / "only_brookline"
-    shp_dir.mkdir()
-    towns.to_file(shp_dir / "municipalities.shp")
-    with zipfile.ZipFile(raw / "geo" / "massgis_municipalities.zip", "w") as zf:
-        for part in shp_dir.iterdir():
-            zf.write(part, arcname=part.name)
+    towns.to_file(raw / "geo" / "massgis_towns.geojson", driver="GeoJSON")
 
     with pytest.raises(SchemaMismatch, match="Somerville"):
         geo.service_area(raw)

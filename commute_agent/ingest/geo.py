@@ -16,10 +16,10 @@ from commute_agent.service_area import CRASH_CITIES, SERVICE_AREA_FILE, SERVICE_
 
 BOSTON_BOUNDARY = "geo/boston_boundary.geojson"
 CAMBRIDGE_BOUNDARY = "geo/cambridge_boundary.geojson"
-# MassGIS municipalities: one multipart polygon per city and town. Somerville and Brookline
-# come from here. The fetch step records the license and the download page in the manifest.
-MUNICIPALITIES = "geo/massgis_municipalities.zip"
-MUNICIPALITY_NAME_FIELD = "TOWN"
+# MassGIS Census 2020 towns, one polygon per city or town. Somerville and Brookline come
+# from here; the fetch step records the source and license in the manifest.
+MUNICIPALITIES = "geo/massgis_towns.geojson"
+MUNICIPALITY_NAME_FIELD = "TOWN20"
 
 SERVICE_BUFFER_FILE = "service_area_buffered.geojson"
 COVERAGE_FILE = "crash_coverage.geojson"
@@ -36,8 +36,8 @@ def _city_geometries(raw_dir: Path) -> dict[str, BaseGeometry]:
         "Boston": gpd.read_file(raw_dir / BOSTON_BOUNDARY).to_crs(4326).union_all(),
         "Cambridge": gpd.read_file(raw_dir / CAMBRIDGE_BOUNDARY).to_crs(4326).union_all(),
     }
-    towns = gpd.read_file(f"zip://{raw_dir / MUNICIPALITIES}").to_crs(4326)
-    require_columns(towns, "geo/massgis_municipalities", {MUNICIPALITY_NAME_FIELD})
+    towns = gpd.read_file(raw_dir / MUNICIPALITIES).to_crs(4326)
+    require_columns(towns, "geo/massgis_towns", {MUNICIPALITY_NAME_FIELD})
     names = towns[MUNICIPALITY_NAME_FIELD].astype(str).str.strip().str.upper()
     for city in SERVICE_CITIES:
         if city in geoms:

@@ -22,7 +22,7 @@ Two inputs need your attention before the first run.
 
 1. `data/emission_factors.yaml` is committed with sourced factors (EPA GHG Emission Factors Hub 2025, Table 10, and UK DESNZ 2026 for ferry; each entry names its source). To use other factors, keep the shape of `data/emission_factors.example.yaml`: every mode needs a numeric `value`, a `unit` of `g_per_passenger_km` or `g_per_passenger_mile`, and a non-empty `source`. Every entry point exits with code 2 if the file is missing or invalid.
 
-   `data/traffic_factors.yaml` holds drive-time multipliers (each at least 1.0) for weekday and weekend hour buckets. Each bucket names its `source`. Every bucket is 1.0 with source `needs a source` until a published Boston congestion figure is confirmed for it. A missing file means 1.0 everywhere, and an invalid one exits with code 2. `data/traffic_factors.example.yaml` shows the shape.
+   `data/traffic_factors.yaml` holds drive-time multipliers (each at least 1.0) for each hour of a weekday and of a weekend day. They come from the TomTom Traffic Index 2025 hourly congestion grid for the City of Boston (value = 1 + congestion level / 100; weekday is the Monday to Friday mean, weekend the Saturday and Sunday mean), and each bucket names that source. A weekday 8 AM departure gets 1.60 and 5 PM gets 1.84. The factor scales the whole free-flow drive time; it is a citywide average, not a per-road speed. A bucket marked `needs a source` must stay at 1.0. A missing file means 1.0 everywhere, and an invalid one exits with code 2. `data/traffic_factors.example.yaml` shows the shape.
 
 2. `data/raw/numina_zones.csv`. This maps each Boston Numina zone id to its sensor site coordinates, because the Numina zone CSVs have none. A candidate is committed at `data/numina_zones.candidate.csv`. It quotes the site coordinates from the Numina project overview PDF. Check it, then copy it after fetching the raw data:
 
@@ -42,7 +42,7 @@ It prints `offline ready`, or lists each missing file by path and exits non-zero
 
 `data/raw/`, `data/processed/`, `data/otp/`, and `data/cache/` are gitignored, so a fresh clone has none of them. Download the raw files first; each script writes `data/raw/<group>/` and a `MANIFEST.json` with the source URL, retrieval time, SHA-256, size, record count, and license.
 
-`geo.py` needs `osmium` on `PATH`, and it needs one file placed by hand. Somerville and Brookline boundaries come from the MassGIS "Massachusetts Municipalities" shapefile zip. Download it from <https://www.mass.gov/info-details/massgis-data-municipalities> and save it as `data/raw/geo/massgis_municipalities.zip`. The script stops with that instruction if the file is missing, because the mass.gov page did not answer a scripted request. The manifest records that no license text was found on the metadata pages checked.
+`geo.py` needs `osmium` on `PATH`. Somerville and Brookline boundaries come from MassGIS's Census 2020 towns layer, queried from its ArcGIS service as GeoJSON.
 
 ```sh
 for group in geo crashes counts transit ridership; do uv run --no-project --python 3.12 python scripts/fetch/$group.py; done
@@ -252,7 +252,7 @@ This table is copied from `data/raw/*/MANIFEST.json`.
 | geo | `geo/boston_boundary.geojson` | 1 | <https://gisportal.boston.gov/arcgis/rest/services/Planning/OpenData/MapServer/9/query?where=1%3D1&outFields=*&outSR=4326&f=geojson> | Open Data Commons Public Domain Dedication and License (PDDL) |
 | geo | `geo/cambridge_boundary.geojson` | 1 | <https://raw.githubusercontent.com/cambridgegis/cambridgegis_data/main/Boundary/City_Boundary/BOUNDARY_CityBoundary.geojson> | Open Data Commons Public Domain Dedication and License (PDDL) |
 | geo | `geo/massachusetts-latest.osm.pbf` |  | <https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf> | ODbL 1.0, © OpenStreetMap contributors |
-| geo | `geo/massgis_municipalities.zip` |  | <https://www.mass.gov/info-details/massgis-data-municipalities> (placed by hand) | MassGIS (Commonwealth of Massachusetts); no license text found on the pages checked |
+| geo | `geo/massgis_towns.geojson` | 2 | <https://arcgisserver.digital.mass.gov/arcgisserver/rest/services/AGOL/Census2020_Towns/MapServer/2> (Somerville and Brookline) | U.S. Census Bureau 2020 municipal boundaries (public domain), processed by MassGIS |
 | transit | `transit/MBTA_GTFS.zip` |  | <https://cdn.mbta.com/MBTA_GTFS.zip> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |
 | ridership | `ridership/GSE_by_year.zip` |  | <https://www.arcgis.com/sharing/rest/content/items/7859894afb5641ce91a2bb03599fdf5b/data> | CC0 1.0 (ArcGIS item licenseInfo), https://mbta-massdot.opendata.arcgis.com/datasets/7859894afb5641ce91a2bb03599fdf5b |
 | transit | `transit/mbta_routes.json` | 8 | <https://api-v3.mbta.com/routes?filter[type]=0,1> | MBTA/MassDOT Developer License Agreement, https://cdn.mbta.com/sites/default/files/2023-08/mbta-massdot-develop-license-agreement.pdf |

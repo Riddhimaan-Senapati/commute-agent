@@ -33,17 +33,17 @@ CAMBRIDGE_GEOJSON_URL = (
 )
 CAMBRIDGE_LICENSE = "Open Data Commons Public Domain Dedication and License (PDDL)"
 
-# MassGIS municipalities (cities and towns, one multipart polygon each), which give
-# Somerville and Brookline. The download is a shapefile zip that the operator places
-# at data/raw/geo/massgis_municipalities.zip; this script cannot fetch it unattended
-# because the mass.gov download page did not answer a scripted request (HTTP 403).
-# Its license was not stated on the metadata pages checked, so the manifest says so.
-MASSGIS_MUNICIPALITIES_PAGE = "https://www.mass.gov/info-details/massgis-data-municipalities"
-MASSGIS_LICENSE = (
-    "MassGIS (Commonwealth of Massachusetts). No license text found on the metadata pages "
-    "checked; confirm the terms on the download page before redistributing."
+# Somerville and Brookline come from MassGIS's Census 2020 towns layer, one polygon per
+# city or town, queried from its ArcGIS service as WGS84 GeoJSON. (The mass.gov download
+# page answers scripted requests with 403; the service does not.)
+MASSGIS_TOWNS_URL = (
+    "https://arcgisserver.digital.mass.gov/arcgisserver/rest/services/AGOL/"
+    "Census2020_Towns/MapServer/2/query?where=TOWN20%20IN%20(%27SOMERVILLE%27,"
+    "%27BROOKLINE%27)&outFields=TOWN20,TOWN_ID&outSR=4326&f=geojson"
 )
-MUNICIPALITIES_ZIP = GEO / "massgis_municipalities.zip"
+MASSGIS_TOWNS_LICENSE = (
+    "U.S. Census Bureau 2020 municipal boundaries (public domain), processed by MassGIS"
+)
 
 MASS_PBF_URL = "https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf"
 OSM_LICENSE = "ODbL 1.0, © OpenStreetMap contributors"
@@ -85,17 +85,11 @@ def main() -> None:
               "(no CRS member -> RFC 7946 default); no reprojection needed.",
     ))
 
-    if not MUNICIPALITIES_ZIP.exists():
-        sys.exit(
-            f"missing {MUNICIPALITIES_ZIP}. Download the MassGIS 'Massachusetts "
-            f"Municipalities' shapefile zip from {MASSGIS_MUNICIPALITIES_PAGE}, save it "
-            "at that path, and rerun this script."
-        )
+    towns = download(MASSGIS_TOWNS_URL, GEO / "massgis_towns.geojson")
     entries.append(manifest_entry(
-        MUNICIPALITIES_ZIP, MASSGIS_MUNICIPALITIES_PAGE, MASSGIS_LICENSE, None,
-        notes="MassGIS municipalities polygons (Somerville and Brookline are read from it "
-              "by the boundary ingest step, by its TOWN field). Supplied by hand; see the "
-              "script comment.",
+        towns, MASSGIS_TOWNS_URL, MASSGIS_TOWNS_LICENSE, feature_count(towns),
+        notes="MassGIS Census 2020 Towns layer, Somerville and Brookline only, WGS84. The "
+              "boundary ingest step reads them by the TOWN20 field.",
     ))
 
     mass_pbf = download(MASS_PBF_URL, GEO / "massachusetts-latest.osm.pbf")

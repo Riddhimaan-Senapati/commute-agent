@@ -414,7 +414,7 @@ Downloads are done. Four stdlib scripts in `scripts/fetch/` fetched every raw fi
 | geo | `geo/boston_boundary.geojson` (land only, 125.1 km², 34 polygons) | 1 | ODC PDDL |
 | geo | `geo/cambridge_boundary.geojson` | 1 | Cambridge GIS |
 | geo | `geo/massachusetts-latest.osm.pbf` (Geofabrik, 2026-10-23) | | ODbL 1.0 |
-| geo | `geo/massgis_municipalities.zip` (placed by hand; Somerville and Brookline polygons) | | MassGIS; license not stated on pages checked |
+| geo | `geo/massgis_towns.geojson` (Somerville and Brookline polygons, `TOWN20`) | MassGIS ArcGIS `AGOL/Census2020_Towns/MapServer/2` | U.S. Census Bureau 2020 (public domain), processed by MassGIS |
 | crashes | `crashes/somerville_police_crashes.csv` (Socrata `mtik-28va`) | | ODbL 1.0 |
 
 `numina_zones.candidate.csv` maps the 9 zones to their 3 sensor sites (Jackson Square 42.322802,-71.100588; 50 Northern Ave 42.353630,-71.046128; Tremont and Boylston 42.352371,-71.064498), quoting the project overview PDF page 2. The zones are sub-areas of one camera each, so every zone carries its site's point. The user confirms it by copying it to `data/raw/numina_zones.csv`, which `paths.NUMINA_ZONES` names.
@@ -427,7 +427,7 @@ Column checks use one helper, `require_columns(df, dataset, expected: set[str])`
 
 | Dataset name | Module | Reads | Output and columns |
 |---|---|---|---|
-| `boundary` | `geo.py` | `geo/boston_boundary.geojson`, `geo/cambridge_boundary.geojson`, `geo/massgis_municipalities.zip` | `service_area.geojson` (union of four cities), `service_area_buffered.geojson` (2 km), `crash_coverage.geojson` (Boston, Cambridge, Somerville) |
+| `boundary` | `geo.py` | `geo/boston_boundary.geojson`, `geo/cambridge_boundary.geojson`, `geo/massgis_towns.geojson` | `service_area.geojson` (union of four cities), `service_area_buffered.geojson` (2 km), `crash_coverage.geojson` (Boston, Cambridge, Somerville) |
 | `graphs` | `geo.py` | `ox.graph_from_polygon(boston_buffered_2km, network_type=...)` for `walk`, `bike`, `drive`, with `ox.settings.use_cache = True` and `ox.settings.cache_folder = "data/raw/geo/overpass_cache"` | `walk.graphml`, `bike.graphml`, `drive.graphml` |
 | `basemap` | `geo.py` | drive graph edges with highway in primary, secondary, tertiary, trunk | `basemap.geojson`, LineStrings simplified to 5 m |
 | `crashes` | `crashes.py` | both crash CSVs | `crashes.parquet`: `source_dataset`, `occurred_at` (UTC), `mode` (`bike` or `ped`), `lat`, `lon` |
@@ -496,7 +496,7 @@ ferry:         {value: null, unit: g_per_passenger_km, source: ""}
 
 ### WS6. Traffic factors (`commute_agent/traffic.py`)
 
-`data/traffic_factors.yaml` multiplies free-flow drive time by a factor per day type and hour bucket (America/New_York local time). Buckets per day type: `0-6`, `6-7`, `7-9`, `9-15`, `15-16`, `16-19`, `19-24`. Each bucket has a `value` (a number at least 1.0) and a `source`. A bucket with `source: "needs a source"` must have `value: 1.0`, so no unsourced number is ever applied.
+`data/traffic_factors.yaml` multiplies free-flow drive time by a factor per day type and hour bucket (America/New_York local time). Buckets per day type are any hour ranges that cover 0 to 24; the shipped file uses one bucket per hour, from the TomTom Traffic Index 2025 hourly congestion grid for the City of Boston (value = 1 + level / 100). Each bucket has a `value` (a number at least 1.0) and a `source`. A bucket with `source: "needs a source"` must have `value: 1.0`, so no unsourced number is ever applied.
 
 ```python
 class TrafficFactorsError(Exception): ...

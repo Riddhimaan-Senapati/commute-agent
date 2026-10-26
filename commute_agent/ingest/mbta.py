@@ -53,9 +53,7 @@ def stations(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
     return path
 
 
-def otp_inputs(
-    raw_dir: Path = RAW, out_dir: Path = OTP_DIR, processed: Path = PROCESSED
-) -> Path:
+def otp_inputs(raw_dir: Path = RAW, out_dir: Path = OTP_DIR, processed: Path = PROCESSED) -> Path:
     """Copy the GTFS zip and extract the service-area OSM pbf into data/otp/.
 
     The extract clips the Massachusetts pbf to the 2 km-buffered service-area polygon
@@ -67,8 +65,15 @@ def otp_inputs(
     _atomic_copy(raw_dir / GTFS_FILE, gtfs_dst)
     subprocess.run(
         [
-            "osmium", "extract", "-p", str(processed / SERVICE_BUFFER_FILE), "--overwrite",
-            "-f", "pbf", "-o", str(pbf_dst.with_name(pbf_dst.name + ".tmp")),
+            "osmium",
+            "extract",
+            "-p",
+            str(processed / SERVICE_BUFFER_FILE),
+            "--overwrite",
+            "-f",
+            "pbf",
+            "-o",
+            str(pbf_dst.with_name(pbf_dst.name + ".tmp")),
             str(raw_dir / MASS_PBF),
         ],
         check=True,
