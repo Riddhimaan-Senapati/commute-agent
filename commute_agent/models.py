@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,6 +25,7 @@ UNKNOWN_EXPOSURE_BASES: frozenset[RiskBasis] = frozenset(
 Label = Literal["fastest", "lowest_co2", "lowest_crash_risk", "least_disrupted"]
 RunMode = Literal["offline", "live"]
 Weekday = Literal["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+WEEKDAYS: tuple[Weekday, ...] = get_args(Weekday)  # in datetime.weekday() order
 
 
 class Point(BaseModel):
@@ -47,6 +48,8 @@ class TransitRef(BaseModel):
     stop_ids: list[
         str
     ]  # board, intermediate, alight stops plus their parent stations, deduplicated
+    board_stop_ids: list[str] = []  # the boarding stop and its parent station
+    alight_stop_ids: list[str] = []  # the alighting stop and its parent station
 
 
 class Leg(BaseModel):
@@ -79,6 +82,7 @@ class AlertEntity(BaseModel):
     stop: str | None = None
     route_type: int | None = None
     direction_id: int | None = None
+    activities: list[str] = []  # MBTA informed_entity activities, e.g. BOARD, EXIT, RIDE
 
 
 class ActivePeriod(BaseModel):

@@ -4,7 +4,7 @@ commute-agent plans trips inside Boston and shows the trade-offs instead of pick
 
 This is an independent prototype. It is not an MBTA or City of Boston service.
 
-The hosted demo is at <https://commute-agent-5hla.onrender.com>. [DEMO.md](DEMO.md) is a script for presenting it.
+The hosted demo is at <https://commute-agent-5hla.onrender.com>.
 
 Run locally, the app works offline by default. Transit comes from cached OpenTripPlanner responses, the map from a local basemap, and alerts from recorded snapshots.
 
@@ -154,7 +154,7 @@ Route A dominates route B when A is no worse than B on every objective, allowing
 
 ## Offline demo
 
-[DEMO.md](DEMO.md) covers the hosted page. These steps run the local page with Wi-Fi off.
+These steps run the local page with Wi-Fi off.
 
 1. Run `uv run python -m commute_agent.check_offline`. It must print `offline ready`.
 2. Run `uv run python -m commute_agent.api` and open <http://127.0.0.1:8000/>.

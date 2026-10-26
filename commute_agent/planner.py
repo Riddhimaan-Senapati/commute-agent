@@ -19,6 +19,7 @@ from shapely.ops import unary_union
 from commute_agent import bluebikes_live
 from commute_agent.emissions import load_emission_factors
 from commute_agent.models import (
+    WEEKDAYS,
     Alert,
     AlertRef,
     DockCounts,
@@ -45,7 +46,6 @@ from commute_agent.transit.otp import fetch_itineraries, transit_routes
 
 TIMEZONE = ZoneInfo("America/New_York")
 DEFAULT_OFFLINE_DEPARTURE = ("tuesday", "08:15")
-WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 FREE_FLOW_NOTE = "Drive time is free-flow and ignores traffic."
 FIXED_NOTES = [
     "Crash risk covers walking and biking segments only. "

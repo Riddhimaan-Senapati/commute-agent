@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 
 from commute_agent.emissions import EmissionFactorsError, load_emission_factors
-from commute_agent.models import Point, ShowcaseTrips, Weekday
+from commute_agent.models import WEEKDAYS, Point, ShowcaseTrips, Weekday
 from commute_agent.paths import OTP_CACHE, ROOT, SHOWCASE_TRIPS
 from commute_agent.streets import load_street_graphs
 from commute_agent.transit.alerts import list_alert_sources, load_alerts, suspended_routes
@@ -24,15 +24,6 @@ from commute_agent.transit.otp import TIMEZONE, fetch_itineraries, transit_route
 
 EVAL_OD_PAIRS = ROOT / "eval" / "od_pairs.yaml"
 
-_WEEKDAYS: tuple[Weekday, ...] = (
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-)
 FIELDS_CORNER_NAME = "fields-corner-to-downtown"
 
 
@@ -49,7 +40,7 @@ def next_departure(weekday: Weekday, depart_local: str, *, now: datetime | None 
     """Next America/New_York datetime on ``weekday`` at ``depart_local`` from ``now``."""
     now = (now or datetime.now(TIMEZONE)).astimezone(TIMEZONE)
     hour, minute = (int(x) for x in depart_local.split(":"))
-    target_dow = _WEEKDAYS.index(weekday)
+    target_dow = WEEKDAYS.index(weekday)
     days_ahead = (target_dow - now.weekday()) % 7
     candidate = (now + timedelta(days=days_ahead)).replace(
         hour=hour, minute=minute, second=0, microsecond=0

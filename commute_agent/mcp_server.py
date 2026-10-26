@@ -21,6 +21,7 @@ from commute_agent import planner, preferences
 from commute_agent.emissions import EmissionFactorsError, load_emission_factors
 from commute_agent.gazetteer import _haversine_m, build_gazetteer, geocode
 from commute_agent.models import (
+    WEEKDAYS,
     Alert,
     AlertRef,
     AlertSnapshot,
@@ -48,7 +49,6 @@ from commute_agent.transit.alerts import list_alert_sources as alert_source_name
 LIVE_ALERT_TTL_S = 60.0
 SHOWCASE_MATCH_M = 300.0
 NO_DEPARTURE = {"", "null", "none"}
-WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 LIVE_SOURCE = "live"
 NO_ALERTS = "none"
 MBTA_UNAVAILABLE_NOTE = "MBTA live alerts could not be fetched, so no alerts were applied."

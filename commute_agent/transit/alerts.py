@@ -26,6 +26,13 @@ from commute_agent.models import (
 from commute_agent.paths import ALERT_SNAPSHOTS
 
 MBTA_ALERTS_URL = "https://api-v3.mbta.com/alerts"
+ALERT_PAGE_SIZE = 200
+MAX_ALERT_PAGES = 10
+# Activities that concern the stop where a leg boards or alights. RIDE concerns every stop
+# the vehicle passes; anything else (USING_WHEELCHAIR, PARK_CAR, ...) is station access.
+RIDE_ACTIVITY = "RIDE"
+BOARD_ACTIVITY = "BOARD"
+EXIT_ACTIVITY = "EXIT"
 # Selectable without --live: the live MBTA loader, with the server's 60 s cache and a note
 # instead of an error when the fetch fails.
 MBTA_LIVE_SOURCE = "MBTA live"
@@ -124,6 +131,7 @@ def parse_mbta_alerts(payload: dict) -> list[Alert]:
                     stop=entity.get("stop"),
                     route_type=entity.get("route_type"),
                     direction_id=entity.get("direction_id"),
+                    activities=entity.get("activities") or [],
                 )
             )
 
@@ -157,14 +165,25 @@ def list_alert_sources(snapshot_dir: Path = ALERT_SNAPSHOTS) -> list[str]:
 
 
 def _fetch_live() -> list[Alert]:
-    """Fetch current MBTA alerts for subway, light rail, and bus."""
-    response = httpx.get(
-        MBTA_ALERTS_URL,
-        params={"filter[route_type]": "0,1,3", "page[limit]": "200"},
-        timeout=30,
-    )
-    response.raise_for_status()
-    return parse_mbta_alerts(response.json())
+    """Fetch current MBTA alerts for subway, light rail, and bus, following ``links.next``
+    for up to MAX_ALERT_PAGES pages."""
+    url: str | None = MBTA_ALERTS_URL
+    params: dict[str, str] | None = {
+        "filter[route_type]": "0,1,3",
+        "page[limit]": str(ALERT_PAGE_SIZE),
+    }
+    alerts: list[Alert] = []
+    for _ in range(MAX_ALERT_PAGES):
+        if url is None:
+            break
+        response = httpx.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        payload = response.json()
+        alerts += parse_mbta_alerts(payload)
+        # The next link already carries the filters and page offset.
+        url = (payload.get("links") or {}).get("next")
+        params = None
+    return alerts
 
 
 def load_alerts(
@@ -203,8 +222,8 @@ def entity_matches(entity: AlertEntity, transit: TransitRef) -> bool:
     """True when every field the entity sets equals the leg's value.
 
     ``route == route_id``, ``route_type == route_type``,
-    ``direction_id == direction_id``, ``stop in stop_ids``. An entity with every
-    field None matches nothing.
+    ``direction_id == direction_id``, and the stop among the leg's stops its activities
+    concern (see ``_stops_for``). An entity with every field None matches nothing.
     """
     checks = (
         entity.route is not None,
@@ -220,9 +239,31 @@ def entity_matches(entity: AlertEntity, transit: TransitRef) -> bool:
         return False
     if entity.direction_id is not None and entity.direction_id != transit.direction_id:
         return False
-    if entity.stop is not None and entity.stop not in transit.stop_ids:
+    if entity.stop is not None and entity.stop not in _stops_for(entity.activities, transit):
         return False
     return True
+
+
+def _stops_for(activities: list[str], transit: TransitRef) -> set[str]:
+    """Stops of the leg that a stop entity with these activities can affect.
+
+    No activities, or a leg without board and alight ids, means every stop on the leg.
+    RIDE adds every stop; BOARD adds the boarding stop; EXIT the alighting stop; any other
+    activity is station access and adds both.
+    """
+    if not activities or not (transit.board_stop_ids or transit.alight_stop_ids):
+        return set(transit.stop_ids)
+    stops: set[str] = set()
+    for activity in activities:
+        if activity == RIDE_ACTIVITY:
+            stops.update(transit.stop_ids)
+        elif activity == BOARD_ACTIVITY:
+            stops.update(transit.board_stop_ids)
+        elif activity == EXIT_ACTIVITY:
+            stops.update(transit.alight_stop_ids)
+        else:
+            stops.update(transit.board_stop_ids, transit.alight_stop_ids)
+    return stops
 
 
 def is_active(alert: Alert, at: datetime) -> bool:

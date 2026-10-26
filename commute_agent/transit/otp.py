@@ -20,6 +20,7 @@ import polyline
 
 from commute_agent.emissions import co2_source, leg_co2_g
 from commute_agent.models import (
+    WEEKDAYS,
     EmissionFactor,
     Leg,
     LegMode,
@@ -64,6 +65,7 @@ BIKE_TRANSIT_TIME_SOURCE = (
 
 NOT_CACHED = "transit not cached for this trip"
 OTP_UNREACHABLE = "OTP unreachable"
+OTP_ERROR = "OTP returned an error for this trip"
 
 PLAN_QUERY = """\
 query Plan($from: PlanCoordinateInput!, $to: PlanCoordinateInput!, $when: OffsetDateTime!) {
@@ -142,15 +144,7 @@ def _cache_key_for_datetime(
     step_free: bool = False,
 ) -> str:
     local = depart_at.astimezone(TIMEZONE)
-    weekday: Weekday = (
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
-    )[local.weekday()]
+    weekday = WEEKDAYS[local.weekday()]
     clock = local.strftime("%H:%M")
     if exclude_routes:
         clock += ";exclude=" + ",".join(sorted(exclude_routes))
@@ -222,6 +216,11 @@ def fetch_itineraries(
     except httpx.HTTPError:
         return None, OTP_UNREACHABLE
 
+    # A GraphQL error is not a stable answer: never cache it, and without a plan report it.
+    if raw.get("errors"):
+        if not (raw.get("data") or {}).get("planConnection"):
+            return None, OTP_ERROR
+        return raw, None
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(json.dumps(raw, indent=2))
     return raw, None
@@ -244,27 +243,22 @@ def _decode_coords(leg: dict) -> list[tuple[float, float]]:
     return [(lon, lat) for lat, lon in polyline.decode(points)]
 
 
+def _ids_of(stop: dict | None) -> list[str]:
+    """A stop's id and its parent station's id, prefix removed."""
+    if not stop:
+        return []
+    parent = stop.get("parentStation") or {}
+    ids = [_strip_prefix(stop.get("gtfsId")), _strip_prefix(parent.get("gtfsId"))]
+    return [gtfs_id for gtfs_id in ids if gtfs_id]
+
+
 def _stop_ids(leg: dict) -> list[str]:
     """Board, intermediate, and alight stop ids plus parent stations, deduped, prefix removed."""
-    ids: list[str] = []
-
-    def add_stop(stop: dict | None) -> None:
-        if not stop:
-            return
-        gtfs_id = _strip_prefix(stop.get("gtfsId"))
-        if gtfs_id:
-            ids.append(gtfs_id)
-        parent = stop.get("parentStation") or {}
-        parent_id = _strip_prefix(parent.get("gtfsId"))
-        if parent_id:
-            ids.append(parent_id)
-
-    add_stop((leg.get("from") or {}).get("stop"))
+    ids = _ids_of((leg.get("from") or {}).get("stop"))
     for intermediate in leg.get("intermediateStops") or []:
         # Intermediate stops may be bare stop objects or wrapped under "stop".
-        add_stop(intermediate.get("stop") if "stop" in intermediate else intermediate)
-    add_stop((leg.get("to") or {}).get("stop"))
-
+        ids += _ids_of(intermediate.get("stop") if "stop" in intermediate else intermediate)
+    ids += _ids_of((leg.get("to") or {}).get("stop"))
     return list(dict.fromkeys(ids))
 
 
@@ -279,6 +273,8 @@ def _transit_ref(leg: dict) -> TransitRef:
         route_type=int(route.get("type") or 0),
         direction_id=int(trip.get("directionId")),
         stop_ids=_stop_ids(leg),
+        board_stop_ids=_ids_of((leg.get("from") or {}).get("stop")),
+        alight_stop_ids=_ids_of((leg.get("to") or {}).get("stop")),
     )
 
 

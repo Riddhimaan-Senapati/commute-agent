@@ -345,3 +345,90 @@ def test_elevator_closure_elsewhere_does_not_flag_step_free_leg() -> None:
 def test_elevator_closure_never_reroutes_like_a_suspension() -> None:
     alerts = elevator_alerts()
     assert suspended_routes(alerts, ELEVATOR_AT, {"Red", "Green-D", "110"}) == ()
+
+
+RED_SOUTHBOUND = TransitRef(
+    route_id="Red",
+    route_name="Red Line",
+    route_type=1,
+    direction_id=0,
+    stop_ids=["70061", "place-alfcl", "70063", "place-davis", "70065", "place-portr"],
+    board_stop_ids=["70061", "place-alfcl"],
+    alight_stop_ids=["70065", "place-portr"],
+)
+
+
+def test_board_and_exit_activities_match_only_the_end_stops() -> None:
+    board_at_davis = AlertEntity(stop="place-davis", activities=["BOARD", "EXIT"])
+    board_at_alewife = AlertEntity(stop="place-alfcl", activities=["BOARD"])
+    exit_at_alewife = AlertEntity(stop="place-alfcl", activities=["EXIT"])
+    assert not entity_matches(board_at_davis, RED_SOUTHBOUND)  # the leg only rides through
+    assert entity_matches(board_at_alewife, RED_SOUTHBOUND)
+    assert not entity_matches(exit_at_alewife, RED_SOUTHBOUND)
+
+
+def test_ride_and_missing_activities_match_every_stop() -> None:
+    assert entity_matches(AlertEntity(stop="place-davis", activities=["RIDE"]), RED_SOUTHBOUND)
+    assert entity_matches(AlertEntity(stop="place-davis"), RED_SOUTHBOUND)
+
+
+def test_station_access_activities_match_board_and_alight_stops() -> None:
+    wheelchair = ["USING_WHEELCHAIR"]
+    assert entity_matches(AlertEntity(stop="place-portr", activities=wheelchair), RED_SOUTHBOUND)
+    assert not entity_matches(
+        AlertEntity(stop="place-davis", activities=wheelchair), RED_SOUTHBOUND
+    )
+
+
+def test_parse_reads_entity_activities() -> None:
+    payload = {
+        "data": [
+            {
+                "id": "a1",
+                "attributes": {
+                    "header": "Elevator closed",
+                    "effect": "ELEVATOR_CLOSURE",
+                    "severity": 3,
+                    "active_period": [{"start": "2026-10-25T00:00:00-04:00"}],
+                    "informed_entity": [
+                        {"stop": "place-davis", "activities": ["USING_WHEELCHAIR"]}
+                    ],
+                },
+            }
+        ]
+    }
+    (alert,) = parse_mbta_alerts(payload)
+    assert alert.entities[0].activities == ["USING_WHEELCHAIR"]
+
+
+def test_live_fetch_follows_next_links(monkeypatch) -> None:
+    import httpx
+
+    from commute_agent.transit import alerts as alerts_module
+
+    def page(alert_id: str, next_url: str | None) -> dict:
+        alert = {
+            "id": alert_id,
+            "attributes": {
+                "header": alert_id,
+                "effect": "DELAY",
+                "severity": 3,
+                "active_period": [],
+                "informed_entity": [{"route": "Red"}],
+            },
+        }
+        return {"data": [alert], "links": {"next": next_url} if next_url else {}}
+
+    pages = {
+        alerts_module.MBTA_ALERTS_URL: page("p1", "https://api-v3.mbta.com/alerts?page[offset]=1"),
+        "https://api-v3.mbta.com/alerts?page[offset]=1": page("p2", None),
+    }
+    seen: list[str] = []
+
+    def fake_get(url, params=None, timeout=None):
+        seen.append(url)
+        return httpx.Response(200, json=pages[url], request=httpx.Request("GET", url))
+
+    monkeypatch.setattr(alerts_module.httpx, "get", fake_get)
+    assert [a.id for a in alerts_module._fetch_live()] == ["p1", "p2"]
+    assert len(seen) == 2

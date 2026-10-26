@@ -375,3 +375,33 @@ def test_fetch_step_free_queries_otp_and_caches_under_its_own_key(
         None,
         "transit not cached for this trip",
     )
+
+
+def test_graphql_error_is_not_cached(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    errors = {"errors": [{"message": "boom"}], "data": None}
+
+    def fake_post(url: str, **kwargs):
+        return httpx.Response(200, json=errors, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(otp.httpx, "post", fake_post)
+    raw, reason = otp.fetch_itineraries(
+        FIELDS_CORNER, DOWNTOWN_CROSSING, TUESDAY_0815, live=True, cache_dir=tmp_path
+    )
+    assert (raw, reason) == (None, otp.OTP_ERROR)
+    assert not list(tmp_path.iterdir())
+
+
+def test_partial_answer_with_errors_is_used_but_not_cached(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    partial = {"errors": [{"message": "one leg"}], "data": {"planConnection": {"edges": []}}}
+
+    def fake_post(url: str, **kwargs):
+        return httpx.Response(200, json=partial, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(otp.httpx, "post", fake_post)
+    raw, reason = otp.fetch_itineraries(
+        FIELDS_CORNER, DOWNTOWN_CROSSING, TUESDAY_0815, live=True, cache_dir=tmp_path
+    )
+    assert (raw, reason) == (partial, None)
+    assert not list(tmp_path.iterdir())
