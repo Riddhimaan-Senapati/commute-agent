@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import geopandas as gpd
@@ -128,6 +129,8 @@ def graphs(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
 
     ox.settings.use_cache = True
     ox.settings.cache_folder = str(raw_dir / "geo" / "overpass_cache")
+    # COMMUTE_OVERPASS_URL points at a mirror when overpass-api.de is overloaded.
+    ox.settings.overpass_url = os.environ.get("COMMUTE_OVERPASS_URL", ox.settings.overpass_url)
 
     polygon = gpd.read_file(out_dir / SERVICE_BUFFER_FILE).union_all()
 
