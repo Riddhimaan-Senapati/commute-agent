@@ -1,4 +1,6 @@
-name: deploy
+name: test
+# Runs the checks on every push to main. Deploying is off: the Render services are
+# suspended, and the Hugging Face Space deploy lives on the hf-spaces branch.
 
 on:
   push:
@@ -6,7 +8,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-render
+  group: test-main
   cancel-in-progress: false
 
 jobs:
@@ -29,17 +31,3 @@ jobs:
         working-directory: webapp
       - run: npm run typecheck
         working-directory: webapp
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Render CLI
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh \
-            --output /tmp/install-render-cli.sh
-          sudo sh /tmp/install-render-cli.sh
-      - name: Deploy this commit and wait for it to go live
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        run: render deploys create "${{ secrets.RENDER_SERVICE_ID }}" --commit "${{ github.sha }}" --wait --confirm -o json
