@@ -26,6 +26,9 @@ from commute_agent.models import (
 from commute_agent.paths import ALERT_SNAPSHOTS
 
 MBTA_ALERTS_URL = "https://api-v3.mbta.com/alerts"
+# Selectable without --live: the live MBTA loader, with the server's 60 s cache and a note
+# instead of an error when the fetch fails.
+MBTA_LIVE_SOURCE = "MBTA live"
 
 # Prototype heuristic effect table. DELAY is handled in effect_score, not here.
 EFFECT_SCORES: dict[str, float] = {
@@ -56,12 +59,23 @@ EFFECT_SCORES: dict[str, float] = {
 }
 
 
-def effect_score(alert: Alert) -> float | None:
+# Step-free mode (the page's "Step-free" switch) scores these effects on matching legs.
+# An elevator closure is a barrier for a wheelchair or stroller user, so it scores
+# the same as a suspension there. Escalator closures are left out: a step-free trip
+# has no use for an escalator, and the stairs beside it are not step-free either.
+STEP_FREE_EFFECTS = frozenset({"ELEVATOR_CLOSURE"})
+STEP_FREE_SCORE = 1.0
+
+
+def effect_score(alert: Alert, *, step_free: bool = False) -> float | None:
     """Return the heuristic disruption score for an alert, or None when unmapped.
 
     DELAY scores ``severity / 10`` capped at 1.0. Every other effect is looked up
-    in ``EFFECT_SCORES``; an effect absent from the table returns None.
+    in ``EFFECT_SCORES``; an effect absent from the table returns None. With
+    ``step_free`` on, a ``STEP_FREE_EFFECTS`` alert scores ``STEP_FREE_SCORE``.
     """
+    if step_free and alert.effect in STEP_FREE_EFFECTS:
+        return STEP_FREE_SCORE
     if alert.effect == "DELAY":
         return min(alert.severity / 10, 1.0)
     return EFFECT_SCORES.get(alert.effect)
@@ -133,13 +147,13 @@ def _slug(label: str) -> str:
 
 
 def list_alert_sources(snapshot_dir: Path = ALERT_SNAPSHOTS) -> list[str]:
-    """Return selectable alert sources: ['none', 'live', <snapshot labels sorted>]."""
+    """Return selectable alert sources: ['none', 'live', 'MBTA live', <snapshot labels sorted>]."""
     labels: list[str] = []
     if snapshot_dir.is_dir():
         for path in snapshot_dir.glob("*.json"):
             snapshot = AlertSnapshot.model_validate_json(path.read_text())
             labels.append(snapshot.label)
-    return ["none", "live", *sorted(labels)]
+    return ["none", "live", MBTA_LIVE_SOURCE, *sorted(labels)]
 
 
 def _fetch_live() -> list[Alert]:
@@ -164,6 +178,8 @@ def load_alerts(
     - ``'none'`` -> ``([], None)``.
     - ``'live'`` -> fetched alerts with clock None (meaning "use the departure time").
       Refused with an empty result when ``live`` is False.
+    - ``'MBTA live'`` -> fetched alerts with clock None, whatever ``live`` is. A failed
+      fetch raises ``httpx.HTTPError`` or ``ValueError``; the caller turns that into a note.
     - a snapshot label -> its alerts and its ``recorded_at`` clock.
     """
     if source == "none":
@@ -171,6 +187,8 @@ def load_alerts(
     if source == "live":
         if not live:
             return [], None
+        return _fetch_live(), None
+    if source == MBTA_LIVE_SOURCE:
         return _fetch_live(), None
 
     if snapshot_dir.is_dir():
@@ -243,6 +261,8 @@ def apply_disruptions(
     routes_in: list[RouteOption],
     alerts: list[Alert],
     at: datetime,
+    *,
+    step_free: bool = False,
 ) -> tuple[list[RouteOption], list[AlertRef]]:
     """Score transit-leg disruption from active, matching alerts.
 
@@ -251,7 +271,7 @@ def apply_disruptions(
     ``effect_score`` over scored affecting alerts (0.0 when none); its ``alert_ids``
     are every affecting alert id. Matching alerts with an unmapped effect are
     collected once into the second return value. Routes are rebuilt with
-    ``routes.with_disruption``.
+    ``routes.with_disruption``. ``step_free`` is passed to ``effect_score``.
     """
     active = [alert for alert in alerts if is_active(alert, at)]
     unscored: dict[str, AlertRef] = {}
@@ -265,9 +285,13 @@ def apply_disruptions(
                 continue
 
             affecting = [alert for alert in active if _affects_leg(alert, leg.transit)]
-            scores = [score for alert in affecting if (score := effect_score(alert)) is not None]
+            scores = [
+                score
+                for alert in affecting
+                if (score := effect_score(alert, step_free=step_free)) is not None
+            ]
             for alert in affecting:
-                if effect_score(alert) is None and alert.id not in unscored:
+                if effect_score(alert, step_free=step_free) is None and alert.id not in unscored:
                     unscored[alert.id] = AlertRef(
                         id=alert.id, header=alert.header, effect=alert.effect, score=None
                     )

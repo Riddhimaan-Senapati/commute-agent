@@ -76,6 +76,25 @@ def test_plan_returns_full_plan(client: TestClient) -> None:
     assert any(leg["coords"] for route in body["routes"] for leg in route["legs"])
 
 
+def test_plan_forwards_step_free_and_defaults_to_off(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[dict] = []
+
+    def plan_trip(**arguments):
+        seen.append(arguments)
+        return {"query_id": "q1"}
+
+    def get_plan(**arguments):
+        return {"query_id": "q1"}
+
+    tools = {"plan_trip": plan_trip, "get_plan": get_plan}
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with TestClient(create_app(live=False, tool_source=lambda: tools)) as test_client:
+        body = {k: v for k, v in PLAN_BODY.items()}
+        test_client.post("/api/plan", json=body)
+        test_client.post("/api/plan", json={**body, "step_free": True})
+    assert [call["step_free"] for call in seen] == [False, True]
+
+
 def test_plan_outside_boston_is_422(client: TestClient) -> None:
     body = {**PLAN_BODY, "origin": {"lat": 42.5, "lon": -71.0}}
     response = client.post("/api/plan", json=body)
@@ -86,6 +105,22 @@ def test_plan_outside_boston_is_422(client: TestClient) -> None:
 def test_preferences_round_trip(client: TestClient) -> None:
     assert client.get("/api/preferences").json()["insufficient_data"] is True
     assert client.delete("/api/preferences").json()["n_choices"] == 0
+
+
+def test_choices_are_per_session(client: TestClient) -> None:
+    tab_a = {"X-Session-Id": "tab-a"}
+    tab_b = {"X-Session-Id": "tab-b"}
+    plan = client.post("/api/plan", json=PLAN_BODY, headers=tab_a).json()
+    route_id = plan["routes"][-1]["id"]
+    for _ in range(3):
+        choice = {"query_id": plan["query_id"], "route_id": route_id}
+        assert client.post("/api/choice", json=choice, headers=tab_a).status_code == 200
+
+    assert client.get("/api/preferences", headers=tab_a).json()["n_choices"] == 3
+    assert client.get("/api/preferences", headers=tab_b).json()["n_choices"] == 0
+    assert client.get("/api/preferences").json()["n_choices"] == 0
+    assert client.delete("/api/preferences", headers=tab_b).json()["n_choices"] == 0
+    assert client.get("/api/preferences", headers=tab_a).json()["n_choices"] == 3
 
 
 def test_alerts_maps_ids_to_headers_for_the_active_source(client: TestClient) -> None:
@@ -146,3 +181,77 @@ def test_geocode_resolves_a_station_and_reports_unknown_places(client: TestClien
 
 def test_healthz_is_ok(client: TestClient) -> None:
     assert client.get("/healthz").json() == {"ok": True}
+
+
+class FakeClock:
+    """A monotonic clock the test moves by hand."""
+
+    def __init__(self) -> None:
+        self.now = 1000.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+@pytest.fixture
+def limited(server, monkeypatch: pytest.MonkeyPatch) -> tuple[TestClient, FakeClock]:
+    """A client with no model key, so an accepted chat request answers 503 without a model call."""
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    monkeypatch.delenv("COMMUTE_AGENT_MODEL", raising=False)
+    monkeypatch.delenv("COMMUTE_AGENT_API_BASE", raising=False)
+    monkeypatch.delenv("COMMUTE_AGENT_API_KEY_ENV", raising=False)
+    monkeypatch.delenv("COMMUTE_ALLOWED_HOSTS", raising=False)
+    clock = FakeClock()
+    app = create_app(live=False, tool_source=in_process_tools, clock=clock)
+    with TestClient(app) as test_client:
+        yield test_client, clock
+
+
+CHAT = {"conversation_id": None, "message": "hi"}
+
+
+def test_chat_per_session_limit_is_429_until_the_window_passes(
+    limited: tuple[TestClient, FakeClock],
+) -> None:
+    client, clock = limited
+    tab_a = {"X-Session-Id": "tab-a"}
+    for _ in range(5):
+        assert client.post("/api/chat", json=CHAT, headers=tab_a).status_code == 503
+    blocked = client.post("/api/chat", json=CHAT, headers=tab_a)
+    assert blocked.status_code == 429
+    assert (
+        blocked.json()["detail"] == "Too many chat messages from this session. Try again in 60 s."
+    )
+    assert blocked.headers["Retry-After"] == "60"
+    tab_b = {"X-Session-Id": "tab-b"}
+    assert client.post("/api/chat", json=CHAT, headers=tab_b).status_code == 503
+    clock.now += 30
+    assert client.post("/api/chat", json=CHAT, headers=tab_a).status_code == 429
+    clock.now += 30
+    assert client.post("/api/chat", json=CHAT, headers=tab_a).status_code == 503
+
+
+def test_chat_global_limit_is_429_across_sessions(limited: tuple[TestClient, FakeClock]) -> None:
+    client, _ = limited
+    for i in range(60):
+        response = client.post("/api/chat", json=CHAT, headers={"X-Session-Id": f"tab-{i}"})
+        assert response.status_code == 503
+    blocked = client.post("/api/chat", json=CHAT, headers={"X-Session-Id": "tab-new"})
+    assert blocked.status_code == 429
+    assert blocked.json()["detail"] == "Too many chat messages from the service. Try again in 60 s."
+
+
+def test_disallowed_host_is_400_and_allowed_host_passes(
+    server, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COMMUTE_ALLOWED_HOSTS", "localhost, Commute-Agent.example")
+    with TestClient(create_app(live=False, tool_source=in_process_tools)) as client:
+        assert client.get("/healthz", headers={"Host": "evil.example:8000"}).status_code == 400
+        assert client.get("/healthz", headers={"Host": "localhost:8000"}).status_code == 200
+        assert client.get("/healthz", headers={"Host": "commute-agent.example"}).status_code == 200
+
+
+def test_unset_allowed_hosts_allows_any_host(server, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("COMMUTE_ALLOWED_HOSTS", raising=False)
+    with TestClient(create_app(live=False, tool_source=in_process_tools)) as client:
+        assert client.get("/healthz", headers={"Host": "evil.example"}).status_code == 200

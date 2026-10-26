@@ -1,0 +1,56 @@
+# Multipliers on free-flow drive time by day type and hour bucket (America/New_York local
+# time). A bucket starts at its first hour and ends before its second, so 16-19 is 16:00 to
+# 18:59. Every value is 1.0 until a published Boston congestion figure is confirmed for that
+# bucket. Each source names the report and the figure it came from.
+#
+# Candidate source, NOT applied (the page could not be read): TomTom Traffic Index, Boston,
+# MA traffic report, 2025 data (https://www.tomtom.com/traffic-index/city/boston-ma). A search
+# excerpt quoting that page gave average congestion of 60.8% for the morning peak and 84% for
+# the evening peak. Those are peak-window averages, not per-bucket figures, so they are not
+# used here. A congestion of 60.8% would mean a factor of 1.608 (time / free-flow time).
+
+weekday:
+  "0-6":
+    value: 1.0
+    source: "needs a source"
+  "6-7":
+    value: 1.0
+    source: "needs a source"
+  "7-9":
+    value: 1.0
+    source: "needs a source"
+  "9-15":
+    value: 1.0
+    source: "needs a source"
+  "15-16":
+    value: 1.0
+    source: "needs a source"
+  "16-19":
+    value: 1.0
+    source: "needs a source"
+  "19-24":
+    value: 1.0
+    source: "needs a source"
+
+weekend:
+  "0-6":
+    value: 1.0
+    source: "needs a source"
+  "6-7":
+    value: 1.0
+    source: "needs a source"
+  "7-9":
+    value: 1.0
+    source: "needs a source"
+  "9-15":
+    value: 1.0
+    source: "needs a source"
+  "15-16":
+    value: 1.0
+    source: "needs a source"
+  "16-19":
+    value: 1.0
+    source: "needs a source"
+  "19-24":
+    value: 1.0
+    source: "needs a source"

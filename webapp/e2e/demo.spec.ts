@@ -33,6 +33,7 @@ test("map-first demo: route on the map, pick an objective, suspend the Red Line,
   await expect(cards.first()).toContainText("Lowest CO₂");
   await page.getByRole("radio", { name: "All trade-offs" }).click();
   await expect(cards).toHaveCount(allCount);
+  await expect(page.getByRole("figure", { name: "Trade-off chart: time against CO2" })).toBeVisible();
 
   // Routes outside the Pareto set are listed under it, each naming the route that beats it.
   await expect(page.getByRole("heading", { name: /On the Pareto frontier/ })).toBeVisible();
@@ -65,7 +66,8 @@ test("map-first demo: route on the map, pick an objective, suspend the Red Line,
   await page.getByRole("button", { name: /Try: / }).click();
   const reply = page.locator(".msg.agent").first();
   await expect(reply).toBeVisible({ timeout: 110_000 });
-  await expect(reply.locator("p").first()).toHaveText(IDENTITY);
+  // The model may keep going in the same paragraph; the reply only has to open with it.
+  expect((await reply.locator("p").first().textContent())?.startsWith(IDENTITY)).toBe(true);
 
 
   // New chat clears the conversation, and so does picking another trip.

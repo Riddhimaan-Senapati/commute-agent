@@ -11,3 +11,18 @@ services:
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false
+      # Trips the cache lacks get transit from the OTP private service below.
+      - key: COMMUTE_OTP_HOSTPORT
+        fromService:
+          name: commute-otp
+          type: pserv
+          property: hostport
+  - type: pserv
+    name: commute-otp
+    runtime: docker
+    plan: standard # 2 GB; OTP holds the Boston graph in about 1.6 GB of heap
+    region: virginia
+    rootDir: docker/otp-render
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: "off"

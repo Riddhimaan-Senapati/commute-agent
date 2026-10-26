@@ -6,6 +6,7 @@ import ChatPanel from "@/components/ChatPanel";
 import PlaceInput from "@/components/PlaceInput";
 import FilteredRoutes from "@/components/FilteredRoutes";
 import RouteCard from "@/components/RouteCard";
+import TradeoffChart from "@/components/TradeoffChart";
 import {
   type AlertSources,
   AlertSourcesSchema,
@@ -22,6 +23,7 @@ import {
   api,
 } from "@/lib/api";
 import { OBJECTIVES, type Objective, departureText, enteredRoutes, visibleRoutes } from "@/lib/format";
+import { type DepartureMode, departureParam } from "@/lib/departure";
 
 const RouteMap = dynamic(() => import("@/components/RouteMap"), {
   ssr: false,
@@ -29,7 +31,15 @@ const RouteMap = dynamic(() => import("@/components/RouteMap"), {
 });
 
 const NO_ALERTS = "none";
+const LIVE_ALERTS = "live";
 const PANEL_WIDTH = 400;
+
+// The server's names for alert sources; snapshot labels are shown as they are.
+function alertLabel(name: string): string {
+  if (name === NO_ALERTS) return "No alerts";
+  if (name === LIVE_ALERTS) return "Live feed (--live only)";
+  return name;
+}
 
 function placeOf(trip: Trip, end: "origin" | "destination"): Place {
   return end === "origin"
@@ -52,19 +62,23 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const [departMode, setDepartMode] = useState<DepartureMode>("default");
+  const [departWall, setDepartWall] = useState("");
+  const [stepFree, setStepFree] = useState(false);
 
   const synthetic = sources?.sources.find((s) => s.startsWith("Synthetic")) ?? null;
   const suspended = synthetic !== null && sources?.active === synthetic;
   const shown = useMemo(() => (plan ? visibleRoutes(plan, objective) : []), [plan, objective]);
   const trades = useMemo(() => new Map(plan?.tradeoffs_vs_fastest.map((t) => [t.route_id, t])), [plan]);
 
-  const planRoute = useCallback(async (origin: Place, destination: Place) => {
+  const planRoute = useCallback(
+    async (origin: Place, destination: Place, departAt: string | null, stepFreeOn: boolean) => {
     setBusy(true);
     setError(null);
     try {
       const result = await api("/api/plan", PlanSchema, {
         method: "POST",
-        body: { origin: origin.point, destination: destination.point, depart_at: null },
+        body: { origin: origin.point, destination: destination.point, depart_at: departAt, step_free: stepFreeOn },
       });
       const view = await api("/api/alerts", AlertsViewSchema);
       setAlertHeaders(new Map(view.alerts.map((a) => [a.id, a.header])));
@@ -93,7 +107,7 @@ export default function Home() {
         if (first) {
           setFrom(placeOf(first, "origin"));
           setTo(placeOf(first, "destination"));
-          await planRoute(placeOf(first, "origin"), placeOf(first, "destination"));
+          await planRoute(placeOf(first, "origin"), placeOf(first, "destination"), null, false);
         }
       })
       .catch(() => setError("Cannot reach the API. Start it with: uv run python -m commute_agent.api"));
@@ -104,10 +118,17 @@ export default function Home() {
     if (!shown.some((r) => r.id === selectedId)) setSelectedId(shown[0]?.id ?? null);
   }, [shown, selectedId]);
 
-  async function go(origin: Place | null, destination: Place | null) {
+  async function go(
+    origin: Place | null,
+    destination: Place | null,
+    mode: DepartureMode = departMode,
+    wall: string = departWall,
+  ) {
     if (!origin || !destination) return;
+    // "Depart at" with no time yet waits for one rather than planning the default.
+    if (mode === "at" && !wall) return;
     setNews(null);
-    await planRoute(origin, destination);
+    await planRoute(origin, destination, departureParam(mode, wall), stepFree);
   }
 
   function pickTrip(trip: Trip) {
@@ -118,6 +139,19 @@ export default function Home() {
     void go(a, b);
   }
 
+  function changeDeparture(mode: DepartureMode, wall: string) {
+    setDepartMode(mode);
+    setDepartWall(wall);
+    void go(from, to, mode, wall);
+  }
+
+  async function chooseAlertSource(name: string) {
+    setNews(null);
+    const updated = await api("/api/alert-source", AlertSourcesSchema, { method: "POST", body: { name } });
+    setSources(updated);
+    if (from && to) await planRoute(from, to, departureParam(departMode, departWall), stepFree);
+  }
+
   async function toggleSuspension() {
     if (!synthetic) return;
     const name = suspended ? NO_ALERTS : synthetic;
@@ -126,7 +160,7 @@ export default function Home() {
     setSources(updated);
     if (!from || !to) return;
     const before = plan;
-    const after = await planRoute(from, to);
+    const after = await planRoute(from, to, departureParam(departMode, departWall), stepFree);
     if (!after || !before) return;
     if (name === NO_ALERTS) {
       setNews("Red Line service restored.");
@@ -139,6 +173,18 @@ export default function Home() {
         : "Red Line suspended (synthetic). Affected routes are flagged.",
     );
     setObjective("all");
+  }
+
+  async function toggleStepFree(next: boolean) {
+    setStepFree(next);
+    if (!from || !to) return;
+    const after = await planRoute(from, to, departureParam(departMode, departWall), next);
+    if (!after) return;
+    setNews(
+      next
+        ? "Step-free on. Transit is wheelchair-accessible; elevator closures at matching stations are flagged."
+        : "Step-free off.",
+    );
   }
 
   async function choose(routeId: string) {
@@ -202,6 +248,48 @@ export default function Home() {
           ))}
         </div>
 
+        <div className="picker" aria-label="Departure and alerts">
+          <div className="picker-row">
+            <label htmlFor="depart-mode">Departure</label>
+            <select
+              id="depart-mode"
+              value={departMode}
+              onChange={(e) => changeDeparture(e.target.value as DepartureMode, departWall)}
+              disabled={busy}
+            >
+              <option value="default">No time chosen</option>
+              <option value="now">Leave now</option>
+              <option value="at">Depart at</option>
+            </select>
+          </div>
+          {departMode === "at" && (
+            <div className="picker-row">
+              <label htmlFor="depart-time">Time</label>
+              <input
+                id="depart-time"
+                type="datetime-local"
+                value={departWall}
+                onChange={(e) => changeDeparture("at", e.target.value)}
+                disabled={busy}
+              />
+            </div>
+          )}
+          {sources && (
+            <div className="picker-row">
+              <label htmlFor="alert-source">Alerts</label>
+              <select id="alert-source" value={sources.active} onChange={(e) => void chooseAlertSource(e.target.value)} disabled={busy}>
+                {sources.sources
+                  .filter((s) => s !== LIVE_ALERTS || sources.live_enabled)
+                  .map((s) => (
+                    <option key={s} value={s}>
+                      {alertLabel(s)}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
+        </div>
+
         {synthetic && (
           <label className="switch">
             <input type="checkbox" checked={suspended} onChange={() => void toggleSuspension()} disabled={busy} />
@@ -210,9 +298,20 @@ export default function Home() {
           </label>
         )}
 
+        <label className="switch">
+          <input type="checkbox" checked={stepFree} onChange={(e) => void toggleStepFree(e.target.checked)} disabled={busy} />
+          <span>Step-free</span>
+          <small>wheelchair-accessible transit</small>
+        </label>
+
         {news && (
           <p className="news" role="status">
             {news}
+          </p>
+        )}
+        {plan?.alert_note && (
+          <p className="news" role="status">
+            {plan.alert_note}
           </p>
         )}
         {error && (
@@ -237,6 +336,14 @@ export default function Home() {
           <h2 className="list-head">
             On the Pareto frontier: {plan.routes.length} of {plan.candidate_count} routes
           </h2>
+        )}
+        {plan && objective === "all" && (
+          <TradeoffChart
+            routes={plan.routes}
+            filtered={plan.filtered}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
         )}
         <ol className="cards" aria-label="Routes">
           {shown.map((route) => (

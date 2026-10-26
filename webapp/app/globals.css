@@ -310,6 +310,38 @@ input {
   font-size: 11px;
 }
 
+.picker {
+  display: grid;
+  gap: 6px;
+}
+
+.picker-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.picker-row > label {
+  color: var(--muted);
+}
+
+.picker-row select,
+.picker-row input {
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.picker-row select:focus,
+.picker-row input:focus {
+  background: #fff;
+  border-color: var(--accent);
+}
+
 .news,
 .error {
   margin: 0;
@@ -682,6 +714,76 @@ mark {
   margin: 4px 0 0;
   font-size: 13px;
   font-weight: 700;
+}
+
+/* Trade-off chart */
+.tradeoff-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tradeoff {
+  margin: 6px 0 0;
+}
+
+.tradeoff svg {
+  display: block;
+  overflow: visible;
+}
+
+.tradeoff figcaption {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tradeoff-grid {
+  stroke: var(--line);
+}
+
+.tradeoff-axis {
+  stroke: var(--muted);
+}
+
+.tradeoff-tick {
+  fill: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tradeoff-label {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tradeoff-filtered {
+  fill: #fff;
+  stroke: #9aa0a6;
+  stroke-width: 1.5;
+}
+
+.tradeoff-dot {
+  cursor: pointer;
+  outline: none;
+}
+
+.tradeoff-dot circle:not(.tradeoff-ring) {
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.tradeoff-dot:hover circle:not(.tradeoff-ring),
+.tradeoff-dot:focus-visible circle:not(.tradeoff-ring) {
+  stroke: var(--ink);
+  stroke-width: 2.5;
+}
+
+.tradeoff-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
 }
 
 .filtered {

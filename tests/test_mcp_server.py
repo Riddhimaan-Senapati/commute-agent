@@ -1,10 +1,15 @@
 import asyncio
+from dataclasses import replace
+from datetime import datetime
 
+import httpx
 import pytest
+from shapely.geometry import box
 
-from commute_agent import mcp_server
+from commute_agent import mcp_server, planner
 from commute_agent.mcp_server import SessionState, load_trips
 from commute_agent.models import PlanResult, Point, PreferenceWeights
+from commute_agent.preferences import order_routes
 
 
 def call(name: str, arguments: dict):
@@ -84,6 +89,42 @@ def test_record_choice_then_clear_restores_equal_weights(server: SessionState) -
     assert cleared.weights == {o: 0.25 for o in cleared.weights}
 
 
+def test_sessions_get_their_own_weights_and_route_order(server: SessionState) -> None:
+    plan = PlanResult.model_validate(call("plan_trip", PLAN_ARGS))
+    low_co2 = min(plan.routes, key=lambda r: r.objectives.co2_g)
+    fastest = min(plan.routes, key=lambda r: r.objectives.time_min)
+    for _ in range(5):
+        call(
+            "record_choice", {"query_id": plan.query_id, "route_id": low_co2.id, "session_id": "a"}
+        )
+        call(
+            "record_choice", {"query_id": plan.query_id, "route_id": fastest.id, "session_id": "b"}
+        )
+
+    weights_a = PreferenceWeights.model_validate(call("get_preferences", {"session_id": "a"}))
+    weights_b = PreferenceWeights.model_validate(call("get_preferences", {"session_id": "b"}))
+    assert weights_a.weights["co2_g"] > weights_a.weights["time_min"]
+    assert weights_b.weights["time_min"] > weights_b.weights["co2_g"]
+    assert call("get_preferences", {})["n_choices"] == 0
+
+    plan_a = PlanResult.model_validate(call("plan_trip", {**PLAN_ARGS, "session_id": "a"}))
+    plan_b = PlanResult.model_validate(call("plan_trip", {**PLAN_ARGS, "session_id": "b"}))
+    shared = PlanResult.model_validate(call("plan_trip", PLAN_ARGS))
+    assert plan_a.preference == weights_a
+    assert plan_b.preference == weights_b
+    assert shared.preference.insufficient_data is True
+    assert [r.id for r in plan_a.routes] == [
+        r.id for r in order_routes(list(reversed(plan_a.routes)), weights_a)
+    ]
+    assert [r.id for r in plan_b.routes] == [
+        r.id for r in order_routes(list(reversed(plan_b.routes)), weights_b)
+    ]
+
+    cleared = call("clear_preferences", {"session_id": "a"})
+    assert cleared["n_choices"] == 0
+    assert call("get_preferences", {"session_id": "b"})["n_choices"] == 5
+
+
 @pytest.mark.parametrize("value", [None, "", "  ", "null", "NULL", "None"])
 def test_empty_or_null_departure_means_default(value) -> None:
     assert mcp_server.parse_depart_at(value) is None
@@ -125,3 +166,93 @@ def test_points_far_from_every_showcase_trip_do_not_match() -> None:
         )
         is None
     )
+
+
+def record_transit_lookups(monkeypatch: pytest.MonkeyPatch) -> list[datetime]:
+    """Record the departure of every transit lookup; every lookup reports 'not cached'."""
+    seen: list[datetime] = []
+
+    def fetch(origin, destination, depart_at, *, live, access="walk", **_options):
+        if access == "walk":  # bike-access lookups use the same departure
+            seen.append(depart_at)
+        return None, "transit not cached for this trip"
+
+    monkeypatch.setattr(planner, "fetch_itineraries", fetch)
+    return seen
+
+
+def widen_boundary(server: SessionState, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The fixture boundary is a small box; the showcase trips lie outside it."""
+    wide = replace(server.ctx, boundary=box(-72.0, 42.0, -70.5, 43.0))
+    monkeypatch.setattr(server, "ctx", wide)
+
+
+def showcase_args(trip) -> dict:
+    return {
+        **PLAN_ARGS,
+        "origin_lat": trip.origin.lat,
+        "origin_lon": trip.origin.lon,
+        "destination_lat": trip.destination.lat,
+        "destination_lon": trip.destination.lon,
+    }
+
+
+def test_chosen_departure_reaches_fetch_itineraries(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen = record_transit_lookups(monkeypatch)
+    chosen = datetime.fromisoformat("2026-10-27T17:30:00-04:00")
+    plan = PlanResult.model_validate(
+        call("plan_trip", {**PLAN_ARGS, "depart_at": chosen.isoformat()})
+    )
+    assert seen == [chosen]
+    assert plan.depart_at == chosen
+
+
+def test_chosen_departure_near_a_showcase_trip_keeps_the_chosen_time(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen = record_transit_lookups(monkeypatch)
+    widen_boundary(server, monkeypatch)
+    trip = load_trips()[0]
+    chosen = "2026-10-27T17:30:00-04:00"
+    plan = PlanResult.model_validate(
+        call("plan_trip", {**showcase_args(trip), "depart_at": chosen})
+    )
+    assert seen == [datetime.fromisoformat(chosen)]
+    assert plan.notes[0].startswith("Matched showcase trip")
+    assert "fixed demo departure" not in plan.notes[0]
+
+
+def test_no_departure_near_a_showcase_trip_uses_its_fixed_departure(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen = record_transit_lookups(monkeypatch)
+    widen_boundary(server, monkeypatch)
+    trip = load_trips()[0]
+    plan = PlanResult.model_validate(call("plan_trip", {**showcase_args(trip), "depart_at": None}))
+    assert seen == [mcp_server.showcase_departure(trip)]
+    assert plan.notes[0].startswith("Planned as showcase trip")
+    assert "fixed demo departure" in plan.notes[0]
+
+
+def test_mbta_live_is_selectable_offline(server: SessionState) -> None:
+    sources = call("set_alert_source", {"name": "MBTA live"})
+    assert sources["active"] == "MBTA live"
+    assert "MBTA live" in sources["sources"]
+
+
+def test_mbta_live_with_a_failed_fetch_gives_no_alerts_and_a_note(
+    server: SessionState, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def fail(source, *, live, snapshot_dir):
+        raise httpx.ConnectError("MBTA is unreachable")
+
+    monkeypatch.setattr(mcp_server, "load_alerts", fail)
+    plan = PlanResult.model_validate(call("plan_trip", {**PLAN_ARGS, "alert_source": "MBTA live"}))
+    assert plan.alert_source == "MBTA live"
+    assert plan.alert_note == mcp_server.MBTA_UNAVAILABLE_NOTE
+    assert plan.routes
+    view = call("get_active_alerts", {"alert_source": "MBTA live"})
+    assert view["alerts"] == []
+    assert view["note"] == mcp_server.MBTA_UNAVAILABLE_NOTE

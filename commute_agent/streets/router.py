@@ -13,7 +13,9 @@ tree. Node ids survive projection.
 import json
 import math
 import weakref
+from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import geopandas as gpd
@@ -28,6 +30,7 @@ from shapely.geometry import Point as ShapelyPoint
 from commute_agent import routes
 from commute_agent.emissions import co2_source, leg_co2_g
 from commute_agent.models import (
+    DockCounts,
     EmissionFactor,
     Leg,
     LegMode,
@@ -37,6 +40,7 @@ from commute_agent.models import (
     RouteOption,
 )
 from commute_agent.paths import PROCESSED
+from commute_agent.traffic import TrafficBucket, TrafficFactors, free_flow_factors
 
 WALK_KPH = 4.8
 BIKE_KPH = 15.0
@@ -46,7 +50,7 @@ SPEED_SOURCE = {
     "walk": "Assumed walking speed 4.8 km/h",
     "bike": "Assumed cycling speed 15 km/h",
     "bluebikes": "Assumed Bluebikes speed 13 km/h plus walking 4.8 km/h to and from stations",
-    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic",
+    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class",
 }
 DRIVE_TIME_SOURCE = SPEED_SOURCE["drive"]
 
@@ -84,6 +88,7 @@ def load_street_graphs(processed: Path = PROCESSED) -> StreetGraphs:
     for G in (walk, bike, drive):
         _projected(G)  # pay the projection cost at load, not on the first plan
     _edge_index(walk)  # score_walk_coords queries it on every transit plan
+    _edge_index(bike)  # score_bike_coords queries it on every bike-access transit plan
     return StreetGraphs(
         walk=walk, bike=bike, drive=drive, stations=stations, crash_source=crash_source
     )
@@ -94,8 +99,16 @@ def street_routes(
     factors: dict[LegMode, EmissionFactor],
     origin: Point,
     destination: Point,
+    depart_at: datetime | None = None,
+    traffic: TrafficFactors | None = None,
+    availability: Mapping[str, DockCounts] | None = None,
 ) -> tuple[list[RouteOption], dict[RouteKind, str]]:
-    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons."""
+    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons.
+
+    Only drive uses ``depart_at``: its free-flow time is multiplied by the traffic factor for
+    that departure. Without ``depart_at`` the drive time stays free-flow. ``availability`` is
+    live Bluebikes counts by station id. None means unknown, and the Bluebikes candidate then
+    uses the nearest stations regardless of their counts."""
     options: list[RouteOption] = []
     omitted: dict[RouteKind, str] = {}
 
@@ -137,15 +150,20 @@ def street_routes(
                 )
             )
 
+    bucket = None
+    if depart_at is not None:
+        bucket = (traffic or free_flow_factors()).factor_for(depart_at)
     drive_option, drive_reason = _drive_route(
-        graphs.drive, origin, destination, factors, graphs.crash_source
+        graphs.drive, origin, destination, factors, graphs.crash_source, bucket
     )
     if drive_option is not None:
         options.append(drive_option)
     else:
         omitted["drive"] = drive_reason
 
-    bluebikes_option, bb_reason = _bluebikes_route(graphs, origin, destination, factors)
+    bluebikes_option, bb_reason = _bluebikes_route(
+        graphs, origin, destination, factors, availability
+    )
     if bluebikes_option is not None:
         options.append(bluebikes_option)
     else:
@@ -157,11 +175,25 @@ def street_routes(
 def score_walk_coords(
     G_walk: nx.MultiDiGraph, coords: list[tuple[float, float]]
 ) -> tuple[float, dict[RiskBasis, float]]:
-    """Crash risk and metres per basis for an arbitrary walk polyline, used for OTP walk legs.
+    """Crash risk and metres per basis for an arbitrary walk polyline, used for OTP walk legs."""
+    return _score_coords(G_walk, coords)
 
-    For each consecutive coordinate pair, take the midpoint, find the nearest walk edge in one
-    vectorized nearest_edges call, and add edge risk * min(1, segment_m / edge_length).
+
+def score_bike_coords(
+    G_bike: nx.MultiDiGraph, coords: list[tuple[float, float]]
+) -> tuple[float, dict[RiskBasis, float]]:
+    """Crash risk and metres per basis for an arbitrary bike polyline, used for OTP bike legs.
+
+    Scored on the bike graph the same way as walk legs are scored on the walk graph.
     """
+    return _score_coords(G_bike, coords)
+
+
+def _score_coords(
+    G: nx.MultiDiGraph, coords: list[tuple[float, float]]
+) -> tuple[float, dict[RiskBasis, float]]:
+    """For each consecutive coordinate pair, take the midpoint, find the nearest edge in one
+    vectorized nearest_edges call, and add edge risk * min(1, segment_m / edge_length)."""
     risk_basis_m: dict[RiskBasis, float] = {}
     if len(coords) < 2:
         return 0.0, risk_basis_m
@@ -175,12 +207,12 @@ def score_walk_coords(
         seg_m.append(float(ox.distance.great_circle(lat1, lon1, lat2, lon2)))
 
     xs, ys = _project_points(seg_lon_mid, seg_lat_mid)
-    edges = _nearest_edges(G_walk, xs, ys)
+    edges = _nearest_edges(G, xs, ys)
 
     total_risk = 0.0
     for edge, segment_m in zip(edges, seg_m, strict=True):
         key = tuple(int(c) for c in edge)
-        data = G_walk.edges[key]
+        data = G.edges[key]
         edge_length = float(data["length"])
         frac = min(1.0, segment_m / edge_length) if edge_length > 0 else 0.0
         total_risk += float(data["risk"]) * frac
@@ -411,12 +443,23 @@ def _build_option(
     )
 
 
+def _drive_time_source(bucket: TrafficBucket | None) -> str:
+    """Drive time source: free-flow, or the bucket, factor, and source of the multiplier."""
+    if bucket is None:
+        return f"{SPEED_SOURCE['drive']}; no departure time, so no traffic factor applied"
+    return (
+        f"{SPEED_SOURCE['drive']}; times multiplied by traffic factor {bucket.factor.value:g} "
+        f"for {bucket.day_type} {bucket.label} ({bucket.factor.source})"
+    )
+
+
 def _drive_route(
     G: nx.MultiDiGraph,
     origin: Point,
     destination: Point,
     factors: dict[LegMode, EmissionFactor],
     crash_source: str,
+    bucket: TrafficBucket | None = None,
 ) -> tuple[RouteOption | None, str]:
     s, t = _snap_nodes(G, origin, destination)
     node_path = ox.routing.shortest_path(G, s, t, weight="travel_time")
@@ -424,7 +467,8 @@ def _drive_route(
         return None, "no path"
     edges = _drive_edges(G, node_path)
     distance_m = sum(_edge_len(G.edges[e]) for e in edges)
-    duration_min = sum(float(G.edges[e]["travel_time"]) for e in edges) / 60
+    multiplier = bucket.factor.value if bucket is not None else 1.0
+    duration_min = sum(float(G.edges[e]["travel_time"]) for e in edges) / 60 * multiplier
     leg = Leg(
         mode="drive",
         coords=_edge_coords(G, edges),
@@ -439,7 +483,7 @@ def _drive_route(
         kind="drive",
         summary="Drive",
         legs=[leg],
-        time_source=SPEED_SOURCE["drive"],
+        time_source=_drive_time_source(bucket),
         co2_source=co2_source(factors, ["drive"]),
         crash_source=crash_source,
     )
@@ -454,12 +498,38 @@ def _drive_edges(G: nx.MultiDiGraph, node_path: list[int]) -> list[tuple[int, in
     return edges
 
 
-def _nearest_station(stations: pd.DataFrame, point: Point) -> int:
-    """Index of the station nearest to ``point`` by straight-line distance."""
+def _nearest_station(
+    stations: pd.DataFrame, point: Point, allowed: np.ndarray | None
+) -> int | None:
+    """Index of the station nearest to ``point`` by straight-line distance, limited to
+    ``allowed`` rows when given. None when no row is allowed."""
     dlat = stations["lat"].to_numpy(dtype=float) - point.lat
     dlon = stations["lon"].to_numpy(dtype=float) - point.lon
     d2 = dlat**2 + dlon**2
+    if allowed is not None:
+        if not allowed.any():
+            return None
+        d2 = np.where(allowed, d2, np.inf)
     return int(np.argmin(d2))
+
+
+def _allowed_stations(
+    stations: pd.DataFrame, availability: Mapping[str, DockCounts] | None, start: bool
+) -> np.ndarray | None:
+    """Rows usable as a start (bikes out, renting) or end (docks free, returning).
+    None when availability is unknown. A station missing from the feed is not usable."""
+    if availability is None:
+        return None
+    allowed = []
+    for station_id in stations["station_id"].astype(str):
+        counts = availability.get(station_id)
+        if counts is None:
+            allowed.append(False)
+        elif start:
+            allowed.append(counts.bikes > 0 and counts.renting)
+        else:
+            allowed.append(counts.docks > 0 and counts.returning)
+    return np.array(allowed, dtype=bool)
 
 
 def _bluebikes_route(
@@ -467,13 +537,22 @@ def _bluebikes_route(
     origin: Point,
     destination: Point,
     factors: dict[LegMode, EmissionFactor],
+    availability: Mapping[str, DockCounts] | None = None,
 ) -> tuple[RouteOption | None, str]:
     stations = graphs.stations
     if stations is None or len(stations) == 0:
         return None, "no path"
 
-    start_idx = _nearest_station(stations, origin)
-    end_idx = _nearest_station(stations, destination)
+    start_idx = _nearest_station(
+        stations, origin, _allowed_stations(stations, availability, start=True)
+    )
+    if start_idx is None:
+        return None, "no station with bikes available"
+    end_idx = _nearest_station(
+        stations, destination, _allowed_stations(stations, availability, start=False)
+    )
+    if end_idx is None:
+        return None, "no station with docks available"
     start = stations.iloc[start_idx]
     end = stations.iloc[end_idx]
     if start_idx == end_idx:
@@ -499,12 +578,19 @@ def _bluebikes_route(
         _build_leg(graphs.walk, "walk", walk_out_edges, factors),
     ]
     summary = f"Bluebikes from {start['name']} to {end['name']}"
+    time_source = SPEED_SOURCE["bluebikes"]
+    if availability is not None:
+        start_counts = availability[str(start["station_id"])]
+        end_counts = availability[str(end["station_id"])]
+        time_source += (
+            f"; live GBFS at start {start_counts.bikes} bikes, at end {end_counts.docks} docks"
+        )
     option = routes.assemble_route(
         route_id="bluebikes-1",
         kind="bluebikes",
         summary=summary,
         legs=legs,
-        time_source=SPEED_SOURCE["bluebikes"],
+        time_source=time_source,
         co2_source=co2_source(factors, ["walk", "bluebikes"]),
         crash_source=graphs.crash_source,
     )
@@ -521,4 +607,5 @@ __all__ = [
     "load_street_graphs",
     "street_routes",
     "score_walk_coords",
+    "score_bike_coords",
 ]

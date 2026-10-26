@@ -76,7 +76,7 @@ Plans and choices live in the MCP subprocess. The REST handlers call MCP tools f
 
 1. `planner.plan_trip` checks both points against the Boston boundary.
 2. `streets.router.street_routes` returns walk, bike, bluebikes, and drive candidates.
-3. `transit.otp.fetch_itineraries` returns a raw OTP response from cache (offline) or OTP (live). `transit.otp.transit_routes` converts it to candidates and scores each walk leg for crash risk.
+3. `transit.otp.fetch_itineraries` returns a raw OTP response from cache (offline) or OTP (live). `transit.otp.transit_routes` converts it to candidates and scores each walk leg for crash risk. A second request, `fetch_itineraries(..., access="bike")`, asks for bike-access itineraries (`PLAN_QUERY_BIKE`, `BICYCLE` for access, egress and transfer). Its cache key carries `;access=bike`, so walk-access keys are unchanged. `transit_routes` scores its bike legs with `score_bike_coords` on the bike graph and labels them "Bike" in the route summary, e.g. "Bike, then Red Line". Offline, a missing bike entry omits these routes without an omit reason.
 4. `transit.alerts.apply_disruptions` sets disruption risk on transit legs from the active alert source.
 5. `pareto.pareto_front` filters. `pareto.assign_labels` labels. `pareto.tradeoff` compares each member with the fastest.
 6. `preferences.order_routes` orders members by the current weights.
@@ -88,6 +88,7 @@ Plans and choices live in the MCP subprocess. The REST handlers call MCP tools f
 |---|---|---|
 | Transit | `data/cache/otp/<key>.json` | POST to `http://localhost:8080/otp/gtfs/v1`, then write the cache |
 | Alerts `live` source | Disabled | GET `https://api-v3.mbta.com/alerts?filter[route_type]=0,1,3` |
+| Alerts `MBTA live` source | Selectable; same GET, cached 60 s; a failed fetch gives no alerts and a note (`PlanResult.alert_note`) | Same as offline |
 | Map basemap | `data/processed/basemap.geojson` | OSM tiles plus the same basemap |
 | LLM provider | Used, unless the model is local (for example Ollama) | Used |
 
@@ -491,6 +492,25 @@ commuter_rail: {value: null, unit: g_per_passenger_km, source: ""}
 ferry:         {value: null, unit: g_per_passenger_km, source: ""}
 ```
 
+### WS6. Traffic factors (`commute_agent/traffic.py`)
+
+`data/traffic_factors.yaml` multiplies free-flow drive time by a factor per day type and hour bucket (America/New_York local time). Buckets per day type: `0-6`, `6-7`, `7-9`, `9-15`, `15-16`, `16-19`, `19-24`. Each bucket has a `value` (a number at least 1.0) and a `source`. A bucket with `source: "needs a source"` must have `value: 1.0`, so no unsourced number is ever applied.
+
+```python
+class TrafficFactorsError(Exception): ...
+
+@dataclass(frozen=True)
+class TrafficFactors:
+    buckets: tuple[TrafficBucket, ...]
+    note: str | None = None
+    def factor_for(self, depart_at: datetime) -> TrafficBucket: ...  # weekend = Sat/Sun
+
+def load_traffic_factors(path: Path = TRAFFIC_FACTORS) -> TrafficFactors: ...  # missing file: 1.0 everywhere with a note
+def free_flow_factors(note: str | None = None) -> TrafficFactors: ...
+```
+
+`load_traffic_factors` raises `TrafficFactorsError` naming the path and each bad day type, bucket and field, including gaps or overlaps in the 0-24 coverage. `street_routes` takes `depart_at` and `traffic` and applies the factor to drive time only. Its time source names the day type, bucket, factor and source. The planner's drive note changes to "Drive time uses a time-of-day traffic factor (...)" only when the departure's factor is not 1.0. `data/traffic_factors.example.yaml` gives the shape with null values.
+
 ### WS1. Showcase trips (`data/showcase_trips.yaml`)
 
 Coordinates are starting values. The WS1 test asserts each point is inside `boston_boundary.geojson` once that file exists (skipped on fixtures only).
@@ -638,14 +658,17 @@ class TooFewCounters(Exception): ...
 
 Bike exposure. Edges with a non-zero proxy get `scale * proxy` and basis `bluebikes_proxy`. All other covered edges get `road_class_prior` with basis `road_class_prior`. Calibration uses only bike counters whose matched edge has a non-zero proxy. `build_risk` raises `TooFewCounters` when fewer than `MIN_MATCHED_COUNTERS` match.
 
-Walk exposure. Edges matched to a `ped` counter get its `peak_hour_volume` and basis `ped_counter`. All others get the prior. The walk prior has few measured edges, so most walk edges fall back to the global median. The Unknown_Exposure_Share shows this to the user.
+Walk exposure. Edges matched to a `ped` counter get its `peak_hour_volume` (per-edge mean) and basis `ped_counter`. All others get the prior. The walk prior has few measured edges, so most walk edges fall back to the global median. The Unknown_Exposure_Share shows this to the user.
+
+Walk station term (`commute_agent/streets/exposure.py`, feature 10). `station_entry_term` gives each edge midpoint the sum over MBTA stations within `STATION_CATCHMENT_M` (804.7 m, a half mile) of `entries_per_day * (1 - distance / STATION_CATCHMENT_M)`. Entries per day are 2025 gated entries from `commute_agent/ingest/ridership.py` (`station_entries.parquet`). `fit_linear(X, observed)` is least squares through the origin with one or more columns. `_walk_calibration` fits the matched ped counters twice: the leave-one-out road-class prior alone (`r_squared_before`), and the prior plus the station term (`r_squared_after`). The decision uses adjusted R² and requires both coefficients to be non-negative. `build_risk` uses the two-term fit for unmeasured walk edges only when `USE_STATION_ENTRIES` is True. It is False unless the decision adopts the term.
 
 Edges outside the Crash_Coverage_Area get basis `outside_crash_coverage` regardless of exposure source.
 
-`exposure_calibration.json`:
+`exposure_calibration.json` (bike keys at the top level, walk under `walk`):
 
 ```json
-{"scale": 0.0, "r_squared": 0.0, "matched": {"cambridge_citywide": 0, "somerville": 0, "numina": 0}, "unmatched_over_30m": 0}
+{"scale": 0.0, "r_squared": 0.0, "matched": {"cambridge_citywide": 0, "somerville": 0, "numina": 0}, "unmatched_over_30m": 0,
+ "walk": {"matched_edges": 0, "station_catchment_m": 804.7, "station_entries_available": true, "r_squared_before": 0.0, "r_squared_after": 0.0, "adjusted_r_squared_before": 0.0, "adjusted_r_squared_after": 0.0, "coefficients": {"road_class_prior": 0.0, "station_entries_per_day": 0.0}, "adopted": false, "decision": "", "station_entries_used": false}}
 ```
 
 Expected runtime of `bluebikes_proxy` is 516 single-source Dijkstra calls on the bike graph. Budget 30 minutes. If it runs longer, the owner reports the measured time to the coordinator before adding parallelism.
@@ -661,7 +684,7 @@ SPEED_SOURCE = {
     "walk": "Assumed walking speed 4.8 km/h",
     "bike": "Assumed cycling speed 15 km/h",
     "bluebikes": "Assumed Bluebikes speed 13 km/h plus walking 4.8 km/h to and from stations",
-    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class; ignores traffic",
+    "drive": "OSMnx free-flow speeds from OSM maxspeed, imputed by road class",
 }
 
 @dataclass(frozen=True)
@@ -675,8 +698,11 @@ class StreetGraphs:
 def load_street_graphs(processed: Path = PROCESSED) -> StreetGraphs: ...
 
 def street_routes(graphs: StreetGraphs, factors: dict[LegMode, EmissionFactor],
-                  origin: Point, destination: Point) -> tuple[list[RouteOption], dict[RouteKind, str]]:
-    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons."""
+                  origin: Point, destination: Point, depart_at: datetime | None = None,
+                  traffic: TrafficFactors | None = None) -> tuple[list[RouteOption], dict[RouteKind, str]]:
+    """Candidates for walk, bike, bluebikes, drive, and omitted kinds with reasons.
+    Only drive uses depart_at: its free-flow time is multiplied by the traffic factor for that
+    departure (see WS6). Without depart_at, drive time stays free-flow."""
 
 def score_walk_coords(G_walk: nx.MultiDiGraph, coords: list[tuple[float, float]]) -> tuple[float, dict[RiskBasis, float]]:
     """Crash risk and metres per basis for an arbitrary walk polyline, used for OTP walk legs.
@@ -694,11 +720,13 @@ Search for walk, bike, and the bike part of bluebikes.
 
 Drive uses `ox.routing.shortest_path(G_drive, s, t, weight="travel_time")` and one route.
 
-Bluebikes picks the station nearest the origin and the station nearest the destination by straight-line distance. When both are the same station, bluebikes is omitted with reason `same station at both ends`. Its walk legs use the fastest walk path. Its bike leg runs the same λ sweep on the bike graph with mode `bluebikes`. The summary names both stations. `PlanResult.notes` carries "Bluebikes dock availability is not checked."
+Bluebikes picks the station nearest the origin and the station nearest the destination by straight-line distance. When both are the same station, bluebikes is omitted with reason `same station at both ends`. Its walk legs use the fastest walk path. Its bike leg runs the same λ sweep on the bike graph with mode `bluebikes`. The summary names both stations.
+
+Live availability (`commute_agent/bluebikes_live.py`) applies only when `COMMUTE_BLUEBIKES_LIVE=1`. `fetch_availability` discovers the GBFS `station_status` feed from `https://gbfs.bluebikes.com/gbfs/gbfs.json` (English feed list; the feed itself is served from `gbfs.lyft.com`), with a 5 s timeout per request and a 60 s module cache that also caches failures. It returns counts keyed by both the GBFS `station_id` and `legacy_id`, because the trip data keys stations by legacy id. When counts are known, the start station must have `num_bikes_available > 0` and `is_renting`, the end station must have `num_docks_available > 0` and `is_returning`, and a station missing from the feed is not used. Selection stays nearest-first among eligible stations, and the counts appear in the `time_min` source. When no station is eligible, bluebikes is omitted with reason `no station with bikes available` or `no station with docks available`. When availability is unknown (flag off, offline, or failure), selection is unchanged. `PlanResult.notes` carries `BLUEBIKES_UNCHECKED_NOTE` only when availability was not checked for that plan.
 
 Route ids are `walk-1`, `walk-2`, and so on, in the order the sweep produced them. Summaries are `Walk, fastest`, `Walk, safer variant 1`, `Bike, fastest`, `Drive`, and `Bluebikes from <station> to <station>`.
 
-`streets/__init__.py` re-exports `StreetGraphs`, `load_street_graphs`, `street_routes`, and `score_walk_coords`.
+`streets/__init__.py` re-exports `StreetGraphs`, `load_street_graphs`, `street_routes`, `score_walk_coords`, and `score_bike_coords`. The last scores an OTP bike leg polyline on the bike graph.
 
 ### WS4. OTP client and cache (`commute_agent/transit/otp.py`)
 
@@ -723,10 +751,10 @@ def fetch_itineraries(origin: Point, destination: Point, depart_at: datetime, *,
 
 def transit_routes(raw: dict, graphs: StreetGraphs, factors: dict[LegMode, EmissionFactor]) -> list[RouteOption]:
     """One RouteOption per itinerary edge, ids transit-1..n. Drops itineraries with no transit leg.
-    Walk legs get crash risk from score_walk_coords. Summary joins route names, e.g. 'Red Line, then Silver Line SL4'."""
+    Walk legs get crash risk from score_walk_coords and bike legs from score_bike_coords. Summary joins route names, e.g. 'Red Line, then Silver Line SL4', with 'Bike' for a bike leg, e.g. 'Bike, then Red Line'."""
 ```
 
-`PLAN_QUERY` (variables `from`, `to`, `when`):
+`PLAN_QUERY` (variables `from`, `to`, `when`). `plan_query(excluding, step_free)` adds one `preferences` input when needed: `transit.filters` exclude for `excluding`, and `accessibility: {wheelchair: {enabled: true}}` for `step_free` (OTP 2.10 `PlanPreferencesInput.accessibility`, checked against a local 2.10.0 server). Step-free requests carry a `;step-free` suffix in the cache time part; default keys are unchanged.
 
 ```graphql
 query Plan($from: PlanCoordinateInput!, $to: PlanCoordinateInput!, $when: OffsetDateTime!) {
@@ -780,8 +808,9 @@ EFFECT_SCORES: dict[str, float] = {
 }
 # DELAY scores severity / 10, capped at 1.0. It is handled in effect_score, not the table.
 
-def effect_score(alert: Alert) -> float | None:
-    """EFFECT_SCORES[effect], severity / 10 for DELAY, None when unmapped."""
+def effect_score(alert: Alert, *, step_free: bool = False) -> float | None:
+    """EFFECT_SCORES[effect], severity / 10 for DELAY, None when unmapped. With step_free,
+    an ELEVATOR_CLOSURE (STEP_FREE_EFFECTS) scores STEP_FREE_SCORE (1.0); off, it keeps its table score 0.2."""
 
 def parse_mbta_alerts(payload: dict) -> list[Alert]:
     """Parse the V3 JSON:API document. Boundary validation lives here."""
@@ -799,10 +828,10 @@ def entity_matches(entity: AlertEntity, transit: TransitRef) -> bool:
 
 def is_active(alert: Alert, at: datetime) -> bool: ...
 
-def apply_disruptions(routes: list[RouteOption], alerts: list[Alert], at: datetime) -> tuple[list[RouteOption], list[AlertRef]]:
+def apply_disruptions(routes: list[RouteOption], alerts: list[Alert], at: datetime, *, step_free: bool = False) -> tuple[list[RouteOption], list[AlertRef]]:
     """For each transit leg, collect active alerts with any matching entity. Leg disruption_risk is the
     max effect_score among scored alerts (0.0 when none). Unscored matching alerts go to the second
-    return value once each. Routes are rebuilt with routes.with_disruption."""
+    return value once each. Routes are rebuilt with routes.with_disruption. step_free is passed to effect_score."""
 
 def record_snapshot(label: str, snapshot_dir: Path = ALERT_SNAPSHOTS) -> Path:
     """CLI: python -m commute_agent.transit.alerts record <label>. Writes <slug(label)>.json with synthetic false."""
@@ -859,10 +888,11 @@ Dominance with tolerance is not transitive. Step 2 compares each candidate again
 DEFAULT_OFFLINE_DEPARTURE = ("tuesday", "08:15")
 FIXED_NOTES = [
     "Crash risk covers walking and biking segments only. Driving and transit vehicle crash risk is not modeled.",
-    "Drive time is free-flow and ignores traffic.",
-    "Bluebikes dock availability is not checked.",
+    "Drive time is free-flow and ignores traffic.",  # replaced by a traffic-factor note when the departure's factor is not 1.0
     "Disruption risk is a prototype index from MBTA alert effects, not an MBTA prediction.",
 ]
+# Appended to notes only when live Bluebikes counts were not checked for the plan.
+BLUEBIKES_UNCHECKED_NOTE = "Bluebikes dock availability is not checked."
 
 @dataclass(frozen=True)
 class PlannerContext:
@@ -901,12 +931,15 @@ MIN_CHOICES = 3
 L2_PENALTY = 0.1
 EQUAL_WEIGHTS: dict[Objective, float] = {o: 0.25 for o in OBJECTIVES}
 
-def record_choice(event: ChoiceEvent, db: Path = PREFERENCES_DB) -> None:
-    """SQLite table choices(id INTEGER PRIMARY KEY, query_id TEXT, chosen_at TEXT, payload TEXT).
-    payload is event.model_dump_json(). CREATE TABLE IF NOT EXISTS on every connect."""
+def record_choice(event: ChoiceEvent, db: Path = PREFERENCES_DB, session_id: str = "") -> None:
+    """SQLite table choices(id INTEGER PRIMARY KEY, session_id TEXT NOT NULL DEFAULT '',
+    query_id TEXT, chosen_at TEXT, payload TEXT). payload is event.model_dump_json().
+    CREATE TABLE IF NOT EXISTS on every connect. If session_id is missing (a database from
+    before sessions), ALTER TABLE adds it, so old rows belong to the shared "" session."""
 
-def load_choices(db: Path = PREFERENCES_DB) -> list[ChoiceEvent]: ...
-def clear_choices(db: Path = PREFERENCES_DB) -> None: ...
+def load_choices(db: Path = PREFERENCES_DB, session_id: str = "") -> list[ChoiceEvent]: ...
+def clear_choices(db: Path = PREFERENCES_DB, session_id: str = "") -> None:
+    """Deletes only that session's rows."""
 
 def normalize(vectors: list[Objectives]) -> np.ndarray:
     """Shape (n, 4). Divide each column by its max over the n vectors; a column whose max is 0 stays 0."""
@@ -921,8 +954,8 @@ def fit_weights(events: list[ChoiceEvent]) -> PreferenceWeights:
 def order_routes(routes: list[RouteOption], weights: PreferenceWeights) -> list[RouteOption]:
     """Sort by weighted sum of normalize([r.objectives ...]) rows, ties by (time_min, id). Same members."""
 
-def current_weights(db: Path = PREFERENCES_DB) -> PreferenceWeights:
-    """fit_weights(load_choices(db))."""
+def current_weights(db: Path = PREFERENCES_DB, session_id: str = "") -> PreferenceWeights:
+    """fit_weights(load_choices(db, session_id))."""
 ```
 
 ### WS7. MCP server (`commute_agent/mcp_server.py`)
@@ -1083,7 +1116,7 @@ The agent passes each step's observations text plus each user message as evidenc
 ```python
 IDENTITY_NOTICE = "Independent prototype. Not a City of Boston or MBTA service."
 
-def create_app(live: bool) -> FastAPI: ...
+def create_app(live: bool, tool_source=None, clock=time.monotonic) -> FastAPI: ...
 def main() -> None:
     """argparse --live, --model (sets COMMUTE_AGENT_MODEL), and --port (default 8000). Log 'No authentication. Local demo use only.'
     uvicorn.run(create_app(args.live), host='127.0.0.1', port=args.port)."""
@@ -1105,17 +1138,19 @@ def call_tool(app: FastAPI, name: str, **arguments) -> dict:
 |---|---|---|
 | `GET /api/status` | | `{"run_mode": "offline", "agent_model": "deepseek/deepseek-v4.1-flash-1017", "agent_available": true, "missing_model_keys": [], "notice": IDENTITY_NOTICE}` |
 | `GET /api/showcase-trips` | | `ShowcaseTrips` |
-| `POST /api/plan` | `{"origin": Point, "destination": Point, "depart_at": "ISO 8601" or null}` | `PlanResult`, planned with the session's alert source |
+| `POST /api/plan` | `{"origin": Point, "destination": Point, "depart_at": "ISO 8601 with offset" or null}` | `PlanResult`, planned with the session's alert source. Null uses the showcase departure when the points match a showcase trip. The page sends "Leave now" as the current Boston time |
 | `GET /api/alert-sources` | | `AlertSources` |
 | `POST /api/alert-source` | `{"name": str}` | `AlertSources`; sets the alert source for this `X-Session-Id` only (requests without the header share one session) |
 | `POST /api/choice` | `{"query_id": str, "route_id": str}` | `PreferenceWeights` |
 | `GET /api/preferences` | | `PreferenceWeights` |
 | `DELETE /api/preferences` | | `PreferenceWeights` |
-| `POST /api/chat` | `{"conversation_id": str or null, "message": str}` | `AgentReply`, or 503 `{"detail": "The agent model <id> needs <missing keys>."}` |
+| `POST /api/chat` | `{"conversation_id": str or null, "message": str}` | `AgentReply`, or 503 `{"detail": "The agent model <id> needs <missing keys>."}`, or 429 `{"detail": "Too many chat messages from this session. Try again in N s."}` (or "the service") with `Retry-After` |
 | `GET /basemap.geojson` | | file from `data/processed/` |
 | `GET /` and static | | `StaticFiles(directory=WEB, html=True)` mounted last |
 
 Request bodies are Pydantic models defined in `api.py`. They are HTTP boundary types, not shared contracts.
+
+Two guards apply to every request. `COMMUTE_ALLOWED_HOSTS` (comma-separated) is a middleware that returns 400 for a `Host` header whose name, without port, is not listed; unset allows all. Chat rate limits are sliding windows in memory, `CHAT_LIMIT_PER_SESSION = (5, 60)` and `CHAT_LIMIT_GLOBAL = (60, 60)`, checked before the model key. A `clock` argument to `create_app` lets tests move time.
 
 ### WS9. Web UI (`web/`)
 
@@ -1189,7 +1224,7 @@ Files: `eval/sample_pairs.py`, `eval/od_pairs.yaml`, `eval/alert_expectations.ya
 | Safety versus speed | For walk and bike separately, per trip: `100 * (fastest.crash_risk - safest.crash_risk) / fastest.crash_risk` and `safest.time_min - fastest.time_min`, over front members of that kind. Report median and IQR and n. Trips where the kind has one member count as 0 reduction. |
 | Alert response | For each expectation row, every transit route whose legs ride an affected line has the alert id and disruption above 0, every other route has disruption 0, and the front changed when `pareto_must_change`. |
 | Number grounding | Run each prompt through `run_turn` against a fresh MCP subprocess. Supported numbers over total numbers, reported for first drafts (before the one rewrite) and final replies. `eval.run --model a,b` repeats the agent metrics per model id and adds one column per model, so model swaps are compared on the same prompts. |
-| Identity | First reply of each conversation contains "independent prototype", from the fixed `IDENTITY_SENTENCE` the system prompt requires. |
+| Identity | First reply of each conversation contains "independent prototype". `run_turn` prepends the fixed `IDENTITY_SENTENCE` when the model omits it, so this passes on first replies by construction. |
 | Clarification | For ambiguous prompts, the final reply contains a question and no `plan_trip` call was made. |
 | Unknown exposure | Mean `unknown_exposure_share` over walk and bike front members. |
 

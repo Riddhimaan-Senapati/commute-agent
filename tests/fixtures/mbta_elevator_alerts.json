@@ -1,0 +1,178 @@
+{
+  "data": [
+    {
+      "type": "alert",
+      "id": "1038209",
+      "attributes": {
+        "active_period": [
+          {
+            "end": null,
+            "start": "2026-10-11T14:46:01-04:00"
+          }
+        ],
+        "cause": "MAINTENANCE",
+        "effect": "ELEVATOR_CLOSURE",
+        "header": "Wonderland Elevator 711 (Ocean Avenue to pedestrian plaza) is unavailable due to maintenance.",
+        "informed_entity": [
+          {
+            "stop": "15796",
+            "route_type": 3,
+            "route": "110",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "711"
+          },
+          {
+            "stop": "15797",
+            "route_type": 3,
+            "route": "110",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "711"
+          },
+          {
+            "stop": "15798",
+            "route_type": 3,
+            "route": "110",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "711"
+          },
+          {
+            "stop": "15799",
+            "route_type": 3,
+            "route": "110",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "711"
+          }
+        ],
+        "lifecycle": "ONGOING",
+        "severity": 3,
+        "timeframe": "ongoing",
+        "updated_at": "2026-10-11T14:46:01-04:00"
+      }
+    },
+    {
+      "type": "alert",
+      "id": "1040976",
+      "attributes": {
+        "active_period": [
+          {
+            "end": null,
+            "start": "2026-10-24T13:19:01-04:00"
+          }
+        ],
+        "cause": "MAINTENANCE",
+        "effect": "ELEVATOR_CLOSURE",
+        "header": "Haymarket Elevator 907 (Underpass to Oak Grove platform) is unavailable due to maintenance.",
+        "informed_entity": [
+          {
+            "stop": "70025",
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "907"
+          },
+          {
+            "stop": "70203",
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "907"
+          },
+          {
+            "stop": "70204",
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "907"
+          },
+          {
+            "stop": "place-haecl",
+            "route_type": 0,
+            "route": "Green-D",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "907"
+          }
+        ],
+        "lifecycle": "NEW",
+        "severity": 3,
+        "timeframe": null,
+        "updated_at": "2026-10-24T13:19:01-04:00"
+      }
+    },
+    {
+      "type": "alert",
+      "id": "1031518",
+      "attributes": {
+        "active_period": [
+          {
+            "end": "2026-12-02T03:00:00-05:00",
+            "start": "2026-09-22T03:00:00-04:00"
+          }
+        ],
+        "cause": "MAINTENANCE",
+        "effect": "ELEVATOR_CLOSURE",
+        "header": "Downtown Crossing Elevator 869 (Alewife platform to Summer Street Concourse) is unavailable due to maintenance through Tuesday, December 1.",
+        "informed_entity": [
+          {
+            "stop": "70078",
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "869"
+          },
+          {
+            "stop": "door-dwnxg-101arch",
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "869"
+          },
+          {
+            "stop": "door-dwnxg-macys",
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "869"
+          },
+          {
+            "stop": "door-dwnxg-rochebros",
+            "route_type": 1,
+            "route": "Red",
+            "activities": [
+              "USING_WHEELCHAIR"
+            ],
+            "facility": "869"
+          }
+        ],
+        "lifecycle": "ONGOING",
+        "severity": 3,
+        "timeframe": "through December 1",
+        "updated_at": "2026-10-12T11:54:37-04:00"
+      }
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  }
+}

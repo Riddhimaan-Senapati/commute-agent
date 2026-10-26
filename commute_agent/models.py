@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 RouteKind = Literal["walk", "bike", "bluebikes", "drive", "transit"]
 LegMode = Literal[
@@ -155,6 +155,7 @@ class PlanResult(BaseModel):
     preference: PreferenceWeights
     notes: list[str]  # fixed caveats, e.g. "Drive time is free-flow and ignores traffic."
     filtered: list[FilteredRoute] = []  # candidates outside the Pareto set; not shown to the agent
+    alert_note: str | None = None  # why the alert source gave no alerts, e.g. a failed MBTA fetch
 
 
 class AlertsView(BaseModel):
@@ -162,6 +163,7 @@ class AlertsView(BaseModel):
     synthetic: bool
     alert_clock: datetime | None
     alerts: list[AlertRef]
+    note: str | None = None
 
 
 class AlertSources(BaseModel):
@@ -173,6 +175,13 @@ class AlertSources(BaseModel):
 class EmissionFactor(BaseModel):
     value: float
     unit: Literal["g_per_passenger_km", "g_per_passenger_mile"]
+    source: str
+
+
+class TrafficFactor(BaseModel):
+    """Multiplier (>= 1.0) on free-flow drive time for one weekday or weekend hour bucket."""
+
+    value: float
     source: str
 
 
@@ -216,3 +225,14 @@ class AgentReply(BaseModel):
     unsupported_numbers: list[str]  # still unsupported after one rewrite; redacted in text
     first_draft_unsupported: list[str] = []  # flagged in the first draft, before the rewrite
     first_draft_numbers: int = 0  # distinct numbers in the first draft
+
+
+class DockCounts(BaseModel):
+    """Live counts for one Bluebikes station from the GBFS ``station_status`` feed."""
+
+    model_config = ConfigDict(frozen=True)
+
+    bikes: int
+    docks: int
+    renting: bool
+    returning: bool

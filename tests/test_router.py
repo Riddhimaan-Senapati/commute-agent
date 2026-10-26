@@ -180,3 +180,40 @@ def test_drive_route_cites_the_crash_source_label(fixture_graph):
     )
     drive = next(r for r in routes if r.kind == "drive")
     assert drive.sources["crash_risk"] == CRASH_SOURCE
+
+
+def test_drive_time_multiplied_by_departure_factor(fixture_graph):
+    from datetime import datetime
+
+    from commute_agent.models import TrafficFactor
+    from commute_agent.traffic import TrafficBucket, TrafficFactors
+
+    G = fixture_graph
+    origin, destination = _point(G, 0), _point(G, 8)
+    base, _ = street_routes(_graphs(G), _factors(), origin, destination)
+    free_flow = next(r for r in base if r.kind == "drive").legs[0].duration_min
+
+    factor = TrafficFactor(value=1.5, source="test source")
+    buckets = tuple(TrafficBucket(day, "0-24", 0, 24, factor) for day in ("weekday", "weekend"))
+    traffic = TrafficFactors(buckets=buckets)
+    routes, _ = street_routes(
+        _graphs(G),
+        _factors(),
+        origin,
+        destination,
+        depart_at=datetime(2026, 10, 27, 17, 0),
+        traffic=traffic,
+    )
+    drive = next(r for r in routes if r.kind == "drive")
+    assert drive.legs[0].duration_min == pytest.approx(free_flow * 1.5)
+    assert "traffic factor 1.5 for weekday 0-24 (test source)" in drive.sources["time_min"]
+    walk = next(r for r in routes if r.kind == "walk")
+    assert "traffic" not in walk.sources["time_min"]
+
+
+def test_drive_without_departure_stays_free_flow(fixture_graph):
+    routes, _ = street_routes(
+        _graphs(fixture_graph), _factors(), _point(fixture_graph, 0), _point(fixture_graph, 8)
+    )
+    drive = next(r for r in routes if r.kind == "drive")
+    assert "no departure time" in drive.sources["time_min"]

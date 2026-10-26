@@ -22,10 +22,14 @@ from commute_agent.paths import PROCESSED
 
 from .exposure import (
     MIN_MATCHED_COUNTERS,
+    STATION_CATCHMENT_M,
     TooFewCounters,
+    adjusted_r_squared,
     bluebikes_proxy,
     fit_calibration,
+    fit_linear,
     road_class_prior,
+    station_entry_term,
 )
 from .risk import RISK_SCALE, SHRINKAGE_K, SNAP_MAX_M, edge_risk, mean_crashes_per_km
 
@@ -43,6 +47,9 @@ EPSG_MA = "EPSG:26986"
 _CRASH_MODE = {"bike": "bike", "walk": "ped"}
 _COUNTER_MODE = {"bike": "bike", "walk": "ped"}
 _CALIBRATION_SOURCES = ("cambridge_citywide", "somerville", "numina")
+# Walk exposure uses the station-entries term only when this is True. Set from the
+# calibration decision in exposure_calibration.json ("walk"); False keeps the prior alone.
+USE_STATION_ENTRIES = False
 Edge = tuple[int, int, int]
 
 
@@ -172,9 +179,19 @@ def _bike_exposure(
 
 
 def _walk_exposure(
-    G: nx.MultiDiGraph, G_proj: nx.MultiDiGraph, edge_ids: list[Edge], processed: Path
-) -> tuple[np.ndarray, list[str]]:
-    """Pedestrian counter volumes where counted, road-class priors elsewhere."""
+    G: nx.MultiDiGraph,
+    G_proj: nx.MultiDiGraph,
+    edge_ids: list[Edge],
+    processed: Path,
+    use_station_entries: bool = USE_STATION_ENTRIES,
+) -> tuple[np.ndarray, list[str], dict]:
+    """Pedestrian counter volumes where counted, road-class priors elsewhere.
+
+    The calibration compares two predictors of the matched counter volumes: the
+    road-class prior (leave-one-out, so a counter does not predict itself) alone,
+    and that prior plus distance-decayed station entries. With ``use_station_entries``
+    the unmeasured edges use the two-term fit instead of the prior alone.
+    """
     index = {e: i for i, e in enumerate(edge_ids)}
     counters = _load_counters(processed, "walk")
     volume = np.zeros(len(edge_ids))
@@ -193,9 +210,103 @@ def _walk_exposure(
     prior = road_class_prior(highway, pd.Series(volume), pd.Series(measured_mask)).to_numpy(
         dtype=float
     )
-    exposure = np.where(measured_mask, volume, prior)
+
+    station_term = _station_term(G_proj, edge_ids, processed)
+    calibration, coef = _walk_calibration(highway, volume, measured_mask, station_term)
+    if use_station_entries and station_term is not None and coef is not None:
+        prior_with_stations = coef[0] * prior + coef[1] * station_term
+        exposure = np.where(measured_mask, volume, prior_with_stations)
+        calibration["station_entries_used"] = True
+    else:
+        exposure = np.where(measured_mask, volume, prior)
+        calibration["station_entries_used"] = False
     bases = ["ped_counter" if m else "road_class_prior" for m in measured_mask]
-    return exposure, bases
+    return exposure, bases, calibration
+
+
+def _station_term(
+    G_proj: nx.MultiDiGraph, edge_ids: list[Edge], processed: Path
+) -> np.ndarray | None:
+    """Distance-decayed station entries at each edge midpoint, or None when not built."""
+    path = processed / "station_entries.parquet"
+    if not path.exists():
+        return None
+    stations = pd.read_parquet(path)
+    xs, ys = _to_projected_xy(stations["lon"], stations["lat"])
+    mid_x = np.array([(G_proj.nodes[u]["x"] + G_proj.nodes[v]["x"]) / 2 for u, v, _ in edge_ids])
+    mid_y = np.array([(G_proj.nodes[u]["y"] + G_proj.nodes[v]["y"]) / 2 for u, v, _ in edge_ids])
+    return station_entry_term(
+        mid_x, mid_y, np.column_stack([xs, ys]), stations["entries_per_day"].to_numpy()
+    )
+
+
+def _walk_calibration(
+    highway: pd.Series,
+    volume: np.ndarray,
+    measured_mask: np.ndarray,
+    station_term: np.ndarray | None,
+) -> tuple[dict, np.ndarray | None]:
+    """Fit the walk calibration on matched ped counters and report both R² values.
+
+    Rows are the edges with a matched counter (per-edge mean volume, as in
+    ``_walk_exposure``). Returns the report for ``exposure_calibration.json`` and the
+    two-term coefficients for the build (None when the fit cannot run).
+    """
+    rows = np.flatnonzero(measured_mask)
+    n = len(rows)
+    report: dict = {
+        "matched_edges": n,
+        "station_catchment_m": STATION_CATCHMENT_M,
+        "station_entries_available": station_term is not None,
+    }
+    if n < MIN_MATCHED_COUNTERS or station_term is None:
+        report.update(
+            r_squared_before=None,
+            r_squared_after=None,
+            adopted=False,
+            decision=(
+                f"Not fitted: {n} walk edges have a ped counter (need {MIN_MATCHED_COUNTERS})"
+                if n < MIN_MATCHED_COUNTERS
+                else "Not fitted: station_entries.parquet is not built"
+            ),
+        )
+        return report, None
+
+    observed = volume[rows]
+    hw_rows = highway.iloc[rows].reset_index(drop=True)
+    vol_rows = pd.Series(observed)
+    # Leave-one-out road-class prior: each counter predicted without its own volume.
+    prior_loo = np.empty(n)
+    for k in range(n):
+        keep = np.ones(n, dtype=bool)
+        keep[k] = False
+        prior_loo[k] = road_class_prior(hw_rows, vol_rows, pd.Series(keep)).iloc[k]
+    station_rows = station_term[rows]
+
+    _, r2_before = fit_linear(prior_loo[:, None], observed)
+    coef, r2_after = fit_linear(np.column_stack([prior_loo, station_rows]), observed)
+    # A nested fit never lowers in-sample R², so the decision uses adjusted R² (one
+    # penalty per coefficient) and requires both coefficients to be non-negative.
+    adj_before = adjusted_r_squared(r2_before, n, 1)
+    adj_after = adjusted_r_squared(r2_after, n, 2)
+    adopted = bool(adj_after > adj_before and coef[0] >= 0 and coef[1] >= 0)
+    report.update(
+        r_squared_before=r2_before,
+        r_squared_after=r2_after,
+        adjusted_r_squared_before=adj_before,
+        adjusted_r_squared_after=adj_after,
+        coefficients={
+            "road_class_prior": float(coef[0]),
+            "station_entries_per_day": float(coef[1]),
+        },
+        adopted=adopted,
+        decision=(
+            "Adopted: adjusted R² rises and both coefficients are non-negative."
+            if adopted
+            else "Not adopted: adjusted R² does not rise with station entries."
+        ),
+    )
+    return report, coef
 
 
 def _stored_exposure(G: nx.MultiDiGraph, edge_ids: list[Edge]) -> tuple[np.ndarray, list[str]]:
@@ -205,11 +316,15 @@ def _stored_exposure(G: nx.MultiDiGraph, edge_ids: list[Edge]) -> tuple[np.ndarr
     return exposure, bases
 
 
-def build_risk(mode: Literal["walk", "bike"], processed: Path = PROCESSED) -> dict:
+def build_risk(
+    mode: Literal["walk", "bike"],
+    processed: Path = PROCESSED,
+    use_station_entries: bool = USE_STATION_ENTRIES,
+) -> dict:
     """Snap crashes and counters onto ``<mode>.graphml`` and write risk attributes.
 
-    Returns the ``risk_meta.json`` fragment for this mode. The bike fragment also
-    carries ``calibration`` for ``exposure_calibration.json``.
+    Returns the ``risk_meta.json`` fragment for this mode. The bike and walk fragments
+    carry ``calibration`` for ``exposure_calibration.json``.
     """
     crash_mode = _CRASH_MODE[mode]
     G = ox.load_graphml(
@@ -232,7 +347,9 @@ def build_risk(mode: Literal["walk", "bike"], processed: Path = PROCESSED) -> di
         if mode == "bike":
             exposure, bases, calibration = _bike_exposure(G, G_proj, edge_ids, processed)
         else:
-            exposure, bases = _walk_exposure(G, G_proj, edge_ids, processed)
+            exposure, bases, calibration = _walk_exposure(
+                G, G_proj, edge_ids, processed, use_station_entries
+            )
     else:
         exposure, bases = _stored_exposure(G, edge_ids)
     bases = [
@@ -301,7 +418,9 @@ def main(processed: Path = PROCESSED) -> int:
     }
     (processed / "risk_meta.json").write_text(json.dumps(risk_meta, indent=2) + "\n")
     if "calibration" in bike:
-        calibration = bike["calibration"]
+        calibration = {**bike["calibration"]}
+        if "calibration" in walk:
+            calibration["walk"] = walk["calibration"]
         (processed / "exposure_calibration.json").write_text(
             json.dumps(calibration, indent=2) + "\n"
         )

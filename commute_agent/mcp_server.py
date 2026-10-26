@@ -1,7 +1,9 @@
 """MCP tool server. Owns all planner state for one session: alert source, plans, and choices.
 
 plan_trip and get_active_alerts also take an alert_source argument, which the API uses to
-give each browser session its own source without changing the stored one."""
+give each browser session its own source without changing the stored one. plan_trip,
+record_choice, get_preferences and clear_preferences take a session_id that keys the
+stored choices; null means the shared "" session."""
 
 import sys
 import time
@@ -10,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
+import httpx
 import yaml
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
@@ -38,7 +41,8 @@ from commute_agent.models import (
 from commute_agent.pareto import tradeoff
 from commute_agent.paths import ALERT_SNAPSHOTS, PROCESSED, SHOWCASE_TRIPS
 from commute_agent.planner import PlannerContext
-from commute_agent.transit.alerts import effect_score, load_alerts
+from commute_agent.traffic import TrafficFactorsError
+from commute_agent.transit.alerts import MBTA_LIVE_SOURCE, effect_score, load_alerts
 from commute_agent.transit.alerts import list_alert_sources as alert_source_names
 
 LIVE_ALERT_TTL_S = 60.0
@@ -47,6 +51,7 @@ NO_DEPARTURE = {"", "null", "none"}
 WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 LIVE_SOURCE = "live"
 NO_ALERTS = "none"
+MBTA_UNAVAILABLE_NOTE = "MBTA live alerts could not be fetched, so no alerts were applied."
 
 mcp = FastMCP("pareto-commute")
 
@@ -59,7 +64,8 @@ class SessionState:
     alert_source: str = NO_ALERTS
     plans: dict[str, PlanResult] = field(default_factory=dict)
     plan_alerts: dict[str, dict[str, AlertRef]] = field(default_factory=dict)
-    live_alerts: tuple[float, list[Alert]] | None = None  # monotonic fetch time, alerts
+    # Monotonic fetch time, alerts, and the failure note (None when the fetch worked).
+    live_alerts: tuple[float, list[Alert], str | None] | None = None
 
 
 STATE: SessionState | None = None
@@ -71,16 +77,24 @@ def _state() -> SessionState:
     return STATE
 
 
-def _load_alerts_for_source(source: str) -> tuple[list[Alert], datetime | None]:
+def _load_alerts_for_source(source: str) -> tuple[list[Alert], datetime | None, str | None]:
+    """Alerts, their clock, and a note when a live fetch failed. Live fetches share a 60 s cache.
+    A failed MBTA fetch returns no alerts and the note; it is cached like a successful one."""
     state = _state()
-    if source != LIVE_SOURCE:
-        return load_alerts(source, live=False, snapshot_dir=ALERT_SNAPSHOTS)
+    if source not in (LIVE_SOURCE, MBTA_LIVE_SOURCE):
+        alerts, clock = load_alerts(source, live=False, snapshot_dir=ALERT_SNAPSHOTS)
+        return alerts, clock, None
     now = time.monotonic()
     if state.live_alerts and now - state.live_alerts[0] < LIVE_ALERT_TTL_S:
-        return state.live_alerts[1], None
-    alerts, clock = load_alerts(source, live=True, snapshot_dir=ALERT_SNAPSHOTS)
-    state.live_alerts = (now, alerts)
-    return alerts, clock
+        _, alerts, note = state.live_alerts
+        return alerts, None, note
+    try:
+        alerts, clock = load_alerts(source, live=True, snapshot_dir=ALERT_SNAPSHOTS)
+        note = None
+    except (httpx.HTTPError, ValueError):
+        alerts, clock, note = [], None, MBTA_UNAVAILABLE_NOTE
+    state.live_alerts = (now, alerts, note)
+    return alerts, clock, note
 
 
 def _without_coords(route: RouteOption) -> RouteOption:
@@ -163,6 +177,16 @@ def plan_trip(
         str | None,
         Field(description="Alert source to use, or null for the one set with set_alert_source."),
     ] = None,
+    session_id: Annotated[
+        str | None,
+        Field(
+            description="Session whose choices order the routes, or null for the shared session."
+        ),
+    ] = None,
+    step_free: Annotated[
+        bool,
+        Field(description="True to plan wheelchair-accessible transit and flag elevator closures."),
+    ] = False,
 ) -> PlanResult:
     """Plan a trip inside Boston and return the Pareto set of routes with trade-offs."""
     state = _state()
@@ -172,22 +196,41 @@ def plan_trip(
     showcase_note = None
     trip = None if state.ctx.live else match_showcase(state.trips, origin, destination)
     if trip is not None:
-        # Offline transit comes from a cache keyed on the showcase points and demo departure.
+        # Offline transit comes from a cache keyed on the showcase points and departure.
         origin, destination = trip.origin, trip.destination
-        depart = showcase_departure(trip)
-        showcase_note = (
-            f"Planned as showcase trip '{trip.origin_name} to {trip.destination_name}' "
-            f"at its fixed demo departure, {trip.weekday.capitalize()} {trip.depart_local}."
-        )
+        name = f"'{trip.origin_name} to {trip.destination_name}'"
+        if depart is None:
+            depart = showcase_departure(trip)
+            showcase_note = (
+                f"Planned as showcase trip {name} at its fixed demo departure, "
+                f"{trip.weekday.capitalize()} {trip.depart_local}."
+            )
+        else:
+            showcase_note = f"Matched showcase trip {name}; planned at the chosen departure time."
     source = _source(alert_source)
-    alerts, clock = _load_alerts_for_source(source)
-    plan = planner.plan_trip(state.ctx, origin, destination, depart, source, alerts, clock)
+    alerts, clock, alert_note = _load_alerts_for_source(source)
+    plan = planner.plan_trip(
+        state.ctx,
+        origin,
+        destination,
+        depart,
+        source,
+        alerts,
+        clock,
+        session_id or "",
+        step_free=step_free,
+    )
     if showcase_note:
         plan = plan.model_copy(update={"notes": [showcase_note, *plan.notes]})
+    if alert_note:
+        plan = plan.model_copy(update={"alert_note": alert_note})
     state.plans[plan.query_id] = plan
     state.plan_alerts[plan.query_id] = {
         alert.id: AlertRef(
-            id=alert.id, header=alert.header, effect=alert.effect, score=effect_score(alert)
+            id=alert.id,
+            header=alert.header,
+            effect=alert.effect,
+            score=effect_score(alert, step_free=step_free),
         )
         for alert in alerts
     }
@@ -223,7 +266,7 @@ def get_active_alerts(
 ) -> AlertsView:
     """Return the alert source in use and its alerts."""
     source = _source(alert_source)
-    alerts, clock = _load_alerts_for_source(source)
+    alerts, clock, note = _load_alerts_for_source(source)
     refs = [
         AlertRef(id=a.id, header=a.header, effect=a.effect, score=effect_score(a)) for a in alerts
     ]
@@ -232,6 +275,7 @@ def get_active_alerts(
         synthetic=_is_synthetic(source),
         alert_clock=clock,
         alerts=refs,
+        note=note,
     )
 
 
@@ -239,6 +283,10 @@ def get_active_alerts(
 def record_choice(
     query_id: Annotated[str, Field(description="The query_id of the plan the user chose from.")],
     route_id: Annotated[str, Field(description="The route the user chose.")],
+    session_id: Annotated[
+        str | None,
+        Field(description="Session that made the choice, or null for the shared session."),
+    ] = None,
 ) -> PreferenceWeights:
     """Store the user's choice of one route from a plan and return the refit preference weights."""
     state = _state()
@@ -251,14 +299,20 @@ def record_choice(
         chosen=chosen.objectives,
         rejected=rejected,
     )
-    preferences.record_choice(event, state.ctx.preferences_db)
-    return preferences.current_weights(state.ctx.preferences_db)
+    session = session_id or ""
+    preferences.record_choice(event, state.ctx.preferences_db, session)
+    return preferences.current_weights(state.ctx.preferences_db, session)
 
 
 @mcp.tool()
-def get_preferences() -> PreferenceWeights:
+def get_preferences(
+    session_id: Annotated[
+        str | None,
+        Field(description="Session whose choices to summarize, or null for the shared session."),
+    ] = None,
+) -> PreferenceWeights:
     """Return the current preference weights and how many choices they came from."""
-    return preferences.current_weights(_state().ctx.preferences_db)
+    return preferences.current_weights(_state().ctx.preferences_db, session_id or "")
 
 
 @mcp.tool()
@@ -278,10 +332,17 @@ def set_alert_source(
 
 
 @mcp.tool()
-def clear_preferences() -> PreferenceWeights:
-    """Delete every stored choice and return equal preference weights."""
-    preferences.clear_choices(_state().ctx.preferences_db)
-    return preferences.current_weights(_state().ctx.preferences_db)
+def clear_preferences(
+    session_id: Annotated[
+        str | None,
+        Field(description="Session whose choices to delete, or null for the shared session."),
+    ] = None,
+) -> PreferenceWeights:
+    """Delete every choice stored for one session and return equal preference weights."""
+    session = session_id or ""
+    db = _state().ctx.preferences_db
+    preferences.clear_choices(db, session)
+    return preferences.current_weights(db, session)
 
 
 @mcp.tool()
@@ -350,6 +411,9 @@ def main(argv: list[str] | None = None) -> int:
         configure(build_state(live))
     except EmissionFactorsError as error:
         print(f"emission factors: {error}", file=sys.stderr)
+        return 2
+    except TrafficFactorsError as error:
+        print(f"traffic factors: {error}", file=sys.stderr)
         return 2
     mcp.run()
     return 0
