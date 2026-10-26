@@ -1,8 +1,9 @@
-"""Fetch the `geo` group: Boston + Cambridge municipal boundaries and OSM data.
+"""Fetch the `geo` group: service-area municipal boundaries and the Massachusetts OSM extract.
 
 Rerunnable: run as
     uv run --no-project --python 3.12 python scripts/fetch/geo.py
-Stdlib only, plus `osmium` on PATH for the OSM clip.
+Stdlib only, plus `osmium` on PATH for `osmium fileinfo` (the OSM clip runs in
+`python -m commute_agent.ingest otp-inputs`, which needs the service-area polygon).
 """
 import subprocess
 import sys
@@ -32,10 +33,20 @@ CAMBRIDGE_GEOJSON_URL = (
 )
 CAMBRIDGE_LICENSE = "Open Data Commons Public Domain Dedication and License (PDDL)"
 
+# Somerville and Brookline come from MassGIS's Census 2020 towns layer, one polygon per
+# city or town, queried from its ArcGIS service as WGS84 GeoJSON. (The mass.gov download
+# page answers scripted requests with 403; the service does not.)
+MASSGIS_TOWNS_URL = (
+    "https://arcgisserver.digital.mass.gov/arcgisserver/rest/services/AGOL/"
+    "Census2020_Towns/MapServer/2/query?where=TOWN20%20IN%20(%27SOMERVILLE%27,"
+    "%27BROOKLINE%27)&outFields=TOWN20,TOWN_ID&outSR=4326&f=geojson"
+)
+MASSGIS_TOWNS_LICENSE = (
+    "U.S. Census Bureau 2020 municipal boundaries (public domain), processed by MassGIS"
+)
+
 MASS_PBF_URL = "https://download.geofabrik.de/north-america/us/massachusetts-latest.osm.pbf"
 OSM_LICENSE = "ODbL 1.0, © OpenStreetMap contributors"
-# Clip box around Boston: west,south,east,north.
-CLIP_BBOX = "-71.22,42.20,-70.89,42.42"  # Boston bounds plus about 2 km, Harbor Islands included
 
 
 def feature_count(path: Path) -> int:
@@ -74,23 +85,19 @@ def main() -> None:
               "(no CRS member -> RFC 7946 default); no reprojection needed.",
     ))
 
+    towns = download(MASSGIS_TOWNS_URL, GEO / "massgis_towns.geojson")
+    entries.append(manifest_entry(
+        towns, MASSGIS_TOWNS_URL, MASSGIS_TOWNS_LICENSE, feature_count(towns),
+        notes="MassGIS Census 2020 Towns layer, Somerville and Brookline only, WGS84. The "
+              "boundary ingest step reads them by the TOWN20 field.",
+    ))
+
     mass_pbf = download(MASS_PBF_URL, GEO / "massachusetts-latest.osm.pbf")
     data_ts = osmium_timestamp(mass_pbf)
     entries.append(manifest_entry(
         mass_pbf, MASS_PBF_URL, OSM_LICENSE, None,
-        notes=f"Geofabrik Massachusetts extract; data timestamp {data_ts}.",
-    ))
-
-    boston_pbf = GEO / "boston.osm.pbf"
-    subprocess.run(
-        ["osmium", "extract", "-b", CLIP_BBOX, "--overwrite",
-         "-o", str(boston_pbf), str(mass_pbf)],
-        check=True,
-    )
-    entries.append(manifest_entry(
-        boston_pbf, MASS_PBF_URL, OSM_LICENSE, None,
-        notes=f"Clipped from massachusetts-latest.osm.pbf with "
-              f"`osmium extract -b {CLIP_BBOX}`. Source data timestamp {data_ts}.",
+        notes=f"Geofabrik Massachusetts extract; data timestamp {data_ts}. The OTP "
+              "service-area clip is made from it by `ingest otp-inputs`.",
     ))
 
     path = write_manifest("geo", entries)

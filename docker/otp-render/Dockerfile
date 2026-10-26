@@ -3,7 +3,7 @@
 # This folder is the build context, so the Render service sets it as its root directory.
 
 FROM curlimages/curl:8.11.1 AS graph
-ARG GRAPH_URL=https://github.com/Riddhimaan-Senapati/commute-agent/releases/download/data-v1/otp-graph.obj
+ARG GRAPH_URL=https://github.com/Riddhimaan-Senapati/commute-agent/releases/download/data-v2/otp-graph.obj
 RUN curl -fsSL -o /tmp/graph.obj "$GRAPH_URL"
 
 FROM opentripplanner/opentripplanner:2.10.0

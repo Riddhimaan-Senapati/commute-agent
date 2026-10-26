@@ -8,9 +8,17 @@ from commute_agent.paths import PROCESSED, RAW
 
 VISION_ZERO_FILE = "crashes/boston_vision_zero.csv"
 CAMBRIDGE_FILE = "crashes/cambridge_police_crashes.csv"
+SOMERVILLE_FILE = "crashes/somerville_police_crashes.csv"
 
 VZ_COLUMNS = {"dispatch_ts", "mode_type", "lat", "long"}
 CAMBRIDGE_COLUMNS = {"Date Time", "May involve cyclist", "May Involve Pedestrian", "Location"}
+# The CSV download uses display names (some with trailing spaces, stripped on read).
+SOM_WHEN = "Date and Time of Crash"
+SOM_LAT = "Latitude"
+SOM_LON = "Longitude"
+SOM_PED = "Pedestrian Involvement (Non-Motorist)"
+SOM_CYCLIST = "Cyclist Involvement (Non-Motorist)"
+SOMERVILLE_COLUMNS = {SOM_WHEN, SOM_LAT, SOM_LON, SOM_PED, SOM_CYCLIST}
 
 LOCATION_RE = re.compile(r"\((-?\d+\.\d+), (-?\d+\.\d+)\)$")
 
@@ -92,16 +100,58 @@ def _cambridge_rows(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
     return rows, counts
 
 
+def _somerville_rows(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Somerville: one row per involved mode (cyclist or pedestrian count above zero).
+
+    Returns the rows and the number of records dropped for missing coordinates.
+    """
+    lat = pd.to_numeric(df[SOM_LAT], errors="coerce")
+    lon = pd.to_numeric(df[SOM_LON], errors="coerce")
+    has_coords = lat.notna() & lon.notna()
+    dropped = int((~has_coords).sum())
+
+    kept = df[has_coords].copy()
+    kept_lat = lat[has_coords]
+    kept_lon = lon[has_coords]
+    occurred_at = pd.to_datetime(kept[SOM_WHEN], format="ISO8601").dt.tz_localize(
+        "America/New_York", ambiguous=True, nonexistent="shift_forward"
+    )
+    occurred_at = occurred_at.dt.tz_convert("UTC")
+
+    cyclist = pd.to_numeric(kept[SOM_CYCLIST], errors="coerce").fillna(0) > 0
+    pedestrian = pd.to_numeric(kept[SOM_PED], errors="coerce").fillna(0) > 0
+
+    frames = []
+    for flag, mode in ((cyclist, "bike"), (pedestrian, "ped")):
+        frames.append(
+            pd.DataFrame(
+                {
+                    "source_dataset": "somerville_police",
+                    "occurred_at": occurred_at[flag].reset_index(drop=True),
+                    "mode": mode,
+                    "lat": kept_lat[flag].reset_index(drop=True),
+                    "lon": kept_lon[flag].reset_index(drop=True),
+                }
+            )
+        )
+    rows = pd.concat(frames, ignore_index=True)
+    return rows, dropped
+
+
 def crashes(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
     vz_df = pd.read_csv(raw_dir / VISION_ZERO_FILE, low_memory=False)
     require_columns(vz_df, "crashes/boston_vision_zero", VZ_COLUMNS)
     cam_df = pd.read_csv(raw_dir / CAMBRIDGE_FILE, low_memory=False)
     require_columns(cam_df, "crashes/cambridge_police", CAMBRIDGE_COLUMNS)
+    som_df = pd.read_csv(raw_dir / SOMERVILLE_FILE, dtype=str, low_memory=False)
+    som_df.columns = [str(c).strip() for c in som_df.columns]
+    require_columns(som_df, "crashes/somerville_police", SOMERVILLE_COLUMNS)
 
     boston = _boston_rows(vz_df)
     cambridge, cam_counts = _cambridge_rows(cam_df)
+    somerville, som_dropped = _somerville_rows(som_df)
 
-    out = pd.concat([boston, cambridge], ignore_index=True)[OUTPUT_COLUMNS]
+    out = pd.concat([boston, cambridge, somerville], ignore_index=True)[OUTPUT_COLUMNS]
 
     path = out_dir / "crashes.parquet"
     atomic_write(path, lambda p: out.to_parquet(p, index=False))
@@ -109,13 +159,16 @@ def crashes(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
     notes = (
         f"{DEFINITIONS_NOTE} Cambridge rows without coordinates dropped: "
         f"{cam_counts['cambridge_empty_location']} empty Location, "
-        f"{cam_counts['cambridge_address_only']} address only."
+        f"{cam_counts['cambridge_address_only']} address only. "
+        f"Somerville records without coordinates dropped: {som_dropped}. "
+        "Somerville excludes state roads and crashes under investigation."
     )
     write_meta(
         path,
         [
             manifest_entry(raw_dir, "crashes", VISION_ZERO_FILE),
             manifest_entry(raw_dir, "crashes", CAMBRIDGE_FILE),
+            manifest_entry(raw_dir, "crashes", SOMERVILLE_FILE),
         ],
         row_count=len(out),
         notes=notes,

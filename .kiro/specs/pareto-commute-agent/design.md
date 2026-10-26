@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design turns a trip query inside Boston into a Pareto set of routes over four objectives, then lets an LLM agent explain the trade-offs. It is written for Claude Haiku 5.5 implementers working in parallel. Every shared type, path, function signature, file format, and tool schema is fixed here. An implementer who needs a contract that this document does not define stops and asks the coordinator instead of inventing one.
+This design turns a trip query inside the service area (Boston, Cambridge, Somerville, and Brookline; see `commute_agent/service_area.py`) into a Pareto set of routes over four objectives, then lets an LLM agent explain the trade-offs. It is written for Claude Haiku 5.5 implementers working in parallel. Every shared type, path, function signature, file format, and tool schema is fixed here. An implementer who needs a contract that this document does not define stops and asks the coordinator instead of inventing one.
 
 The design follows four rules.
 
@@ -74,7 +74,7 @@ Plans and choices live in the MCP subprocess. The REST handlers call MCP tools f
 
 ### Request flow for one plan
 
-1. `planner.plan_trip` checks both points against the Boston boundary.
+1. `planner.plan_trip` checks both points against `service_area.geojson`. A point outside it raises `OutsideServiceArea` with the message "Outside the service area (Boston, Cambridge, Somerville, Brookline): origin" (or `destination`, or both).
 2. `streets.router.street_routes` returns walk, bike, bluebikes, and drive candidates.
 3. `transit.otp.fetch_itineraries` returns a raw OTP response from cache (offline) or OTP (live). `transit.otp.transit_routes` converts it to candidates and scores each walk leg for crash risk. A second request, `fetch_itineraries(..., access="bike")`, asks for bike-access itineraries (`PLAN_QUERY_BIKE`, `BICYCLE` for access, egress and transfer). Its cache key carries `;access=bike`, so walk-access keys are unchanged. `transit_routes` scores its bike legs with `score_bike_coords` on the bike graph and labels them "Bike" in the route summary, e.g. "Bike, then Red Line". Offline, a missing bike entry omits these routes without an omit reason.
 4. `transit.alerts.apply_disruptions` sets disruption risk on transit legs from the active alert source.
@@ -121,8 +121,9 @@ data/
   raw/                           gitignored; starter zips and downloads
     numina_zones.csv             user-supplied
   processed/                     gitignored
-    boston_boundary.geojson
-    crash_coverage.geojson       Boston union Cambridge
+    service_area.geojson         Boston, Cambridge, Somerville, Brookline union
+    service_area_buffered.geojson  service area plus 2 km (graph polygon, Bluebikes filter, OTP clip)
+    crash_coverage.geojson       Boston, Cambridge, Somerville union (Brookline excluded)
     crashes.parquet
     counts.parquet
     bluebikes_trips.parquet
@@ -413,7 +414,8 @@ Downloads are done. Four stdlib scripts in `scripts/fetch/` fetched every raw fi
 | geo | `geo/boston_boundary.geojson` (land only, 125.1 km², 34 polygons) | 1 | ODC PDDL |
 | geo | `geo/cambridge_boundary.geojson` | 1 | Cambridge GIS |
 | geo | `geo/massachusetts-latest.osm.pbf` (Geofabrik, 2026-10-23) | | ODbL 1.0 |
-| geo | `geo/boston.osm.pbf`, clipped to `-71.22,42.20,-70.89,42.42` | | ODbL 1.0 |
+| geo | `geo/massgis_towns.geojson` (Somerville and Brookline polygons, `TOWN20`) | MassGIS ArcGIS `AGOL/Census2020_Towns/MapServer/2` | U.S. Census Bureau 2020 (public domain), processed by MassGIS |
+| crashes | `crashes/somerville_police_crashes.csv` (Socrata `mtik-28va`) | | ODbL 1.0 |
 
 `numina_zones.candidate.csv` maps the 9 zones to their 3 sensor sites (Jackson Square 42.322802,-71.100588; 50 Northern Ave 42.353630,-71.046128; Tremont and Boylston 42.352371,-71.064498), quoting the project overview PDF page 2. The zones are sub-areas of one camera each, so every zone carries its site's point. The user confirms it by copying it to `data/raw/numina_zones.csv`, which `paths.NUMINA_ZONES` names.
 
@@ -425,14 +427,14 @@ Column checks use one helper, `require_columns(df, dataset, expected: set[str])`
 
 | Dataset name | Module | Reads | Output and columns |
 |---|---|---|---|
-| `boundary` | `geo.py` | `geo/boston_boundary.geojson`, `geo/cambridge_boundary.geojson` | `boston_boundary.geojson` (dissolved), `crash_coverage.geojson` (Boston union Cambridge) |
+| `boundary` | `geo.py` | `geo/boston_boundary.geojson`, `geo/cambridge_boundary.geojson`, `geo/massgis_towns.geojson` | `service_area.geojson` (union of four cities), `service_area_buffered.geojson` (2 km), `crash_coverage.geojson` (Boston, Cambridge, Somerville) |
 | `graphs` | `geo.py` | `ox.graph_from_polygon(boston_buffered_2km, network_type=...)` for `walk`, `bike`, `drive`, with `ox.settings.use_cache = True` and `ox.settings.cache_folder = "data/raw/geo/overpass_cache"` | `walk.graphml`, `bike.graphml`, `drive.graphml` |
 | `basemap` | `geo.py` | drive graph edges with highway in primary, secondary, tertiary, trunk | `basemap.geojson`, LineStrings simplified to 5 m |
 | `crashes` | `crashes.py` | both crash CSVs | `crashes.parquet`: `source_dataset`, `occurred_at` (UTC), `mode` (`bike` or `ped`), `lat`, `lon` |
 | `counts` | `counts.py` | counts CSVs, Numina zone CSVs, `numina_zones.csv` | `counts.parquet`: `source`, `location_id`, `lat`, `lon`, `mode` (`bike` or `ped`), `peak_hour_volume`, `n_sessions` |
 | `bluebikes` | `bluebikes.py` | zip member `202411-bluebikes-tripdata.csv` only | `bluebikes_trips.parquet`: `start_station_id`, `end_station_id`, `trips`. `bluebikes_stations.parquet`: `station_id`, `name`, `lat`, `lon` (median of trip coordinates) |
 | `stations` | `mbta.py` | `transit/massgis_rapid_transit_stations.json` | `rapid_transit_stations.parquet`: `name`, `line`, `lat`, `lon` |
-| `otp-inputs` | `mbta.py` | `transit/MBTA_GTFS.zip`, `geo/boston.osm.pbf` | copies to `data/otp/mbta-gtfs.zip` and `data/otp/boston.osm.pbf` |
+| `otp-inputs` | `mbta.py` | `transit/MBTA_GTFS.zip`, `geo/massachusetts-latest.osm.pbf`, `processed/service_area_buffered.geojson` | copies GTFS to `data/otp/mbta-gtfs.zip`; `osmium extract -p` writes `data/otp/service_area.osm.pbf` |
 | `all` | `__main__.py` | runs the above in table order | |
 
 The Overpass cache under `data/raw/geo/overpass_cache` makes a rerun of `graphs` work offline.
@@ -494,7 +496,7 @@ ferry:         {value: null, unit: g_per_passenger_km, source: ""}
 
 ### WS6. Traffic factors (`commute_agent/traffic.py`)
 
-`data/traffic_factors.yaml` multiplies free-flow drive time by a factor per day type and hour bucket (America/New_York local time). Buckets per day type: `0-6`, `6-7`, `7-9`, `9-15`, `15-16`, `16-19`, `19-24`. Each bucket has a `value` (a number at least 1.0) and a `source`. A bucket with `source: "needs a source"` must have `value: 1.0`, so no unsourced number is ever applied.
+`data/traffic_factors.yaml` multiplies free-flow drive time by a factor per day type and hour bucket (America/New_York local time). Buckets per day type are any hour ranges that cover 0 to 24; the shipped file uses one bucket per hour, from the TomTom Traffic Index 2025 hourly congestion grid for the City of Boston (value = 1 + level / 100). Each bucket has a `value` (a number at least 1.0) and a `source`. A bucket with `source: "needs a source"` must have `value: 1.0`, so no unsourced number is ever applied.
 
 ```python
 class TrafficFactorsError(Exception): ...
@@ -589,7 +591,7 @@ Load graphs with `ox.load_graphml(path, edge_dtypes={"crashes": int, "exposure":
   "mean_crashes_per_km": {"bike": 0.0, "ped": 0.0},
   "shrinkage_k": 1.0,
   "risk_scale": 1000.0,
-  "crash_source_label": "Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01) and Cambridge police (2015-01-01 to 2026-09-30) per estimated peak-hour volume. Drive and transit vehicle segments are not modeled."
+  "crash_source_label": "Estimated crash risk index for walk and bike segments. Crashes from Boston Vision Zero (2015-01-01 to 2026-09-01), Cambridge police (2015-01-01 to 2026-09-30) and Somerville police (2018-05-01 to 2026-09-30) per estimated peak-hour volume. Brookline has no crash source, so its segments use the road-class prior and are marked outside_crash_coverage. Drive and transit vehicle segments are not modeled."
 }
 ```
 
@@ -787,7 +789,7 @@ The OTP graph build uses `docker/otp/build-config.json`:
 
 ```json
 {"transitFeeds": [{"type": "gtfs", "feedId": "mbta", "source": "mbta-gtfs.zip"}],
- "osm": [{"source": "boston.osm.pbf"}]}
+ "osm": [{"source": "service_area.osm.pbf"}]}
 ```
 
 `docker/otp/run.sh build` runs `docker run --rm -e JAVA_TOOL_OPTIONS=-Xmx6g -v "$PWD/data/otp:/var/opentripplanner" -v "$PWD/docker/otp/build-config.json:/var/opentripplanner/build-config.json" opentripplanner/opentripplanner:2.10.0 --build --save`. `docker/otp/run.sh serve` runs the same image with `--load --serve -p 8080:8080`.
@@ -903,7 +905,7 @@ class PlannerContext:
     preferences_db: Path = PREFERENCES_DB
 
 class OutsideServiceArea(Exception):
-    """Message: 'Outside the City of Boston: origin' or 'destination' or both."""
+    """Message: 'Outside the service area (Boston, Cambridge, Somerville, Brookline): origin' or 'destination' or both."""
 
 def load_context(live: bool) -> PlannerContext: ...
 
@@ -1075,9 +1077,9 @@ The API runs `run_turn` in a worker thread with `anyio.to_thread.run_sync`, beca
 ```text
 You are the Pareto Commute prototype, an independent hackathon project running on a swappable language model. You are not a City of Boston or MBTA service. Say so in your first reply of every conversation.
 
-You help people compare trips within the City of Boston. For a trip question:
+You help people compare trips within Boston, Cambridge, Somerville, and Brookline. For a trip question:
 1. Resolve each place with geocode_place. If the status is ambiguous or not_found, ask the user which place they mean. Do not pick one.
-2. Call plan_trip. If it reports a point outside the City of Boston, explain that the prototype covers trips within the City of Boston only.
+2. Call plan_trip. If it reports a point outside the service area, explain that the prototype covers trips within Boston, Cambridge, Somerville, and Brookline only.
 3. Describe every route in the result, starting with the first one listed. For each route other than the fastest, state its trade-off against the fastest using tradeoffs_vs_fastest, for example "4 min slower, ~70% less CO2, avoids the Red Line disruption".
 
 Rules for numbers:

@@ -79,7 +79,7 @@ def test_required_offline_files_lists_expected(tmp_path: Path) -> None:
 
     names = {p.name for p in paths}
     assert "walk.graphml" in names
-    assert "boston_boundary.geojson" in names
+    assert "service_area.geojson" in names
     assert "bluebikes_stations.parquet" in names
     assert "basemap.geojson" in names
     assert "risk_meta.json" in names
@@ -132,10 +132,10 @@ def test_main_offline_ready(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     assert capsys.readouterr().out.strip() == "offline ready"
 
 
-def test_showcase_points_inside_boston_boundary() -> None:
-    boundary = PROCESSED / "boston_boundary.geojson"
+def test_showcase_points_inside_service_area() -> None:
+    boundary = PROCESSED / "service_area.geojson"
     if not boundary.exists():
-        pytest.skip("boston_boundary.geojson not built yet (fixtures only)")
+        pytest.skip("service_area.geojson not built yet (fixtures only)")
 
     import geopandas as gpd
     from shapely.geometry import Point as ShapelyPoint
@@ -149,5 +149,5 @@ def test_showcase_points_inside_boston_boundary() -> None:
     for trip in trips:
         for name, point in (("origin", trip.origin), ("destination", trip.destination)):
             assert land.contains(ShapelyPoint(point.lon, point.lat)), (
-                f"{trip.name} {name} is outside boston_boundary.geojson"
+                f"{trip.name} {name} is outside service_area.geojson"
             )

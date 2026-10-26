@@ -1,2 +1,2 @@
 {"transitFeeds": [{"type": "gtfs", "feedId": "mbta", "source": "mbta-gtfs.zip"}],
- "osm": [{"source": "boston.osm.pbf"}]}
+ "osm": [{"source": "service_area.osm.pbf"}]}

@@ -25,7 +25,7 @@ COPY data/ data/
 RUN uv sync --frozen --no-dev
 
 # Runtime data (processed graphs, basemap, OTP cache) is a release asset, not in git.
-ARG DATA_URL=https://github.com/Riddhimaan-Senapati/commute-agent/releases/download/data-v1/commute-data.tar.gz
+ARG DATA_URL=https://github.com/Riddhimaan-Senapati/commute-agent/releases/download/data-v2/commute-data.tar.gz
 RUN curl -fsSL "$DATA_URL" | tar -xz -C /app
 
 COPY --from=web /web /app/webapp

@@ -1,56 +1,157 @@
-# Multipliers on free-flow drive time by day type and hour bucket (America/New_York local
-# time). A bucket starts at its first hour and ends before its second, so 16-19 is 16:00 to
-# 18:59. Every value is 1.0 until a published Boston congestion figure is confirmed for that
-# bucket. Each source names the report and the figure it came from.
+# Multipliers on free-flow drive time by day type and hour (America/New_York local time).
+# A bucket starts at its first hour and ends before its second, so 17-18 is 17:00 to 17:59.
 #
-# Candidate source, NOT applied (the page could not be read): TomTom Traffic Index, Boston,
-# MA traffic report, 2025 data (https://www.tomtom.com/traffic-index/city/boston-ma). A search
-# excerpt quoting that page gave average congestion of 60.8% for the morning peak and 84% for
-# the evening peak. Those are peak-window averages, not per-bucket figures, so they are not
-# used here. A congestion of 60.8% would mean a factor of 1.608 (time / free-flow time).
+# Source: TomTom Traffic Index, Boston, MA traffic report, 2025 data, City area, the
+# "Driving patterns" grid set to Congestion level with "Show values" on, read 2026-10-25.
+# TomTom defines a congestion level of 40 as journey times 40% longer than free flow
+# (https://www.tomtom.com/traffic-index/about/), so value = 1 + level / 100.
+# weekday = mean of Monday to Friday for that hour; weekend = mean of Saturday and Sunday.
+# Rounded to two decimals. The grid is a citywide average, not a per-road speed.
 
 weekday:
-  "0-6":
+  "0-1":
+    value: 1.1
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 10.2%"
+  "1-2":
+    value: 1.06
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 5.8%"
+  "2-3":
+    value: 1.04
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 3.6%"
+  "3-4":
+    value: 1.01
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 1.4%"
+  "4-5":
     value: 1.0
-    source: "needs a source"
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 0.2%"
+  "5-6":
+    value: 1.07
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 7.0%"
   "6-7":
-    value: 1.0
-    source: "needs a source"
-  "7-9":
-    value: 1.0
-    source: "needs a source"
-  "9-15":
-    value: 1.0
-    source: "needs a source"
+    value: 1.27
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 27.2%"
+  "7-8":
+    value: 1.49
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 48.6%"
+  "8-9":
+    value: 1.6
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 60.2%"
+  "9-10":
+    value: 1.5
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 50.4%"
+  "10-11":
+    value: 1.43
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 42.6%"
+  "11-12":
+    value: 1.4
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 39.8%"
+  "12-13":
+    value: 1.42
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 41.6%"
+  "13-14":
+    value: 1.45
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 44.6%"
+  "14-15":
+    value: 1.58
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 58.2%"
   "15-16":
-    value: 1.0
-    source: "needs a source"
-  "16-19":
-    value: 1.0
-    source: "needs a source"
-  "19-24":
-    value: 1.0
-    source: "needs a source"
+    value: 1.71
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 71.0%"
+  "16-17":
+    value: 1.78
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 78.0%"
+  "17-18":
+    value: 1.84
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 84.0%"
+  "18-19":
+    value: 1.62
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 61.8%"
+  "19-20":
+    value: 1.39
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 38.8%"
+  "20-21":
+    value: 1.25
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 25.2%"
+  "21-22":
+    value: 1.23
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 23.0%"
+  "22-23":
+    value: 1.24
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 24.4%"
+  "23-24":
+    value: 1.2
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekday mean 19.6%"
 
 weekend:
-  "0-6":
+  "0-1":
+    value: 1.14
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 14.0%"
+  "1-2":
+    value: 1.09
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 9.0%"
+  "2-3":
+    value: 1.07
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 7.5%"
+  "3-4":
+    value: 1.02
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 2.0%"
+  "4-5":
     value: 1.0
-    source: "needs a source"
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 0.0%"
+  "5-6":
+    value: 1.0
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 0.0%"
   "6-7":
-    value: 1.0
-    source: "needs a source"
-  "7-9":
-    value: 1.0
-    source: "needs a source"
-  "9-15":
-    value: 1.0
-    source: "needs a source"
+    value: 1.03
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 3.5%"
+  "7-8":
+    value: 1.06
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 6.0%"
+  "8-9":
+    value: 1.1
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 10.0%"
+  "9-10":
+    value: 1.17
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 17.0%"
+  "10-11":
+    value: 1.25
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 25.5%"
+  "11-12":
+    value: 1.34
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 34.5%"
+  "12-13":
+    value: 1.42
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 41.5%"
+  "13-14":
+    value: 1.45
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 44.5%"
+  "14-15":
+    value: 1.47
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 46.5%"
   "15-16":
-    value: 1.0
-    source: "needs a source"
-  "16-19":
-    value: 1.0
-    source: "needs a source"
-  "19-24":
-    value: 1.0
-    source: "needs a source"
+    value: 1.48
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 48.0%"
+  "16-17":
+    value: 1.47
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 47.0%"
+  "17-18":
+    value: 1.46
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 45.5%"
+  "18-19":
+    value: 1.42
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 41.5%"
+  "19-20":
+    value: 1.34
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 34.5%"
+  "20-21":
+    value: 1.26
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 26.0%"
+  "21-22":
+    value: 1.23
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 22.5%"
+  "22-23":
+    value: 1.22
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 21.5%"
+  "23-24":
+    value: 1.18
+    source: "TomTom Traffic Index 2025, Boston, MA, City, hourly congestion level (https://www.tomtom.com/traffic-index/city/boston-ma/); weekend mean 17.5%"

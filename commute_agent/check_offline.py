@@ -23,7 +23,7 @@ from commute_agent.paths import (
 from commute_agent.transit.otp import otp_cache_key
 
 GRAPHML_FILES = ("walk.graphml", "bike.graphml", "drive.graphml")
-BOUNDARY_FILES = ("boston_boundary.geojson", "crash_coverage.geojson")
+BOUNDARY_FILES = ("service_area.geojson", "crash_coverage.geojson")
 PROCESSED_FILES = (
     "bluebikes_stations.parquet",
     "rapid_transit_stations.parquet",

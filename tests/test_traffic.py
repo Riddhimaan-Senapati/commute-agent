@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 import yaml
@@ -64,12 +65,13 @@ def test_missing_file_is_free_flow_with_note(tmp_path: Path) -> None:
         assert bucket.factor.source == "needs a source"
 
 
-def test_repo_traffic_file_loads_and_is_unsourced_free_flow() -> None:
+def test_repo_traffic_file_is_hourly_and_sourced() -> None:
     factors = load_traffic_factors(TRAFFIC_FACTORS)
     assert factors.note is None
-    assert len(factors.buckets) == 2 * len(BUCKETS)
-    assert all(b.factor.value == 1.0 for b in factors.buckets)
-    assert all(b.factor.source == "needs a source" for b in factors.buckets)
+    assert len(factors.buckets) == 2 * 24
+    assert all(b.factor.source.startswith("TomTom Traffic Index 2025") for b in factors.buckets)
+    rush = factors.factor_for(datetime(2026, 10, 27, 17, 15, tzinfo=ZoneInfo("America/New_York")))
+    assert (rush.label, rush.factor.value) == ("17-18", 1.84)
 
 
 @pytest.mark.parametrize(
