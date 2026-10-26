@@ -98,11 +98,15 @@ def test_missing_town_is_named_in_the_error(tmp_path: Path) -> None:
 def test_somerville_rows_one_per_mode_and_drops_missing_coordinates() -> None:
     df = pd.DataFrame(
         {
-            "dtcrash": ["2026-09-24 15:35:00", "2026-09-17 13:42:00", "2026-09-01 08:00:00"],
-            "latitude": ["42.3946", "42.3975", ""],
-            "longitude": ["-71.081", "-71.1036", ""],
-            "nonmotoristpedestrian": ["0", "1", "0"],
-            "nonmotoristcyclist": ["0", "1", "0"],
+            "Date and Time of Crash": [
+                "2026-09-24 15:35:00",
+                "2026-09-17 13:42:00",
+                "2026-09-01 08:00:00",
+            ],
+            "Latitude": ["42.3946", "42.3975", ""],
+            "Longitude": ["-71.081", "-71.1036", ""],
+            "Pedestrian Involvement (Non-Motorist)": ["0", "1", "0"],
+            "Cyclist Involvement (Non-Motorist)": ["0", "1", "0"],
         }
     )
 
