@@ -184,25 +184,25 @@ uv run python -m eval.run --model deepseek/deepseek-v4.1-flash-1017,<second mode
 
 It writes `eval/results.md` and `eval/results.json`. It checks Pareto soundness and completeness on the 5 showcase trips and the 20 trips in `eval/od_pairs.yaml`. It also reports crash-risk reduction versus minutes added for walk and bike, the alert expectations in `eval/alert_expectations.yaml`, and the mean unknown-exposure share. Agent metrics (number grounding, identity statement, clarification) run on `eval/prompts.yaml`. When the model's credentials are missing, they show `skipped: <missing keys>`. `--model a,b` adds one column per model.
 
-Results from 2026-10-24 at commit `2dde2f9`, agent model `deepseek/deepseek-v4.1-flash-1017` on OpenRouter. The full table is in `eval/results.md`.
+Results from 2026-10-26 on the four-city data (`data-v2`), agent model `deepseek/deepseek-v4.1-flash-1017` on OpenRouter. The full table is in `eval/results.md`.
 
 | Metric | Result | n |
 |---|---|---|
 | Pareto soundness (self-consistency) | 25 pass, 0 fail | 25 trips |
 | Pareto completeness (self-consistency) | 25 pass, 0 fail | 25 trips |
-| Walk, safest vs fastest: crash risk reduction | median 70.4% (IQR 34.8 to 82.1) | 25 |
-| Walk, safest vs fastest: minutes added | median 3.5 (IQR 1.1 to 7.2) | 25 |
-| Bike, safest vs fastest: crash risk reduction | median 61.1% (IQR 46.0 to 77.4) | 25 |
-| Bike, safest vs fastest: minutes added | median 5.1 (IQR 3.4 to 9.0) | 25 |
-| Alert response: transit routes flagged correctly | 35/35 | 35 routes |
+| Walk, safest vs fastest: crash risk reduction | median 76.2% (IQR 38.4 to 84.3) | 25 |
+| Walk, safest vs fastest: minutes added | median 3.5 (IQR 1.2 to 7.2) | 25 |
+| Bike, safest vs fastest: crash risk reduction | median 62.1% (IQR 49.0 to 79.0) | 25 |
+| Bike, safest vs fastest: minutes added | median 5.4 (IQR 3.4 to 9.4) | 25 |
+| Alert response: transit routes flagged correctly | 45/45 | 45 routes |
 | Alert response: Pareto set as expected | 6/6 | 6 rows |
-| Number grounding, first draft | 209/214 (98%) | 214 numbers |
-| Number grounding, final reply | 231/231 (100%) | 231 numbers |
-| Identity statement | 9/10 | 10 conversations |
+| Number grounding, first draft | 281/288 (98%) | 288 numbers |
+| Number grounding, final reply | 298/298 (100%) | 298 numbers |
+| Identity statement (model's own reply) | 9/10 | 10 conversations |
 | Clarification on ambiguous places | 2/2 | 2 conversations |
-| Unknown exposure share, walk and bike | 0.583 | 143 routes |
-| Unknown exposure share, walk | 1.000 | 61 routes |
-| Unknown exposure share, bike | 0.272 | 82 routes |
+| Unknown exposure share, walk and bike | 0.578 | 143 routes |
+| Unknown exposure share, walk | 1.000 | 62 routes |
+| Unknown exposure share, bike | 0.254 | 81 routes |
 
 How to read these numbers:
 
