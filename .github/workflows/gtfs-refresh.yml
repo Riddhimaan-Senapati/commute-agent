@@ -1,0 +1,113 @@
+name: gtfs-refresh
+
+# Weekly: when the MBTA publishes a new GTFS feed, rebuild the OTP graph, re-cache the demo
+# and eval trips against it, replace the assets on the data-latest release, and rebuild the
+# Hugging Face Space so it downloads them. The MBTA feed changes a few times a year; a run
+# with an unchanged feed_version stops after the version check.
+
+on:
+  schedule:
+    - cron: "17 9 * * 1" # Mondays 09:17 UTC
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Rebuild even if the feed version is unchanged
+        type: boolean
+        default: false
+
+concurrency:
+  group: gtfs-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write # upload release assets
+
+env:
+  RELEASE: data-latest
+  GTFS_URL: https://cdn.mbta.com/MBTA_GTFS.zip
+  OTP_IMAGE: opentripplanner/opentripplanner:2.10.0
+  SPACE_ID: ${{ vars.HF_SPACE_ID }}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest # 4 vCPU / 16 GB for public repos; the OTP build peaks near 4 GiB
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the GTFS feed and compare versions
+        id: version
+        run: |
+          mkdir -p data/otp
+          curl -fsSL -o data/otp/mbta-gtfs.zip "$GTFS_URL"
+          new=$(unzip -p data/otp/mbta-gtfs.zip feed_info.txt | python3 -c \
+            "import csv,sys; r=next(csv.DictReader(sys.stdin)); print(r['feed_version'], r['feed_end_date'], sep=' | ')")
+          old=$(gh release download "$RELEASE" -p gtfs-version.txt -O - 2>/dev/null || true)
+          echo "published: ${old:-none}"
+          echo "latest:    $new"
+          echo "$new" > gtfs-version.txt
+          if [ "$new" = "$old" ] && [ "${{ inputs.force }}" != "true" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fetch the current data and the OSM extract
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          gh release download "$RELEASE" -p commute-data.tar.gz -p service_area.osm.pbf -D /tmp/release
+          tar -xzf /tmp/release/commute-data.tar.gz
+          mv /tmp/release/service_area.osm.pbf data/otp/
+          cp docker/otp/build-config.json data/otp/
+
+      - name: Build the OTP graph
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          docker run --rm -e JAVA_TOOL_OPTIONS=-Xmx6g \
+            -v "$PWD/data/otp:/var/opentripplanner" "$OTP_IMAGE" --build --save
+          ls -la data/otp/graph.obj
+
+      - uses: astral-sh/setup-uv@v6
+        if: steps.version.outputs.changed == 'true'
+
+      - name: Re-cache the demo and eval trips against the new graph
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          docker run -d --name otp -e JAVA_TOOL_OPTIONS=-Xmx3g \
+            -v "$PWD/data/otp:/var/opentripplanner:ro" -p 8080:8080 "$OTP_IMAGE" --load --serve
+          for i in $(seq 1 90); do
+            curl -fsS -X POST localhost:8080/otp/gtfs/v1 -H 'content-type: application/json' \
+              -d '{"query":"{ feeds { feedId } }"}' >/dev/null 2>&1 && break
+            sleep 2
+          done
+          # Itineraries from the old feed may name trips the new one dropped.
+          rm -rf data/cache/otp
+          uv sync --frozen
+          uv run python -m commute_agent.transit.cache_trips
+          docker stop otp
+
+      - name: Package and replace the release assets
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          mkdir -p /tmp/out
+          tar -czf /tmp/out/commute-data.tar.gz \
+            data/processed/walk.graphml data/processed/bike.graphml data/processed/drive.graphml \
+            data/processed/service_area.geojson data/processed/crash_coverage.geojson \
+            data/processed/bluebikes_stations.parquet data/processed/rapid_transit_stations.parquet \
+            data/processed/basemap.geojson data/processed/risk_meta.json data/cache/otp
+          cp data/otp/graph.obj /tmp/out/otp-graph.obj
+          cp gtfs-version.txt /tmp/out/
+          gh release upload "$RELEASE" /tmp/out/commute-data.tar.gz /tmp/out/otp-graph.obj \
+            /tmp/out/gtfs-version.txt --clobber
+
+      - name: Rebuild the Space
+        if: steps.version.outputs.changed == 'true' && env.SPACE_ID != ''
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: >-
+          uv run --no-project --with huggingface_hub python -c
+          "import os; from huggingface_hub import HfApi;
+          HfApi(token=os.environ['HF_TOKEN']).restart_space(os.environ['SPACE_ID'], factory_reboot=True);
+          print('rebuild requested for', os.environ['SPACE_ID'])"

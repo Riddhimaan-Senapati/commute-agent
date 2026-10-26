@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: deploy-render
+  group: deploy-space
   cancel-in-progress: false
 
 jobs:
@@ -32,14 +32,16 @@ jobs:
 
   deploy:
     needs: test
+    if: vars.HF_SPACE_ID != ''
     runs-on: ubuntu-latest
     steps:
-      - name: Install Render CLI
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/render-oss/cli/refs/heads/main/bin/install.sh \
-            --output /tmp/install-render-cli.sh
-          sudo sh /tmp/install-render-cli.sh
-      - name: Deploy this commit and wait for it to go live
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.18"
+      # The Space rebuilds its Docker image from the uploaded files.
+      - name: Upload to the Hugging Face Space
         env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        run: render deploys create "${{ secrets.RENDER_SERVICE_ID }}" --commit "${{ github.sha }}" --wait --confirm -o json
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+        run: uv run --no-project --with huggingface_hub python docker/space/upload.py
