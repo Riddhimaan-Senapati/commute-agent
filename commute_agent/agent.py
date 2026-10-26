@@ -222,7 +222,8 @@ def run_turn(conv: Conversation, text: str) -> AgentReply:
         answer = str(conv.agent.run(retry, reset=False))
         unsupported = unsupported_numbers(answer, _observations(conv.agent, 0) + conv.user_texts)
         answer = _redact(answer, unsupported)
-    if first_turn and not answer.lstrip().startswith(IDENTITY_SENTENCE):
+    identity_added = first_turn and not answer.lstrip().startswith(IDENTITY_SENTENCE)
+    if identity_added:
         answer = f"{IDENTITY_SENTENCE} {answer.lstrip()}"
     return AgentReply(
         conversation_id=conv.id,
@@ -231,4 +232,5 @@ def run_turn(conv: Conversation, text: str) -> AgentReply:
         unsupported_numbers=unsupported,
         first_draft_unsupported=first_draft,
         first_draft_numbers=first_draft_numbers,
+        identity_added=identity_added,
     )

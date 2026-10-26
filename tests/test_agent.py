@@ -256,13 +256,16 @@ def test_first_reply_gets_the_identity_sentence_when_the_model_omits_it() -> Non
     conv = make_conversation([call("final_answer", {"answer": "Hello there."}, "f1")])
     reply = run_turn(conv, "Hi")
     assert reply.text == f"{IDENTITY_SENTENCE} Hello there."
+    assert reply.identity_added is True
     assert reply.unsupported_numbers == []
 
 
 def test_identity_sentence_is_not_doubled_when_present() -> None:
     answer = f"{IDENTITY_SENTENCE} Hello there."
     conv = make_conversation([call("final_answer", {"answer": answer}, "f1")])
-    assert run_turn(conv, "Hi").text == answer
+    reply = run_turn(conv, "Hi")
+    assert reply.text == answer
+    assert reply.identity_added is False
 
 
 def test_identity_is_only_enforced_on_the_first_reply() -> None:

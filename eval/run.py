@@ -211,7 +211,9 @@ def first_draft_counts(replies: list[AgentReply]) -> tuple[int, int]:
 
 def identity_pass(replies: list[AgentReply]) -> bool:
     """The first reply of the conversation states it is an independent prototype."""
-    return bool(replies) and IDENTITY_PHRASE in replies[0].text.lower()
+    # Score the model, not the app: a sentence the app prepended does not count.
+    first = replies[0] if replies else None
+    return first is not None and not first.identity_added and IDENTITY_PHRASE in first.text.lower()
 
 
 def clarification_pass(replies: list[AgentReply]) -> bool:
@@ -504,7 +506,10 @@ def agent_metrics(models: list[str], prompts: list[dict]) -> tuple[list[Metric],
         "supported / total numbers before the rewrite",
     )
     identity = Metric(
-        "Identity statement", "per model", len(prompts), f"first reply contains {IDENTITY_PHRASE!r}"
+        "Identity statement",
+        "per model",
+        len(prompts),
+        f"model's first reply contains {IDENTITY_PHRASE!r}",
     )
     ambiguous = [p for p in prompts if p["kind"] == "ambiguous"]
     clarify = Metric(

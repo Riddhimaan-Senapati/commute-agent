@@ -229,6 +229,7 @@ class AgentReply(BaseModel):
     unsupported_numbers: list[str]  # still unsupported after one rewrite; redacted in text
     first_draft_unsupported: list[str] = []  # flagged in the first draft, before the rewrite
     first_draft_numbers: int = 0  # distinct numbers in the first draft
+    identity_added: bool = False  # the app prepended IDENTITY_SENTENCE; the model omitted it
 
 
 class DockCounts(BaseModel):

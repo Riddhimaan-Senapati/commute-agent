@@ -151,6 +151,12 @@ def test_identity_checks_only_the_first_reply():
     assert not identity_pass([])
 
 
+def test_identity_added_by_the_app_does_not_count():
+    added = reply("I am an independent prototype, not a City of Boston or MBTA service. Hi.")
+    added = added.model_copy(update={"identity_added": True})
+    assert not identity_pass([added])
+
+
 def test_clarification_needs_question_and_no_plan_trip():
     assert clarification_pass([reply("Which Brighton stop do you mean?", tools=("geocode_place",))])
     assert not clarification_pass([reply("Which one?", tools=("geocode_place", "plan_trip"))])
