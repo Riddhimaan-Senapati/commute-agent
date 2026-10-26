@@ -34,6 +34,7 @@ from commute_agent.models import (
 from commute_agent.pareto import assign_labels, filtered_out, pareto_front, tradeoff
 from commute_agent.paths import PREFERENCES_DB, PROCESSED
 from commute_agent.preferences import current_weights, order_routes
+from commute_agent.service_area import SERVICE_AREA_FILE, outside_message
 from commute_agent.streets import StreetGraphs, load_street_graphs, street_routes
 from commute_agent.traffic import (
     TrafficBucket,
@@ -85,11 +86,11 @@ def _notes(bucket: TrafficBucket, availability: Mapping[str, DockCounts] | None)
 
 
 class OutsideServiceArea(Exception):
-    """Raised when a trip point lies outside the City of Boston."""
+    """Raised when a trip point lies outside the service area (see commute_agent.service_area)."""
 
 
 def load_context(live: bool, processed: Path = PROCESSED) -> PlannerContext:
-    geojson = json.loads((processed / "boston_boundary.geojson").read_text())
+    geojson = json.loads((processed / SERVICE_AREA_FILE).read_text())
     boundary = unary_union([shape(feature["geometry"]) for feature in geojson["features"]])
     return PlannerContext(
         graphs=load_street_graphs(processed),
@@ -185,7 +186,7 @@ def gather_candidates(
     ``step_free`` asks OTP for wheelchair-accessible transit and scores elevator closures."""
     outside = _outside(ctx, origin, destination)
     if outside:
-        raise OutsideServiceArea(f"Outside the City of Boston: {' and '.join(outside)}")
+        raise OutsideServiceArea(outside_message(outside))
 
     candidates, omitted = street_routes(
         ctx.graphs, ctx.factors, origin, destination, depart_at, ctx.traffic, availability

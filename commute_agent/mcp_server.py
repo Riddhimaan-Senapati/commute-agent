@@ -188,7 +188,8 @@ def plan_trip(
         Field(description="True to plan wheelchair-accessible transit and flag elevator closures."),
     ] = False,
 ) -> PlanResult:
-    """Plan a trip inside Boston and return the Pareto set of routes with trade-offs."""
+    """Plan a trip inside the service area (Boston, Cambridge, Somerville, Brookline) and
+    return the Pareto set of routes with trade-offs."""
     state = _state()
     depart = parse_depart_at(depart_at)
     origin = Point(lat=origin_lat, lon=origin_lon)

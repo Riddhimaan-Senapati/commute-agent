@@ -1,15 +1,18 @@
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 import pandas as pd
 
+from commute_agent.ingest.geo import SERVICE_BUFFER_FILE
 from commute_agent.ingest.meta import SchemaMismatch, atomic_write, manifest_entry, write_meta
 from commute_agent.paths import OTP_DIR, PROCESSED, RAW
 
 STATIONS_FILE = "transit/massgis_rapid_transit_stations.json"
 GTFS_FILE = "transit/MBTA_GTFS.zip"
-BOSTON_PBF = "geo/boston.osm.pbf"
+MASS_PBF = "geo/massachusetts-latest.osm.pbf"
+SERVICE_PBF = "service_area.osm.pbf"
 
 
 def _parse_stations(raw: dict) -> pd.DataFrame:
@@ -50,13 +53,27 @@ def stations(raw_dir: Path = RAW, out_dir: Path = PROCESSED) -> Path:
     return path
 
 
-def otp_inputs(raw_dir: Path = RAW, out_dir: Path = OTP_DIR) -> Path:
-    """Copy the GTFS zip and the clipped Boston OSM pbf into data/otp/."""
+def otp_inputs(
+    raw_dir: Path = RAW, out_dir: Path = OTP_DIR, processed: Path = PROCESSED
+) -> Path:
+    """Copy the GTFS zip and extract the service-area OSM pbf into data/otp/.
+
+    The extract clips the Massachusetts pbf to the 2 km-buffered service-area polygon
+    (osmium extract -p), so it covers Boston, Cambridge, Somerville and Brookline.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     gtfs_dst = out_dir / "mbta-gtfs.zip"
-    pbf_dst = out_dir / "boston.osm.pbf"
+    pbf_dst = out_dir / SERVICE_PBF
     _atomic_copy(raw_dir / GTFS_FILE, gtfs_dst)
-    _atomic_copy(raw_dir / BOSTON_PBF, pbf_dst)
+    subprocess.run(
+        [
+            "osmium", "extract", "-p", str(processed / SERVICE_BUFFER_FILE), "--overwrite",
+            "-f", "pbf", "-o", str(pbf_dst.with_name(pbf_dst.name + ".tmp")),
+            str(raw_dir / MASS_PBF),
+        ],
+        check=True,
+    )
+    pbf_dst.with_name(pbf_dst.name + ".tmp").replace(pbf_dst)
     return gtfs_dst
 
 

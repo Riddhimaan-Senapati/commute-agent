@@ -42,12 +42,30 @@ def test_plan_returns_front_with_fastest_label(
     assert len(plan.tradeoffs_vs_fastest) == len(plan.routes)
 
 
+CAMBRIDGE_ORIGIN = Point(lat=42.3700, lon=-71.1100)
+NEWTON_ORIGIN = Point(lat=42.3297, lon=-71.1956)
+
+
 def test_point_outside_boundary_names_origin(planner_ctx: PlannerContext) -> None:
     far = Point(lat=42.5, lon=-71.0)
     with pytest.raises(OutsideServiceArea, match="origin"):
         planner.gather_candidates(
             planner_ctx, far, DESTINATION, datetime(2026, 10, 27, 8, 15), [], None
         )
+
+
+def test_cambridge_origin_passes_boundary_check(planner_ctx: PlannerContext) -> None:
+    assert planner._outside(planner_ctx, CAMBRIDGE_ORIGIN, DESTINATION) == []
+
+
+def test_newton_origin_is_rejected_with_service_area_message(planner_ctx: PlannerContext) -> None:
+    with pytest.raises(OutsideServiceArea) as exc:
+        planner.gather_candidates(
+            planner_ctx, NEWTON_ORIGIN, DESTINATION, datetime(2026, 10, 27, 8, 15), [], None
+        )
+    assert str(exc.value) == (
+        "Outside the service area (Boston, Cambridge, Somerville, Brookline): origin"
+    )
 
 
 def test_offline_departure_defaults_to_next_tuesday_0815() -> None:
