@@ -6,7 +6,7 @@ State of the Pareto Commute Agent as of 2026-10-25, for whoever picks it up next
 
 A commute planner for trips inside Boston, Cambridge, Somerville, and Brookline. For one trip it returns every route that no other route beats on all four objectives: travel time, CO₂, crash risk on walk and bike segments, and MBTA disruption risk. The page also lists the routes it dropped and which route beats each one. An LLM agent explains the trade-offs using only numbers the tools returned. It is an independent prototype, not a City of Boston or MBTA service.
 
-- Live site: https://commute-agent-5hla.onrender.com (no login)
+- Hosting: none right now. The Render services and workspace were deleted on 2026-10-26; the old address `commute-agent-5hla.onrender.com` no longer works. Run it locally (see "Running it").
 - Repository: https://github.com/Riddhimaan-Senapati/commute-agent, branch `main`
 - Spec: `.kiro/specs/pareto-commute-agent/` (`requirements.md`, `design.md`, `tasks.md`). `docs/plans/next-features.md` is the plan for the second round of features.
 - Setup, data build, deploy, eval, and data notes: `README.md`
@@ -30,15 +30,15 @@ A commute planner for trips inside Boston, Cambridge, Somerville, and Brookline.
 - **Emission factors** (`data/emission_factors.yaml`): EPA GHG Emission Factors Hub 2025, Table 10, and UK DESNZ 2026 for ferry. CO₂ only. Walk, bike, and Bluebikes are 0.
 - **Traffic factors** (`data/traffic_factors.yaml`): TomTom Traffic Index 2025, City of Boston hourly congestion grid, read from the page with "Show values" on. Value = 1 + level / 100 (TomTom's definition); weekday is the Monday to Friday mean, weekend the Saturday and Sunday mean. Weekday 8 AM is 1.60 and 5 PM is 1.84.
 - **Agent model:** `deepseek/deepseek-v4.1-flash-1017` on OpenRouter, key `OPENROUTER_API_KEY` in `.env`. LiteLLM was removed because of an `mcp` version conflict.
-- **Hosting:** Render. Web service `srv-dbeitagae00c73da2ht0` on `2c-4g`; OTP private service `commute-otp` (`srv-dbekn7om7kps73e78u6g`) on `standard`. The web service reaches OTP through `COMMUTE_OTP_HOSTPORT=commute-otp:8080`.
+- **Hosting:** Render cost $110 a month (web `2c-4g` $85, OTP `1c-2g` $25) and was shut down. Render's free plan (512 MB) can't hold the app, which needs about 3.4 GB plus about 1 GB for OTP. Hugging Face Docker Spaces need a PRO subscription ($9 a month) as of 2026-10-26. A free option still to try is an Oracle Cloud Always Free ARM VM.
 - **Walking exposure:** MBTA station entries were tried as an extra signal and not adopted (adjusted R² fell on the Boston-only data). The code is behind `USE_STATION_ENTRIES = False`.
 - **Brookline** has no open crash data; its streets use the road-class prior and are outside `crash_coverage.geojson`.
 
 ## Deployment
 
-- `.github/workflows/deploy.yml`: every push to `main` runs ruff, pytest and the webapp typecheck, then deploys the web service with `render deploys create --commit <sha> --wait`.
-- Runtime data is not in git. The web image downloads `commute-data.tar.gz` and the OTP image downloads `otp-graph.obj`, both from the GitHub release named in `Dockerfile` and `docker/otp-render/Dockerfile`. `data-v2` is the four-city build; `data-v1` is the older Boston-only build.
-- The OTP service does not deploy from the GitHub workflow. After changing its Dockerfile or graph, deploy it with `render deploys create srv-dbekn7om7kps73e78u6g`. Its branch must be `main`.
+- `.github/workflows/deploy.yml` (named `test`): every push to `main` runs ruff, pytest and the webapp typecheck. It no longer deploys.
+- Branch `hf-spaces` has the next hosting setup, ready for any host that runs a Docker image with about 6 GB of memory: a single `Dockerfile` with OTP, the API and Next.js on port 7860 (about 4.4 GiB in use, tested locally), a Space deploy in `deploy.yml`, and `.github/workflows/gtfs-refresh.yml`, which rebuilds the OTP graph and re-caches trips weekly when the MBTA publishes a new GTFS feed. The current feed ends 2026-12-12.
+- Runtime data is not in git. It lives on GitHub releases: `data-latest` (current data, OTP graph, OSM extract, GTFS version; the refresh job replaces it), `data-v2` (four-city build), and `data-v1` (Boston-only build).
 - Rebuilding the data: see "Build the data" in the README. The graph download uses Overpass; set `COMMUTE_OVERPASS_URL` to a mirror if overpass-api.de returns 502.
 
 ## Known limits
